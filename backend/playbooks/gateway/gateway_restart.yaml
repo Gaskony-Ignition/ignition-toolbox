@@ -1,0 +1,281 @@
+name: "Gateway Restart"
+version: "2.0"
+description: "Restart Ignition Gateway from restart notification bar (assumes already logged in)"
+domain: gateway
+group: "Gateway (Base Playbooks)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: username
+    type: string
+    required: false
+    description: "Gateway admin username (not used, kept for compatibility)"
+
+  - name: password
+    type: string
+    required: false
+    description: "Gateway admin password (not used, kept for compatibility)"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Check for Trial Reset Button (May Overlap with Restart Button)
+  # ==========================================================================
+  - id: step1_check_trial_reset
+    name: "Step 1: Check for Trial Reset Button"
+    type: browser.verify
+    parameters:
+      selector: 'button:has-text("Reset"), button:has-text("RESET"), [class*="reset"]:has-text("Reset")'
+      state: "visible"
+      timeout: 3000
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 2: Click Trial Reset Button (if present)
+  # ==========================================================================
+  - id: step2_click_trial_reset
+    name: "Step 2: Click Trial Reset Button (if present)"
+    type: browser.click
+    parameters:
+      selector: 'button:has-text("Reset"), button:has-text("RESET"), [class*="reset"]:has-text("Reset")'
+      timeout: 5000
+      force: true
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 3: Wait for Trial Reset to Complete
+  # ==========================================================================
+  - id: step3_wait_trial_reset
+    name: "Step 3: Wait for Trial Reset to Complete"
+    type: utility.sleep
+    parameters:
+      seconds: 2
+
+  # ==========================================================================
+  # STEP 4: Verify Restart Required Bar is Visible (Try Multiple Selectors)
+  # ==========================================================================
+  - id: step4_verify_restart_bar
+    name: "Step 4: Verify Restart Required Bar is Visible"
+    type: browser.verify
+    parameters:
+      selector: 'button:has-text("Restart"), button:has-text("RESTART"), a:has-text("Restart Gateway")'
+      state: "visible"
+      timeout: 10000
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 5: Click Restart Gateway Button (Try Multiple Selectors)
+  # ==========================================================================
+  - id: step5_click_restart_button
+    name: "Step 5: Click Restart Gateway Button"
+    type: browser.click
+    parameters:
+      selector: 'button:has-text("Restart"), a:has-text("Restart Gateway"), button:has-text("RESTART")'
+      timeout: 30000
+      force: true
+
+  # ==========================================================================
+  # STEP 6: Wait for Confirmation Dialog
+  # ==========================================================================
+  - id: step6_wait_for_dialog
+    name: "Step 6: Wait for Confirmation Dialog"
+    type: utility.sleep
+    parameters:
+      seconds: 2
+
+  # ==========================================================================
+  # STEP 7: Screenshot Confirmation Dialog
+  # ==========================================================================
+  - id: step7_screenshot_dialog
+    name: "Step 7: Screenshot - Confirmation Dialog"
+    type: browser.screenshot
+    parameters:
+      name: "restart_confirmation_dialog"
+      full_page: false
+
+  # ==========================================================================
+  # STEP 8: Click I understand the risks Checkbox
+  # ==========================================================================
+  - id: step8_click_checkbox
+    name: "Step 8: Click I understand the risks"
+    type: browser.click
+    parameters:
+      selector: 'text=I understand the risks'
+      timeout: 30000
+      force: true
+
+  # ==========================================================================
+  # STEP 9: Wait for Restart Gateway Button to Enable
+  # ==========================================================================
+  - id: step9_wait_for_button_enable
+    name: "Step 9: Wait for Restart Gateway Button to Enable"
+    type: utility.sleep
+    parameters:
+      seconds: 1
+
+  # ==========================================================================
+  # STEP 10: Verify Restart Gateway Button is Enabled
+  # ==========================================================================
+  - id: step10_verify_button_enabled
+    name: "Step 10: Verify Restart Gateway Button is Enabled"
+    type: browser.verify
+    parameters:
+      selector: 'button:has-text("Restart Gateway"):not([disabled]), button:has-text("RESTART GATEWAY"):not([disabled]), button:has-text("Restart"):not([disabled])'
+      state: "visible"
+      timeout: 15000
+
+  # ==========================================================================
+  # STEP 11: Click Restart Gateway Button (BLUE button inside dialog)
+  # ==========================================================================
+  - id: step11_click_restart_in_dialog
+    name: "Step 11: Click Restart Gateway Button"
+    type: browser.click
+    parameters:
+      selector: 'button[id="restart gateway-button"]'
+      timeout: 30000
+      force: true
+
+  # ==========================================================================
+  # STEP 12: Confirm Gateway is Restarting (Goes Offline)
+  # ==========================================================================
+  - id: step12_confirm_offline
+    name: "Step 12: Confirm Gateway is Restarting"
+    type: utility.python
+    parameters:
+      script: |
+        import time
+        import httpx
+
+        gateway_url = """{{ parameter.gateway_url }}"""
+        max_attempts = 20
+        wait_seconds = 3
+
+        print(f"Waiting for Gateway to go offline (confirming restart started)...")
+        print(f"Max attempts: {max_attempts}, interval: {wait_seconds}s")
+        print("=" * 60)
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = httpx.get(gateway_url, timeout=10.0, follow_redirects=True)
+                print(f"✗ Attempt {attempt}/{max_attempts}: Gateway still online (Status: {response.status_code})")
+            except Exception as e:
+                print(f"✓ Attempt {attempt}/{max_attempts}: Gateway is offline! Restart confirmed.")
+                set_variable('restart_confirmed', 'true')
+                break
+
+            if attempt < max_attempts:
+                time.sleep(wait_seconds)
+        else:
+            print("ERROR: Gateway did not go offline - restart may have failed")
+            set_variable('restart_confirmed', 'false')
+            raise Exception("Step failed")
+
+        print("=" * 60)
+        print(f"Gateway went offline after {attempt * wait_seconds}s - restart in progress")
+
+  # ==========================================================================
+  # STEP 13: Poll Gateway Until Online
+  # ==========================================================================
+  - id: step13_poll_gateway
+    name: "Step 13: Poll Gateway Until Online"
+    type: utility.python
+    parameters:
+      script: |
+        import time
+        import httpx
+
+        gateway_url = """{{ parameter.gateway_url }}"""
+        max_attempts = 30
+        wait_seconds = 5
+
+        print(f"Polling {gateway_url} until it comes back online...")
+        print(f"Max attempts: {max_attempts}, interval: {wait_seconds}s")
+        print("=" * 60)
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = httpx.get(gateway_url, timeout=10.0, follow_redirects=True)
+                if response.status_code == 200:
+                    print(f"✓ Attempt {attempt}/{max_attempts}: Gateway is online! (Status: {response.status_code})")
+                    set_variable('gateway_online', 'true')
+                    set_variable('attempts_needed', str(attempt))
+                    break
+                else:
+                    print(f"✗ Attempt {attempt}/{max_attempts}: Gateway responded but not ready (Status: {response.status_code})")
+            except Exception as e:
+                print(f"✗ Attempt {attempt}/{max_attempts}: Gateway not responding - {type(e).__name__}")
+
+            if attempt < max_attempts:
+                time.sleep(wait_seconds)
+        else:
+            print("ERROR: Gateway did not come back online within the timeout period")
+            set_variable('gateway_online', 'false')
+            raise Exception("Step failed")
+
+        print("=" * 60)
+        print(f"Gateway online after {attempt} attempts ({attempt * wait_seconds}s)")
+
+  # ==========================================================================
+  # STEP 14: Wait After Gateway Online (Extended for Auth System Initialization)
+  # ==========================================================================
+  - id: step14_wait_after_online
+    name: "Step 14: Wait After Gateway Online (15s for auth initialization)"
+    type: utility.sleep
+    parameters:
+      seconds: 15
+
+  # ==========================================================================
+  # STEP 15: Verify Home Page Access (No Login Required)
+  # ==========================================================================
+  - id: step15_verify_home_page
+    name: "Step 15: Verify Home Page Access"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      wait_for: "load"
+      timeout: 30
+
+  # ==========================================================================
+  # STEP 16: Screenshot Home Page
+  # ==========================================================================
+  - id: step16_screenshot_home
+    name: "Step 16: Screenshot Home Page"
+    type: browser.screenshot
+    parameters:
+      name: "after_restart_home_page"
+      full_page: true
+
+  # ==========================================================================
+  # STEP 17: Verify Gateway is Accessible
+  # ==========================================================================
+  - id: step17_verify_accessible
+    name: "Step 17: Verify Gateway is Accessible"
+    type: browser.verify
+    parameters:
+      selector: ".home-page, .ia_homePage, [data-page='home'], nav"
+      state: "visible"
+      timeout: 10000
+
+  # ==========================================================================
+  # STEP 18: Execution Summary
+  # ==========================================================================
+  - id: step18_summary
+    name: "Step 18: Execution Summary"
+    type: utility.python
+    parameters:
+      script: |
+        print("=" * 80)
+        print("GATEWAY RESTART SUMMARY")
+        print("=" * 80)
+        print(f"Gateway URL: {{ parameter.gateway_url }}")
+        print(f"Restart Confirmed: {get_variable('restart_confirmed')}")
+        print(f"Gateway Online: {get_variable('gateway_online')}")
+        print(f"Attempts to Come Online: {get_variable('attempts_needed')}")
+        print(f"")
+        print(f"Gateway has been restarted successfully and is now accessible")
+        print(f"Waited 15s after online for authentication system initialization")
+        print("=" * 80)

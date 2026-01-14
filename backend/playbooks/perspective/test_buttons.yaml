@@ -1,0 +1,381 @@
+name: "Test All Buttons"
+version: "1.0"
+description: "Systematically test all buttons on a Perspective page - click and verify expected behavior"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: expected_behaviors
+    type: dict
+    required: false
+    default: {}
+    description: |
+      Optional dictionary mapping button selectors to expected behavior types.
+      Format: {"#button-id": "navigation", ".dock-trigger": "dock", "#toggle-btn": "state"}
+      Supported behaviors: "navigation", "dock", "state", "none"
+      If not specified, tests will click and observe without specific verification.
+
+steps:
+  # ==========================================================================
+  # STEP 1: Navigate to Perspective page
+  # ==========================================================================
+  - id: navigate_to_page
+    name: "Navigate to Perspective Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.perspective_url }}"
+      wait_until: "networkidle"
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 2: Wait for page to be ready
+  # ==========================================================================
+  - id: wait_for_ready
+    name: "Wait for Page Ready"
+    type: browser.wait
+    parameters:
+      selector: "body"
+      timeout: 10000
+    timeout: 15
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 3: Take initial screenshot
+  # ==========================================================================
+  - id: initial_screenshot
+    name: "Capture Initial Page State"
+    type: browser.screenshot
+    parameters:
+      name: "button_test_initial"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 4: Discover all components
+  # ==========================================================================
+  - id: discover_components
+    name: "Discover All Interactive Components"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+      types: []  # Discover all types
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 5: Filter and test buttons
+  # ==========================================================================
+  - id: test_buttons
+    name: "Filter Buttons and Execute Tests"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+
+        # Get discovered components
+        inventory = step_output['discover_components'].get('inventory', [])
+        expected_behaviors = parameters.get('expected_behaviors', {})
+
+        # Filter for buttons only
+        buttons = [
+            comp for comp in inventory
+            if comp.get('type', '').lower() in ['button', 'ia_button']
+        ]
+
+        # Prepare test manifest
+        test_results = {
+            'total_buttons': len(buttons),
+            'buttons': [],
+            'summary': {
+                'total': len(buttons),
+                'tested': 0,
+                'passed': 0,
+                'failed': 0,
+                'skipped': 0
+            }
+        }
+
+        # Build button test data
+        for idx, button in enumerate(buttons):
+            button_id = button.get('id', f'button_{idx}')
+            selector = button.get('selector', {}).get('css') or button.get('selector', {}).get('xpath', '')
+            label = button.get('label') or button.get('text') or button.get('ariaLabel', 'Unknown')
+
+            # Determine expected behavior
+            expected_behavior = expected_behaviors.get(selector, 'unknown')
+
+            button_test = {
+                'index': idx,
+                'id': button_id,
+                'selector': selector,
+                'label': label,
+                'type': button.get('type'),
+                'component_path': button.get('componentPath'),
+                'position': button.get('position', {}),
+                'expected_behavior': expected_behavior,
+                'test_status': 'pending',
+                'click_result': None,
+                'verification_result': None,
+                'error': None
+            }
+
+            test_results['buttons'].append(button_test)
+
+        # Store for next steps
+        result = {
+            'status': 'prepared',
+            'test_manifest': test_results,
+            'button_count': len(buttons),
+            'component_count': len(inventory)
+        }
+    timeout: 10
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 6: Execute button tests sequentially
+  # ==========================================================================
+  - id: execute_button_tests
+    name: "Execute Button Click Tests"
+    type: utility.python
+    parameters:
+      code: |
+        import asyncio
+        import json
+        from datetime import datetime
+
+        # Get test manifest from previous step
+        test_manifest = step_output['test_buttons'].get('test_manifest', {})
+        buttons = test_manifest.get('buttons', [])
+
+        # Results storage
+        results = []
+        passed_count = 0
+        failed_count = 0
+        skipped_count = 0
+
+        async def test_button(browser_manager, button_data):
+            """Test a single button"""
+            selector = button_data['selector']
+            button_id = button_data['id']
+            label = button_data['label']
+
+            result = {
+                **button_data,
+                'test_status': 'running',
+                'started_at': datetime.now().isoformat()
+            }
+
+            try:
+                # Get page
+                page = await browser_manager.get_page()
+
+                # Check if button exists and is visible
+                element = await page.query_selector(selector)
+                if not element:
+                    result['test_status'] = 'skipped'
+                    result['error'] = 'Button not found or not visible'
+                    result['completed_at'] = datetime.now().isoformat()
+                    return result
+
+                # Take screenshot before click
+                screenshot_before = await browser_manager.screenshot(f'button_test_{button_id}_before')
+                result['screenshot_before'] = str(screenshot_before)
+
+                # Get initial URL
+                initial_url = page.url
+
+                # Click button
+                await browser_manager.click(selector, timeout=5000, force=False)
+                result['click_result'] = 'success'
+
+                # Wait a moment for any changes
+                await asyncio.sleep(1)
+
+                # Get new URL
+                new_url = page.url
+
+                # Take screenshot after click
+                screenshot_after = await browser_manager.screenshot(f'button_test_{button_id}_after')
+                result['screenshot_after'] = str(screenshot_after)
+
+                # Determine what happened
+                if new_url != initial_url:
+                    result['verification_result'] = 'navigation_detected'
+                    result['navigation_url'] = new_url
+                    result['test_status'] = 'passed'
+                else:
+                    # Check for dock/popup (this is a simplified check)
+                    # In real implementation, would check for specific dock selectors
+                    result['verification_result'] = 'no_navigation_detected'
+                    result['test_status'] = 'passed'  # Still pass if no errors
+
+                result['completed_at'] = datetime.now().isoformat()
+
+            except Exception as e:
+                result['test_status'] = 'failed'
+                result['error'] = str(e)
+                result['completed_at'] = datetime.now().isoformat()
+
+            return result
+
+        # Note: This Python step can't actually execute async browser operations
+        # This is a design limitation - we need a dedicated step type for this
+        # For now, just prepare the test plan
+        result = {
+            'status': 'test_plan_prepared',
+            'message': 'Button test execution requires dedicated step type - storing test plan',
+            'test_plan': {
+                'buttons': buttons,
+                'total_buttons': len(buttons)
+            }
+        }
+    timeout: 300
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 7: Generate test report
+  # ==========================================================================
+  - id: generate_report
+    name: "Generate Button Test Report"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get test data
+        test_manifest = step_output['test_buttons'].get('test_manifest', {})
+        buttons = test_manifest.get('buttons', [])
+
+        # Generate HTML report
+        html_report = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Button Test Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                h1 {{ color: #333; }}
+                .summary {{ background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .summary-stat {{ display: inline-block; margin-right: 30px; }}
+                table {{ border-collapse: collapse; width: 100%; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #4CAF50; color: white; }}
+                tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                .status-passed {{ color: green; font-weight: bold; }}
+                .status-failed {{ color: red; font-weight: bold; }}
+                .status-skipped {{ color: orange; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <h1>Button Test Report</h1>
+            <p>Generated: {datetime.now().isoformat()}</p>
+
+            <div class="summary">
+                <h2>Test Summary</h2>
+                <div class="summary-stat">Total Buttons: <strong>{len(buttons)}</strong></div>
+                <div class="summary-stat">Tested: <strong>0</strong></div>
+                <div class="summary-stat">Passed: <strong>0</strong></div>
+                <div class="summary-stat">Failed: <strong>0</strong></div>
+            </div>
+
+            <h2>Button Inventory</h2>
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>Selector</th>
+                    <th>Status</th>
+                </tr>
+        """
+
+        for idx, button in enumerate(buttons):
+            html_report += f"""
+                <tr>
+                    <td>{idx + 1}</td>
+                    <td>{button.get('id', 'N/A')}</td>
+                    <td>{button.get('label', 'Unknown')}</td>
+                    <td>{button.get('type', 'button')}</td>
+                    <td><code>{button.get('selector', 'N/A')}</code></td>
+                    <td class="status-{button.get('test_status', 'pending')}">{button.get('test_status', 'pending')}</td>
+                </tr>
+            """
+
+        html_report += """
+            </table>
+        </body>
+        </html>
+        """
+
+        result = {
+            'status': 'report_generated',
+            'report_html': html_report,
+            'button_count': len(buttons),
+            'timestamp': datetime.now().isoformat()
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 8: Take final screenshot
+  # ==========================================================================
+  - id: final_screenshot
+    name: "Capture Final Page State"
+    type: browser.screenshot
+    parameters:
+      name: "button_test_final"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["testing", "buttons", "automated", "fat"]
+  created: "2025-11-17"
+  notes: |
+    This playbook systematically tests all buttons on a Perspective page.
+
+    Test Process:
+    1. Discover all interactive components
+    2. Filter for button components
+    3. For each button:
+       - Record initial state
+       - Click button
+       - Observe behavior (navigation/dock/state change)
+       - Record result
+
+    Expected Behaviors:
+    - "navigation" - Button should navigate to new page/view
+    - "dock" - Button should open a docked window/popup
+    - "state" - Button should change some state (toggle, enable/disable)
+    - "none" - Button click has no visible effect (may trigger backend action)
+    - "unknown" - Behavior not specified, will observe and record
+
+    Output:
+    - Test manifest with all discovered buttons
+    - Individual test results for each button
+    - Screenshots before/after each button click
+    - HTML test report
+
+    Limitations (Current Version):
+    - Python utility steps cannot directly execute browser operations
+    - This version prepares test manifests but doesn't execute clicks yet
+    - Phase 3 will add dedicated step types for iterative component testing
+
+    Usage:
+      parameters:
+        perspective_url: "http://localhost:8088/data/perspective/client/MyProject/dashboard"
+        expected_behaviors:
+          "#nav-home": "navigation"
+          ".open-settings": "dock"
+          "#toggle-mode": "state"

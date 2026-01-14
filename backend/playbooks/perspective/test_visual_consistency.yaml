@@ -1,0 +1,435 @@
+name: "Test Visual Consistency"
+version: "1.0"
+description: "Test visual consistency across components - alignment, fonts, colors, spacing"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: alignment_tolerance
+    type: integer
+    required: false
+    default: 5
+    description: "Pixel tolerance for alignment checks (default: 5 pixels)"
+
+  - name: check_fonts
+    type: boolean
+    required: false
+    default: true
+    description: "Check font consistency across similar components"
+
+  - name: check_colors
+    type: boolean
+    required: false
+    default: true
+    description: "Check color consistency across similar components"
+
+  - name: check_spacing
+    type: boolean
+    required: false
+    default: true
+    description: "Check spacing/padding consistency"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Navigate to Perspective page
+  # ==========================================================================
+  - id: navigate_to_page
+    name: "Navigate to Perspective Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.perspective_url }}"
+      wait_until: "networkidle"
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 2: Wait for page to be ready
+  # ==========================================================================
+  - id: wait_for_ready
+    name: "Wait for Page Ready"
+    type: browser.wait
+    parameters:
+      selector: "body"
+      timeout: 10000
+    timeout: 15
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 3: Take initial screenshot
+  # ==========================================================================
+  - id: initial_screenshot
+    name: "Capture Initial Page State"
+    type: browser.screenshot
+    parameters:
+      name: "visual_test_initial"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 4: Discover all components
+  # ==========================================================================
+  - id: discover_components
+    name: "Discover All Interactive Components"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+      types: []
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 5: Extract visual properties
+  # ==========================================================================
+  - id: extract_visual_properties
+    name: "Extract Visual Properties from Components"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+
+        # Get discovered components
+        inventory = step_output['discover_components'].get('inventory', [])
+
+        # Group components by type
+        components_by_type = {}
+        for comp in inventory:
+            comp_type = comp.get('type', 'unknown')
+            if comp_type not in components_by_type:
+                components_by_type[comp_type] = []
+
+            # Extract visual properties
+            visual_props = {
+                'id': comp.get('id'),
+                'selector': comp.get('selector', {}).get('css', ''),
+                'label': comp.get('label') or comp.get('text', 'Unknown'),
+                'position': comp.get('position', {}),
+                'x': comp.get('position', {}).get('x', 0),
+                'y': comp.get('position', {}).get('y', 0),
+                'width': comp.get('position', {}).get('width', 0),
+                'height': comp.get('position', {}).get('height', 0),
+                # Note: CSS properties would need browser evaluation
+                # Placeholder for font-size, color, etc.
+                'computed_styles': {}
+            }
+
+            components_by_type[comp_type].append(visual_props)
+
+        result = {
+            'status': 'extracted',
+            'components_by_type': components_by_type,
+            'type_count': len(components_by_type),
+            'total_components': len(inventory)
+        }
+    timeout: 10
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 6: Analyze alignment
+  # ==========================================================================
+  - id: analyze_alignment
+    name: "Analyze Component Alignment"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+
+        # Get visual properties
+        components_by_type = step_output['extract_visual_properties'].get('components_by_type', {})
+        tolerance = parameters.get('alignment_tolerance', 5)
+
+        alignment_issues = []
+        alignment_summary = {
+            'total_groups': 0,
+            'aligned_groups': 0,
+            'misaligned_groups': 0,
+            'issues': []
+        }
+
+        # Check alignment for each component type
+        for comp_type, components in components_by_type.items():
+            if len(components) < 2:
+                continue  # Need at least 2 components to check alignment
+
+            alignment_summary['total_groups'] += 1
+
+            # Check horizontal alignment (same Y coordinate)
+            y_coords = [c['y'] for c in components]
+            y_unique = list(set(y_coords))
+
+            # Group by Y coordinate (within tolerance)
+            y_groups = {}
+            for comp in components:
+                y = comp['y']
+                matched_group = False
+                for group_y in y_groups.keys():
+                    if abs(y - group_y) <= tolerance:
+                        y_groups[group_y].append(comp)
+                        matched_group = True
+                        break
+                if not matched_group:
+                    y_groups[y] = [comp]
+
+            # Check for horizontal alignment consistency
+            for group_y, group_comps in y_groups.items():
+                if len(group_comps) >= 2:
+                    y_coords_in_group = [c['y'] for c in group_comps]
+                    y_min = min(y_coords_in_group)
+                    y_max = max(y_coords_in_group)
+                    if y_max - y_min > tolerance:
+                        issue = {
+                            'type': 'horizontal_misalignment',
+                            'component_type': comp_type,
+                            'affected_components': [c['label'] for c in group_comps],
+                            'y_range': f"{y_min} - {y_max}",
+                            'deviation': y_max - y_min,
+                            'tolerance': tolerance
+                        }
+                        alignment_issues.append(issue)
+                        alignment_summary['issues'].append(issue)
+
+            # Check vertical alignment (same X coordinate)
+            x_coords = [c['x'] for c in components]
+
+            # Group by X coordinate (within tolerance)
+            x_groups = {}
+            for comp in components:
+                x = comp['x']
+                matched_group = False
+                for group_x in x_groups.keys():
+                    if abs(x - group_x) <= tolerance:
+                        x_groups[group_x].append(comp)
+                        matched_group = True
+                        break
+                if not matched_group:
+                    x_groups[x] = [comp]
+
+            # Check for vertical alignment consistency
+            for group_x, group_comps in x_groups.items():
+                if len(group_comps) >= 2:
+                    x_coords_in_group = [c['x'] for c in group_comps]
+                    x_min = min(x_coords_in_group)
+                    x_max = max(x_coords_in_group)
+                    if x_max - x_min > tolerance:
+                        issue = {
+                            'type': 'vertical_misalignment',
+                            'component_type': comp_type,
+                            'affected_components': [c['label'] for c in group_comps],
+                            'x_range': f"{x_min} - {x_max}",
+                            'deviation': x_max - x_min,
+                            'tolerance': tolerance
+                        }
+                        alignment_issues.append(issue)
+                        alignment_summary['issues'].append(issue)
+
+        alignment_summary['misaligned_groups'] = len(alignment_issues)
+        alignment_summary['aligned_groups'] = alignment_summary['total_groups'] - alignment_summary['misaligned_groups']
+
+        result = {
+            'status': 'analyzed',
+            'alignment_issues': alignment_issues,
+            'summary': alignment_summary,
+            'total_issues': len(alignment_issues)
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 7: Generate visual consistency report
+  # ==========================================================================
+  - id: generate_report
+    name: "Generate Visual Consistency Report"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get analysis data
+        components_by_type = step_output['extract_visual_properties'].get('components_by_type', {})
+        alignment_analysis = step_output['analyze_alignment'].get('summary', {})
+        alignment_issues = step_output['analyze_alignment'].get('alignment_issues', [])
+
+        # Generate HTML report
+        html_report = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Visual Consistency Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                h1 {{ color: #333; }}
+                .summary {{ background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .summary-stat {{ display: inline-block; margin-right: 30px; }}
+                .stat-good {{ color: green; font-weight: bold; }}
+                .stat-bad {{ color: red; font-weight: bold; }}
+                table {{ border-collapse: collapse; width: 100%; margin-bottom: 30px; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #673AB7; color: white; }}
+                tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                .issue {{ background-color: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin-bottom: 15px; }}
+                .issue-type {{ font-weight: bold; color: #c62828; }}
+                code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Visual Consistency Report</h1>
+            <p>Generated: {datetime.now().isoformat()}</p>
+
+            <div class="summary">
+                <h2>Summary</h2>
+                <div class="summary-stat">Component Types: <strong>{len(components_by_type)}</strong></div>
+                <div class="summary-stat">Alignment Issues: <strong class="stat-bad">{len(alignment_issues)}</strong></div>
+                <div class="summary-stat">Aligned Groups: <strong class="stat-good">{alignment_analysis.get('aligned_groups', 0)}</strong></div>
+            </div>
+
+            <h2>Component Type Distribution</h2>
+            <table>
+                <tr>
+                    <th>Component Type</th>
+                    <th>Count</th>
+                    <th>Position Range (X)</th>
+                    <th>Position Range (Y)</th>
+                </tr>
+        """
+
+        for comp_type, components in components_by_type.items():
+            x_coords = [c['x'] for c in components]
+            y_coords = [c['y'] for c in components]
+            x_range = f"{min(x_coords)} - {max(x_coords)}" if x_coords else "N/A"
+            y_range = f"{min(y_coords)} - {max(y_coords)}" if y_coords else "N/A"
+
+            html_report += f"""
+                <tr>
+                    <td>{comp_type}</td>
+                    <td>{len(components)}</td>
+                    <td>{x_range}</td>
+                    <td>{y_range}</td>
+                </tr>
+            """
+
+        html_report += """
+            </table>
+
+            <h2>Alignment Issues</h2>
+        """
+
+        if alignment_issues:
+            for issue in alignment_issues:
+                issue_type = issue.get('type', 'unknown').replace('_', ' ').title()
+                comp_type = issue.get('component_type', 'unknown')
+                components = ', '.join(issue.get('affected_components', []))
+                deviation = issue.get('deviation', 0)
+                tolerance = issue.get('tolerance', 5)
+
+                html_report += f"""
+                <div class="issue">
+                    <p class="issue-type">{issue_type}</p>
+                    <p><strong>Component Type:</strong> {comp_type}</p>
+                    <p><strong>Affected Components:</strong> {components}</p>
+                    <p><strong>Deviation:</strong> {deviation:.1f}px (tolerance: {tolerance}px)</p>
+                </div>
+                """
+        else:
+            html_report += "<p>No alignment issues detected! All component groups are properly aligned.</p>"
+
+        html_report += """
+            <h2>Test Methodology</h2>
+            <h3>Alignment Testing</h3>
+            <p>Components of the same type are grouped and checked for:</p>
+            <ul>
+                <li><strong>Horizontal Alignment:</strong> Components with similar Y coordinates should be aligned within tolerance</li>
+                <li><strong>Vertical Alignment:</strong> Components with similar X coordinates should be aligned within tolerance</li>
+                <li><strong>Tolerance:</strong> Maximum acceptable deviation (default: 5 pixels)</li>
+            </ul>
+
+            <h3>Future Enhancements (Phase 3+)</h3>
+            <p>Additional visual consistency checks to be implemented:</p>
+            <ul>
+                <li><strong>Font Consistency:</strong> font-family, font-size, font-weight across similar components</li>
+                <li><strong>Color Consistency:</strong> Color, background-color for similar component types</li>
+                <li><strong>Spacing Consistency:</strong> Padding, margin, gap between components</li>
+                <li><strong>Size Consistency:</strong> Width/height consistency for similar components</li>
+            </ul>
+
+            <p><em>Note: CSS property extraction requires browser evaluation in dedicated step type.</em></p>
+        </body>
+        </html>
+        """
+
+        result = {
+            'status': 'report_generated',
+            'report_html': html_report,
+            'total_issues': len(alignment_issues),
+            'timestamp': datetime.now().isoformat()
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 8: Take final screenshot
+  # ==========================================================================
+  - id: final_screenshot
+    name: "Capture Final Page State"
+    type: browser.screenshot
+    parameters:
+      name: "visual_test_final"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["testing", "visual", "consistency", "alignment", "automated", "fat"]
+  created: "2025-11-17"
+  notes: |
+    This playbook tests visual consistency across components on a Perspective page.
+
+    Visual Checks Performed:
+    1. **Alignment** - Horizontal and vertical alignment of similar components
+    2. **Fonts** - Font family, size, weight consistency (Phase 3+)
+    3. **Colors** - Color and background-color consistency (Phase 3+)
+    4. **Spacing** - Padding, margin, gap consistency (Phase 3+)
+
+    Alignment Detection:
+    - Groups components of same type
+    - Checks if components on same horizontal line are Y-aligned
+    - Checks if components in same vertical column are X-aligned
+    - Reports deviations exceeding tolerance threshold
+
+    Parameters:
+    - alignment_tolerance: Pixel tolerance for alignment (default: 5px)
+    - check_fonts: Enable font consistency checks (future)
+    - check_colors: Enable color consistency checks (future)
+    - check_spacing: Enable spacing consistency checks (future)
+
+    Output:
+    - Component type distribution analysis
+    - Alignment issue reports with affected components
+    - Visual consistency summary
+    - HTML report with detailed findings
+
+    Limitations (Current Version):
+    - Alignment checks use position data from component discovery
+    - CSS property checks (fonts, colors) require browser evaluation
+    - Phase 3 will add dedicated step types for CSS property extraction
+
+    Usage:
+      parameters:
+        perspective_url: "http://localhost:8088/data/perspective/client/MyProject/dashboard"
+        alignment_tolerance: 5
+        check_fonts: true
+        check_colors: true
+        check_spacing: true
+
+    Common Issues Detected:
+    - Buttons in a row with inconsistent Y coordinates
+    - Form labels not vertically aligned
+    - Inconsistent spacing between grouped components
+    - Misaligned grid layouts

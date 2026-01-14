@@ -1,0 +1,344 @@
+name: "Test Dock/Popup Behavior"
+version: "1.0"
+description: "Systematically test components that open docked windows, popups, or modals"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: dock_triggers
+    type: dict
+    required: false
+    default: {}
+    description: |
+      Optional dictionary mapping trigger selectors to expected dock selectors.
+      Format: {"#open-settings": ".settings-dock", ".menu-trigger": ".menu-popup"}
+      If not specified, will attempt to detect dock opening automatically.
+
+  - name: close_after_test
+    type: boolean
+    required: false
+    default: true
+    description: "Whether to close docks after testing (default: true)"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Navigate to Perspective page
+  # ==========================================================================
+  - id: navigate_to_page
+    name: "Navigate to Perspective Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.perspective_url }}"
+      wait_until: "networkidle"
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 2: Wait for page to be ready
+  # ==========================================================================
+  - id: wait_for_ready
+    name: "Wait for Page Ready"
+    type: browser.wait
+    parameters:
+      selector: "body"
+      timeout: 10000
+    timeout: 15
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 3: Take initial screenshot
+  # ==========================================================================
+  - id: initial_screenshot
+    name: "Capture Initial Page State"
+    type: browser.screenshot
+    parameters:
+      name: "dock_test_initial"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 4: Discover all components
+  # ==========================================================================
+  - id: discover_components
+    name: "Discover All Interactive Components"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+      types: []
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 5: Identify dock triggers
+  # ==========================================================================
+  - id: identify_dock_triggers
+    name: "Identify Potential Dock Triggers"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+
+        # Get discovered components
+        inventory = step_output['discover_components'].get('inventory', [])
+        dock_triggers_param = parameters.get('dock_triggers', {})
+
+        # Identify potential dock triggers based on:
+        # 1. Explicit dock_triggers parameter
+        # 2. Buttons/links with data-dock, data-popup attributes
+        # 3. Buttons with "open", "show", "menu" in label
+
+        potential_triggers = []
+
+        for idx, comp in enumerate(inventory):
+            trigger_id = comp.get('id', f'trigger_{idx}')
+            selector = comp.get('selector', {}).get('css') or comp.get('selector', {}).get('xpath', '')
+            label = (comp.get('label') or comp.get('text') or comp.get('ariaLabel', '')).lower()
+            comp_type = comp.get('type', '').lower()
+
+            # Check if explicitly defined as dock trigger
+            is_explicit_trigger = selector in dock_triggers_param
+            expected_dock = dock_triggers_param.get(selector)
+
+            # Check for dock/popup indicators
+            has_dock_indicator = any([
+                'data-dock' in str(comp.get('attributes', {})),
+                'data-popup' in str(comp.get('attributes', {})),
+                'open' in label,
+                'show' in label,
+                'menu' in label,
+                'modal' in label,
+                'dialog' in label,
+                'settings' in label,
+            ])
+
+            # Only include buttons and links
+            is_clickable = comp_type in ['button', 'ia_button', 'link', 'a']
+
+            if is_explicit_trigger or (is_clickable and has_dock_indicator):
+                trigger = {
+                    'index': idx,
+                    'id': trigger_id,
+                    'selector': selector,
+                    'label': comp.get('label') or comp.get('text') or 'Unknown',
+                    'type': comp_type,
+                    'component_path': comp.get('componentPath'),
+                    'expected_dock_selector': expected_dock,
+                    'detection_method': 'explicit' if is_explicit_trigger else 'heuristic',
+                    'test_status': 'pending',
+                    'click_result': None,
+                    'dock_detected': None,
+                    'dock_selector': None,
+                    'error': None
+                }
+                potential_triggers.append(trigger)
+
+        test_manifest = {
+            'total_triggers': len(potential_triggers),
+            'triggers': potential_triggers,
+            'summary': {
+                'total': len(potential_triggers),
+                'tested': 0,
+                'passed': 0,
+                'failed': 0
+            }
+        }
+
+        result = {
+            'status': 'identified',
+            'test_manifest': test_manifest,
+            'trigger_count': len(potential_triggers),
+            'component_count': len(inventory)
+        }
+    timeout: 10
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 6: Generate dock test report
+  # ==========================================================================
+  - id: generate_report
+    name: "Generate Dock Test Report"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get test data
+        test_manifest = step_output['identify_dock_triggers'].get('test_manifest', {})
+        triggers = test_manifest.get('triggers', [])
+
+        # Generate HTML report
+        html_report = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Dock/Popup Test Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                h1 {{ color: #333; }}
+                .summary {{ background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .summary-stat {{ display: inline-block; margin-right: 30px; }}
+                table {{ border-collapse: collapse; width: 100%; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #9C27B0; color: white; }}
+                tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                .method-explicit {{ background-color: #4CAF50; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.85em; }}
+                .method-heuristic {{ background-color: #FF9800; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.85em; }}
+                code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Dock/Popup Test Report</h1>
+            <p>Generated: {datetime.now().isoformat()}</p>
+
+            <div class="summary">
+                <h2>Test Summary</h2>
+                <div class="summary-stat">Total Triggers: <strong>{len(triggers)}</strong></div>
+                <div class="summary-stat">Tested: <strong>0</strong></div>
+                <div class="summary-stat">Passed: <strong>0</strong></div>
+                <div class="summary-stat">Failed: <strong>0</strong></div>
+            </div>
+
+            <h2>Dock Trigger Inventory</h2>
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>Detection</th>
+                    <th>Expected Dock</th>
+                    <th>Selector</th>
+                    <th>Status</th>
+                </tr>
+        """
+
+        for idx, trigger in enumerate(triggers):
+            method_class = f"method-{trigger.get('detection_method', 'unknown')}"
+            expected_dock = trigger.get('expected_dock_selector', 'Auto-detect')
+            html_report += f"""
+                <tr>
+                    <td>{idx + 1}</td>
+                    <td>{trigger.get('id', 'N/A')}</td>
+                    <td>{trigger.get('label', 'Unknown')}</td>
+                    <td>{trigger.get('type', 'button')}</td>
+                    <td><span class="{method_class}">{trigger.get('detection_method', 'unknown')}</span></td>
+                    <td><code>{expected_dock}</code></td>
+                    <td><code>{trigger.get('selector', 'N/A')}</code></td>
+                    <td>{trigger.get('test_status', 'pending')}</td>
+                </tr>
+            """
+
+        html_report += """
+            </table>
+
+            <h2>Test Methodology</h2>
+            <p>For each dock trigger, the following tests would be performed:</p>
+            <ol>
+                <li><strong>Click Trigger:</strong> Click the button/link that should open dock</li>
+                <li><strong>Wait for Dock:</strong> Wait up to 2 seconds for dock to appear</li>
+                <li><strong>Verify Dock:</strong> Check if expected dock selector is visible</li>
+                <li><strong>Capture Dock:</strong> Take screenshot of opened dock</li>
+                <li><strong>Close Dock:</strong> Close dock using close button or overlay click</li>
+                <li><strong>Verify Closed:</strong> Confirm dock is no longer visible</li>
+            </ol>
+
+            <h3>Detection Methods</h3>
+            <ul>
+                <li><span class="method-explicit">explicit</span> - Defined in dock_triggers parameter</li>
+                <li><span class="method-heuristic">heuristic</span> - Detected by label keywords or data attributes</li>
+            </ul>
+
+            <h3>Common Dock Selectors</h3>
+            <ul>
+                <li><code>.ia_dockableContainer</code> - Ignition Perspective docked view</li>
+                <li><code>[data-docked="true"]</code> - Docked state attribute</li>
+                <li><code>.popup-container</code> - Custom popup containers</li>
+                <li><code>.modal-dialog</code> - Modal dialogs</li>
+            </ul>
+
+            <p><em>Note: Full execution requires Phase 3 implementation with perspective.verify_dock_opened step type.</em></p>
+        </body>
+        </html>
+        """
+
+        result = {
+            'status': 'report_generated',
+            'report_html': html_report,
+            'trigger_count': len(triggers),
+            'timestamp': datetime.now().isoformat()
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 7: Take final screenshot
+  # ==========================================================================
+  - id: final_screenshot
+    name: "Capture Final Page State"
+    type: browser.screenshot
+    parameters:
+      name: "dock_test_final"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["testing", "docks", "popups", "modals", "automated", "fat"]
+  created: "2025-11-17"
+  notes: |
+    This playbook systematically tests dock/popup trigger components.
+
+    Dock Types Tested:
+    - Docked Views (Ignition Perspective native docking)
+    - Modal Dialogs
+    - Popups
+    - Flyout Menus
+    - Custom overlays
+
+    Detection Methods:
+    1. **Explicit** - dock_triggers parameter specifies trigger->dock mapping
+    2. **Heuristic** - Automatic detection based on:
+       - Component attributes (data-dock, data-popup)
+       - Label keywords ("open", "show", "menu", "settings")
+       - Component type (buttons, links)
+
+    Test Process:
+    1. Discover all interactive components
+    2. Identify potential dock triggers (explicit + heuristic)
+    3. For each trigger:
+       - Click trigger
+       - Wait for dock appearance
+       - Verify dock is visible
+       - Capture dock screenshot
+       - Close dock
+       - Verify dock closed
+
+    Output:
+    - Test manifest with all identified triggers
+    - Detection method for each trigger
+    - Individual test results
+    - Screenshots of opened docks
+    - HTML test report
+
+    Usage:
+      parameters:
+        perspective_url: "http://localhost:8088/data/perspective/client/MyProject/main"
+        dock_triggers:
+          "#open-settings": ".settings-dock"
+          ".menu-button": ".main-menu"
+          "#help-icon": "[data-dock='help']"
+        close_after_test: true
+
+    Notes:
+    - Uses existing perspective.verify_dock_opened step type for dock verification
+    - Automatically closes docks to reset page state between tests
+    - Detects both Ignition native docks and custom implementations

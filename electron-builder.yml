@@ -1,0 +1,81 @@
+appId: com.ignition-toolbox.app
+productName: Ignition Toolbox
+copyright: Copyright © 2024 Nigel G
+
+directories:
+  buildResources: resources
+  output: release
+
+files:
+  - dist-electron/**/*
+  - frontend/dist/**/*
+
+extraResources:
+  # Include Python backend
+  - from: backend
+    to: backend
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+      - "!**/*.pyc"
+      - "!**/*.pyo"
+      - "!**/venv/**"
+      - "!**/.venv/**"
+      - "!**/node_modules/**"
+      - "!**/.git/**"
+      - "!**/data/**"
+
+# Windows configuration
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Ignition Toolbox
+  uninstallDisplayName: Ignition Toolbox
+  license: LICENSE
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+
+# macOS configuration (for future use)
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+
+# Linux configuration (for future use)
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: resources/icon.png
+  category: Development
+
+# Auto-update configuration
+publish:
+  provider: github
+  owner: nigelgwork
+  repo: ignition-toolbox
+  releaseType: release
+
+# Compression
+compression: maximum
+
+# Remove unused locales to reduce size
+electronLanguages:
+  - en-US

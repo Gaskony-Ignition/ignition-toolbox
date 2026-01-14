@@ -1,0 +1,334 @@
+name: "Test All Inputs"
+version: "1.0"
+description: "Systematically test all input fields and setpoints on a Perspective page - fill, verify, and validate"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: test_values
+    type: dict
+    required: false
+    default: {}
+    description: |
+      Optional dictionary mapping input selectors to test values.
+      Format: {"#setpoint-1": "100", ".temp-input": "75.5", "#name-field": "Test Name"}
+      If not specified, will use default test values based on input type.
+
+  - name: validation_rules
+    type: dict
+    required: false
+    default: {}
+    description: |
+      Optional dictionary of validation rules to test.
+      Format: {"#setpoint-1": {"min": 0, "max": 100, "required": true}}
+
+steps:
+  # ==========================================================================
+  # STEP 1: Navigate to Perspective page
+  # ==========================================================================
+  - id: navigate_to_page
+    name: "Navigate to Perspective Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.perspective_url }}"
+      wait_until: "networkidle"
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 2: Wait for page to be ready
+  # ==========================================================================
+  - id: wait_for_ready
+    name: "Wait for Page Ready"
+    type: browser.wait
+    parameters:
+      selector: "body"
+      timeout: 10000
+    timeout: 15
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 3: Take initial screenshot
+  # ==========================================================================
+  - id: initial_screenshot
+    name: "Capture Initial Page State"
+    type: browser.screenshot
+    parameters:
+      name: "input_test_initial"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 4: Discover all components
+  # ==========================================================================
+  - id: discover_components
+    name: "Discover All Interactive Components"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+      types: []  # Discover all types
+    timeout: 30
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 5: Filter and prepare input tests
+  # ==========================================================================
+  - id: prepare_input_tests
+    name: "Filter Inputs and Prepare Test Plan"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+
+        # Get discovered components
+        inventory = step_output['discover_components'].get('inventory', [])
+        test_values = parameters.get('test_values', {})
+        validation_rules = parameters.get('validation_rules', {})
+
+        # Filter for input components
+        inputs = [
+            comp for comp in inventory
+            if comp.get('type', '').lower() in ['input', 'ia_input', 'textarea', 'select', 'ia_dropdown']
+        ]
+
+        # Prepare test manifest
+        test_manifest = {
+            'total_inputs': len(inputs),
+            'inputs': [],
+            'summary': {
+                'total': len(inputs),
+                'tested': 0,
+                'passed': 0,
+                'failed': 0,
+                'skipped': 0
+            }
+        }
+
+        # Build input test data
+        for idx, input_comp in enumerate(inputs):
+            input_id = input_comp.get('id', f'input_{idx}')
+            selector = input_comp.get('selector', {}).get('css') or input_comp.get('selector', {}).get('xpath', '')
+            label = input_comp.get('label') or input_comp.get('placeholder') or input_comp.get('ariaLabel', 'Unknown')
+            input_type = input_comp.get('type', 'input')
+
+            # Determine test value
+            if selector in test_values:
+                test_value = test_values[selector]
+            else:
+                # Default test values based on type
+                if 'number' in input_type.lower() or 'setpoint' in label.lower():
+                    test_value = "42"
+                elif 'email' in input_type.lower():
+                    test_value = "test@example.com"
+                elif 'date' in input_type.lower():
+                    test_value = "2025-01-01"
+                else:
+                    test_value = "Test Value"
+
+            # Get validation rules
+            rules = validation_rules.get(selector, {})
+
+            input_test = {
+                'index': idx,
+                'id': input_id,
+                'selector': selector,
+                'label': label,
+                'type': input_type,
+                'component_path': input_comp.get('componentPath'),
+                'position': input_comp.get('position', {}),
+                'current_value': input_comp.get('value', ''),
+                'test_value': test_value,
+                'validation_rules': rules,
+                'test_status': 'pending',
+                'fill_result': None,
+                'verify_result': None,
+                'validation_result': None,
+                'error': None
+            }
+
+            test_manifest['inputs'].append(input_test)
+
+        result = {
+            'status': 'prepared',
+            'test_manifest': test_manifest,
+            'input_count': len(inputs),
+            'component_count': len(inventory)
+        }
+    timeout: 10
+    on_failure: abort
+
+  # ==========================================================================
+  # STEP 6: Generate input test report
+  # ==========================================================================
+  - id: generate_report
+    name: "Generate Input Test Report"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get test data
+        test_manifest = step_output['prepare_input_tests'].get('test_manifest', {})
+        inputs = test_manifest.get('inputs', [])
+
+        # Generate HTML report
+        html_report = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Input Test Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                h1 {{ color: #333; }}
+                .summary {{ background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+                .summary-stat {{ display: inline-block; margin-right: 30px; }}
+                table {{ border-collapse: collapse; width: 100%; }}
+                th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
+                th {{ background-color: #2196F3; color: white; }}
+                tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                .status-passed {{ color: green; font-weight: bold; }}
+                .status-failed {{ color: red; font-weight: bold; }}
+                .status-pending {{ color: gray; font-weight: bold; }}
+                code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Input Test Report</h1>
+            <p>Generated: {datetime.now().isoformat()}</p>
+
+            <div class="summary">
+                <h2>Test Summary</h2>
+                <div class="summary-stat">Total Inputs: <strong>{len(inputs)}</strong></div>
+                <div class="summary-stat">Tested: <strong>0</strong></div>
+                <div class="summary-stat">Passed: <strong>0</strong></div>
+                <div class="summary-stat">Failed: <strong>0</strong></div>
+            </div>
+
+            <h2>Input Inventory</h2>
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>Current Value</th>
+                    <th>Test Value</th>
+                    <th>Selector</th>
+                    <th>Status</th>
+                </tr>
+        """
+
+        for idx, input_comp in enumerate(inputs):
+            html_report += f"""
+                <tr>
+                    <td>{idx + 1}</td>
+                    <td>{input_comp.get('id', 'N/A')}</td>
+                    <td>{input_comp.get('label', 'Unknown')}</td>
+                    <td>{input_comp.get('type', 'input')}</td>
+                    <td><code>{input_comp.get('current_value', '')}</code></td>
+                    <td><code>{input_comp.get('test_value', '')}</code></td>
+                    <td><code>{input_comp.get('selector', 'N/A')}</code></td>
+                    <td class="status-{input_comp.get('test_status', 'pending')}">{input_comp.get('test_status', 'pending')}</td>
+                </tr>
+            """
+
+        html_report += """
+            </table>
+
+            <h2>Test Plan</h2>
+            <p>For each input field, the following tests would be performed:</p>
+            <ul>
+                <li><strong>Fill Test:</strong> Enter test value using browser.fill</li>
+                <li><strong>Verification Test:</strong> Verify value was set using browser.verify_attribute</li>
+                <li><strong>Validation Test:</strong> Test min/max/required rules (if specified)</li>
+                <li><strong>Change Detection:</strong> Verify any dependent UI updates</li>
+            </ul>
+
+            <p><em>Note: Full execution requires Phase 3 implementation with dedicated component testing step types.</em></p>
+        </body>
+        </html>
+        """
+
+        result = {
+            'status': 'report_generated',
+            'report_html': html_report,
+            'input_count': len(inputs),
+            'timestamp': datetime.now().isoformat()
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 7: Take final screenshot
+  # ==========================================================================
+  - id: final_screenshot
+    name: "Capture Final Page State"
+    type: browser.screenshot
+    parameters:
+      name: "input_test_final"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["testing", "inputs", "validation", "automated", "fat"]
+  created: "2025-11-17"
+  notes: |
+    This playbook systematically tests all input fields on a Perspective page.
+
+    Test Process:
+    1. Discover all interactive components
+    2. Filter for input/textarea/select components
+    3. For each input:
+       - Record initial value
+       - Fill with test value
+       - Verify value was set correctly
+       - Test validation rules (if specified)
+       - Check for dependent UI updates
+
+    Validation Rules Supported:
+    - "min" - Minimum value (numeric inputs)
+    - "max" - Maximum value (numeric inputs)
+    - "required" - Field must have value
+    - "pattern" - Regular expression pattern
+    - "minLength" - Minimum text length
+    - "maxLength" - Maximum text length
+
+    Test Values:
+    - Numeric fields: "42"
+    - Email fields: "test@example.com"
+    - Date fields: "2025-01-01"
+    - Text fields: "Test Value"
+    - Custom values via test_values parameter
+
+    Output:
+    - Test manifest with all discovered inputs
+    - Individual test results for each input
+    - Screenshots before/after input changes
+    - HTML test report
+
+    Limitations (Current Version):
+    - Prepares test manifests but full execution pending Phase 3
+    - Validation rule testing requires additional step types
+
+    Usage:
+      parameters:
+        perspective_url: "http://localhost:8088/data/perspective/client/MyProject/form"
+        test_values:
+          "#temperature-setpoint": "75.5"
+          "#pressure-input": "100"
+          "#operator-name": "John Doe"
+        validation_rules:
+          "#temperature-setpoint":
+            min: 60
+            max: 90
+            required: true

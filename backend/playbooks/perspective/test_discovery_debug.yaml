@@ -1,0 +1,70 @@
+name: "Test Perspective Discovery - Debug"
+version: "1.0"
+description: "Debug test for perspective.discover_page step"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Navigate to page
+  # ==========================================================================
+  - id: step1_navigate
+    name: "Step 1: Navigate to Perspective Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.perspective_url }}"
+      wait_until: "networkidle"
+
+  # ==========================================================================
+  # STEP 2: Wait for page to be ready
+  # ==========================================================================
+  - id: step2_wait
+    name: "Step 2: Wait for Page Ready"
+    type: browser.wait
+    parameters:
+      selector: "body"
+      timeout: 10000
+
+  # ==========================================================================
+  # STEP 3: Take screenshot before discovery
+  # ==========================================================================
+  - id: step3_screenshot
+    name: "Step 3: Screenshot Before Discovery"
+    type: browser.screenshot
+    parameters:
+      name: "before_discovery"
+      full_page: true
+
+  # ==========================================================================
+  # STEP 4: Discover components
+  # ==========================================================================
+  - id: step4_discover
+    name: "Step 4: Discover Interactive Components"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+      types: []
+
+  # ==========================================================================
+  # STEP 5: Log discovery result
+  # ==========================================================================
+  - id: step5_log
+    name: "Step 5: Log Discovery Result"
+    type: utility.log
+    parameters:
+      message: |
+        Discovery completed!
+        Count: {{ step.step4_discover.count }}
+        Status: {{ step.step4_discover.status }}
+      level: "info"
+
+metadata:
+  author: "Debug Test"
+  category: "perspective"
+  tags: ["debug", "test"]

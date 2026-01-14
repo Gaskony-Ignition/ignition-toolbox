@@ -1,0 +1,83 @@
+{
+  "name": "ignition-toolbox",
+  "version": "1.0.0",
+  "description": "Ignition Automation Toolkit - Visual acceptance testing platform for Ignition SCADA",
+  "main": "dist-electron/main.js",
+  "author": "Nigel G",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev:frontend\" \"npm run dev:electron\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:electron": "npm run build:electron && concurrently -k \"npm run watch:electron\" \"wait-on tcp:3000 && electron .\"",
+    "watch:electron": "tsc -p electron/tsconfig.json --watch",
+    "build": "npm run build:frontend && npm run build:electron",
+    "build:frontend": "cd frontend && npm run build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "electron-log": "^5.2.0",
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^9.1.2",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.ignition-toolbox.app",
+    "productName": "Ignition Toolbox",
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "frontend/dist/**/*",
+      "backend/**/*",
+      "!backend/**/__pycache__/**",
+      "!backend/**/*.pyc"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "nigelgwork",
+      "repo": "ignition-toolbox"
+    }
+  }
+}

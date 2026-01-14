@@ -1,0 +1,418 @@
+name: "Perspective Test Suite - Master Orchestrator"
+version: "1.0"
+description: "Comprehensive test suite that runs all specialized perspective tests and compiles results"
+domain: perspective
+verified: false
+
+parameters:
+  - name: perspective_url
+    type: string
+    required: true
+    description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: run_verification_tests
+    type: boolean
+    required: false
+    default: true
+    description: "Run verification examples playbook (demonstrates new verification step types)"
+
+  - name: run_button_tests
+    type: boolean
+    required: false
+    default: true
+    description: "Run button testing playbook"
+
+  - name: run_input_tests
+    type: boolean
+    required: false
+    default: true
+    description: "Run input testing playbook"
+
+  - name: run_dock_tests
+    type: boolean
+    required: false
+    default: true
+    description: "Run dock/popup testing playbook"
+
+  - name: run_visual_tests
+    type: boolean
+    required: false
+    default: true
+    description: "Run visual consistency testing playbook"
+
+  - name: suite_name
+    type: string
+    required: false
+    default: "Perspective Test Suite"
+    description: "Custom name for this test suite execution"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Initialize test suite
+  # ==========================================================================
+  - id: initialize_suite
+    name: "Initialize Test Suite"
+    type: utility.log
+    parameters:
+      message: |
+        🚀 Starting Perspective Test Suite
+
+        Suite Name: {{ parameter.suite_name }}
+        Target URL: {{ parameter.perspective_url }}
+
+        Tests Enabled:
+        - Verification Tests: {{ parameter.run_verification_tests }}
+        - Button Tests: {{ parameter.run_button_tests }}
+        - Input Tests: {{ parameter.run_input_tests }}
+        - Dock Tests: {{ parameter.run_dock_tests }}
+        - Visual Tests: {{ parameter.run_visual_tests }}
+      level: "info"
+    timeout: 5
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 2: Run verification examples (conditional)
+  # ==========================================================================
+  - id: run_verification_playbook
+    name: "Execute Verification Examples Tests"
+    type: playbook.run
+    parameters:
+      playbook: "perspective/test_verification_examples.yaml"
+      perspective_url: "{{ parameter.perspective_url }}"
+    timeout: 120
+    on_failure: continue
+    # Note: Conditional execution would require utility.python step to check parameter
+
+  # ==========================================================================
+  # STEP 3: Run button tests (conditional)
+  # ==========================================================================
+  - id: run_button_playbook
+    name: "Execute Button Tests"
+    type: playbook.run
+    parameters:
+      playbook: "perspective/test_buttons.yaml"
+      perspective_url: "{{ parameter.perspective_url }}"
+    timeout: 300
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 4: Run input tests (conditional)
+  # ==========================================================================
+  - id: run_input_playbook
+    name: "Execute Input Tests"
+    type: playbook.run
+    parameters:
+      playbook: "perspective/test_inputs.yaml"
+      perspective_url: "{{ parameter.perspective_url }}"
+    timeout: 300
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 5: Run dock tests (conditional)
+  # ==========================================================================
+  - id: run_dock_playbook
+    name: "Execute Dock/Popup Tests"
+    type: playbook.run
+    parameters:
+      playbook: "perspective/test_docks.yaml"
+      perspective_url: "{{ parameter.perspective_url }}"
+    timeout: 300
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 6: Run visual consistency tests (conditional)
+  # ==========================================================================
+  - id: run_visual_playbook
+    name: "Execute Visual Consistency Tests"
+    type: playbook.run
+    parameters:
+      playbook: "perspective/test_visual_consistency.yaml"
+      perspective_url: "{{ parameter.perspective_url }}"
+    timeout: 300
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 7: Compile test results
+  # ==========================================================================
+  - id: compile_results
+    name: "Compile Test Suite Results"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get results from each test playbook
+        verification_result = step_output.get('run_verification_playbook', {})
+        button_result = step_output.get('run_button_playbook', {})
+        input_result = step_output.get('run_input_playbook', {})
+        dock_result = step_output.get('run_dock_playbook', {})
+        visual_result = step_output.get('run_visual_playbook', {})
+
+        # Compile suite summary
+        suite_summary = {
+            'suite_name': parameters.get('suite_name', 'Perspective Test Suite'),
+            'page_url': parameters.get('perspective_url'),
+            'started_at': datetime.now().isoformat(),
+            'test_playbooks': {
+                'verification': {
+                    'enabled': parameters.get('run_verification_tests', True),
+                    'status': verification_result.get('status', 'not_run'),
+                    'execution_id': verification_result.get('execution_id'),
+                },
+                'buttons': {
+                    'enabled': parameters.get('run_button_tests', True),
+                    'status': button_result.get('status', 'not_run'),
+                    'execution_id': button_result.get('execution_id'),
+                },
+                'inputs': {
+                    'enabled': parameters.get('run_input_tests', True),
+                    'status': input_result.get('status', 'not_run'),
+                    'execution_id': input_result.get('execution_id'),
+                },
+                'docks': {
+                    'enabled': parameters.get('run_dock_tests', True),
+                    'status': dock_result.get('status', 'not_run'),
+                    'execution_id': dock_result.get('execution_id'),
+                },
+                'visual': {
+                    'enabled': parameters.get('run_visual_tests', True),
+                    'status': visual_result.get('status', 'not_run'),
+                    'execution_id': visual_result.get('execution_id'),
+                },
+            },
+            'completed_at': datetime.now().isoformat(),
+        }
+
+        result = {
+            'status': 'suite_completed',
+            'suite_summary': suite_summary
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 8: Generate master test report
+  # ==========================================================================
+  - id: generate_master_report
+    name: "Generate Master Test Report"
+    type: utility.python
+    parameters:
+      code: |
+        import json
+        from datetime import datetime
+
+        # Get compiled results
+        suite_summary = step_output.get('compile_results', {}).get('suite_summary', {})
+        test_playbooks = suite_summary.get('test_playbooks', {})
+        suite_name = suite_summary.get('suite_name', 'Perspective Test Suite')
+        page_url = suite_summary.get('page_url', 'Unknown')
+
+        # Count playbooks
+        total_playbooks = sum(1 for pb in test_playbooks.values() if pb.get('enabled'))
+        completed_playbooks = sum(1 for pb in test_playbooks.values() if pb.get('status') in ['completed', 'success'])
+        failed_playbooks = sum(1 for pb in test_playbooks.values() if pb.get('status') == 'failed')
+
+        # Generate HTML report
+        html_report = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{suite_name} - Master Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }}
+                .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
+                .summary {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; }}
+                .summary h2 {{ margin-top: 0; }}
+                .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }}
+                .summary-stat {{ background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; text-align: center; }}
+                .summary-stat-label {{ font-size: 0.9em; opacity: 0.9; }}
+                .summary-stat-value {{ font-size: 2em; font-weight: bold; margin-top: 5px; }}
+                .playbooks-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }}
+                .playbook-card {{ background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; transition: all 0.3s; }}
+                .playbook-card:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }}
+                .playbook-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }}
+                .playbook-title {{ font-size: 1.2em; font-weight: bold; color: #333; }}
+                .status-badge {{ padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; }}
+                .status-completed {{ background-color: #4CAF50; color: white; }}
+                .status-failed {{ background-color: #f44336; color: white; }}
+                .status-not_run {{ background-color: #9E9E9E; color: white; }}
+                .playbook-meta {{ color: #666; font-size: 0.9em; margin-top: 10px; }}
+                .execution-link {{ color: #2196F3; text-decoration: none; font-weight: 500; }}
+                .execution-link:hover {{ text-decoration: underline; }}
+                .footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 0.9em; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🧪 {suite_name}</h1>
+                <p><strong>Test Page:</strong> <code>{page_url}</code></p>
+                <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+
+                <div class="summary">
+                    <h2>📊 Suite Summary</h2>
+                    <div class="summary-grid">
+                        <div class="summary-stat">
+                            <div class="summary-stat-label">Total Playbooks</div>
+                            <div class="summary-stat-value">{total_playbooks}</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-stat-label">Completed</div>
+                            <div class="summary-stat-value">{completed_playbooks}</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-stat-label">Failed</div>
+                            <div class="summary-stat-value">{failed_playbooks}</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="summary-stat-label">Success Rate</div>
+                            <div class="summary-stat-value">{int((completed_playbooks / total_playbooks * 100) if total_playbooks > 0 else 0)}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>📋 Test Playbook Results</h2>
+                <div class="playbooks-grid">
+        """
+
+        # Add playbook cards
+        playbook_info = [
+            ('verification', '✅ Verification Examples', 'Tests new verification step types (text, attribute, state)'),
+            ('buttons', '🔘 Button Tests', 'Tests all buttons on page - click and verify behavior'),
+            ('inputs', '📝 Input Tests', 'Tests all input fields - fill, verify, validate'),
+            ('docks', '🪟 Dock/Popup Tests', 'Tests dock triggers and popup behavior'),
+            ('visual', '🎨 Visual Consistency', 'Tests alignment, fonts, colors, spacing'),
+        ]
+
+        for key, title, description in playbook_info:
+            pb = test_playbooks.get(key, {})
+            enabled = pb.get('enabled', False)
+            status = pb.get('status', 'not_run')
+            exec_id = pb.get('execution_id')
+
+            if not enabled:
+                status_class = 'not_run'
+                status_text = 'Disabled'
+            elif status in ['completed', 'success']:
+                status_class = 'completed'
+                status_text = 'Completed'
+            elif status == 'failed':
+                status_class = 'failed'
+                status_text = 'Failed'
+            else:
+                status_class = 'not_run'
+                status_text = 'Not Run'
+
+            exec_link = f'<a href="/executions/{exec_id}" class="execution-link">View Execution →</a>' if exec_id else '<span style="color: #999;">No execution</span>'
+
+            html_report += f"""
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="playbook-title">{title}</div>
+                            <div class="status-badge status-{status_class}">{status_text}</div>
+                        </div>
+                        <p>{description}</p>
+                        <div class="playbook-meta">
+                            {exec_link}
+                        </div>
+                    </div>
+            """
+
+        html_report += """
+                </div>
+
+                <div class="footer">
+                    <p>Generated by Ignition Automation Toolkit - Perspective Test Suite</p>
+                    <p>For detailed component-level results, click "View Execution" for each playbook above.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        result = {
+            'status': 'report_generated',
+            'report_html': html_report,
+            'suite_summary': suite_summary,
+            'total_playbooks': total_playbooks,
+            'completed_playbooks': completed_playbooks,
+            'failed_playbooks': failed_playbooks,
+        }
+    timeout: 10
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 9: Log suite completion
+  # ==========================================================================
+  - id: log_completion
+    name: "Log Suite Completion"
+    type: utility.log
+    parameters:
+      message: |
+        ✅ Perspective Test Suite Complete!
+
+        Total Playbooks: {{ step.generate_master_report.total_playbooks }}
+        Completed: {{ step.generate_master_report.completed_playbooks }}
+        Failed: {{ step.generate_master_report.failed_playbooks }}
+
+        Master report generated successfully.
+      level: "info"
+    timeout: 5
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["test-suite", "orchestrator", "comprehensive", "master", "fat"]
+  created: "2025-11-17"
+  notes: |
+    This is the master orchestrator playbook for the Perspective Test Suite.
+
+    **What it does:**
+    1. Runs multiple specialized test playbooks in sequence
+    2. Compiles results from all playbooks
+    3. Generates a master HTML report with suite-level statistics
+
+    **Test Playbooks Orchestrated:**
+    - test_verification_examples.yaml - Demonstrates verification steps
+    - test_buttons.yaml - Tests all buttons on page
+    - test_inputs.yaml - Tests all input fields
+    - test_docks.yaml - Tests dock/popup triggers
+    - test_visual_consistency.yaml - Tests visual consistency
+
+    **How to Use:**
+    Simply execute this playbook with the perspective_url parameter:
+
+      parameters:
+        perspective_url: "http://localhost:8088/data/perspective/client/MyProject/dashboard"
+        suite_name: "Dashboard Test Suite"
+        run_verification_tests: true
+        run_button_tests: true
+        run_input_tests: true
+        run_dock_tests: true
+        run_visual_tests: true
+
+    **Re-run Failed Tests:**
+    To re-run only failed tests:
+    1. Review the master report to identify failed playbooks
+    2. Set the corresponding run_* parameters to false for passed tests
+    3. Execute the suite again with only failed test flags enabled
+
+    **Output:**
+    - Suite-level summary statistics
+    - Links to individual playbook executions
+    - Master HTML report combining all test results
+    - Component-level details in each playbook execution
+
+    **Integration with Database:**
+    - Each playbook execution is stored in the database
+    - Master suite data can be stored in TestSuiteModel (Phase 5)
+    - Failed component IDs tracked for selective re-run
+
+    **Future Enhancements:**
+    - Automatic re-run of failed tests only
+    - Test suite dashboard in frontend (Phase 5)
+    - Export to inspection test plan format
+    - Email/Slack notifications on completion
+    - Scheduled test suite execution

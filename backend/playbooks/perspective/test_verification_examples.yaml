@@ -1,0 +1,207 @@
+name: "Test Verification Examples"
+version: "1.0"
+description: "Demonstrates the new browser verification step types (text, attribute, state)"
+domain: perspective
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: username
+    type: string
+    required: true
+    description: "Gateway admin username"
+
+  - name: password
+    type: string
+    required: true
+    description: "Gateway admin password"
+
+  - name: project_name
+    type: string
+    required: true
+    description: "Perspective project name"
+
+  - name: view_path
+    type: string
+    required: true
+    description: "Perspective view path (e.g., /main/dashboard)"
+
+steps:
+  # Step 1: Navigate to Perspective session
+  - id: navigate_to_perspective
+    name: "Navigate to Perspective View"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.view_path }}"
+      wait_until: "networkidle"
+    timeout: 30
+    on_failure: abort
+
+  # Step 2: Wait for page to load
+  - id: wait_for_perspective
+    name: "Wait for Perspective Page Load"
+    type: browser.wait
+    parameters:
+      selector: ".perspective-page"
+      timeout: 15000
+    timeout: 20
+    on_failure: abort
+
+  # Example 1: Verify Text Content (Exact Match)
+  - id: verify_text_exact
+    name: "Verify Text - Exact Match"
+    type: browser.verify_text
+    parameters:
+      selector: "h1.page-title"  # Example selector - adjust to your page
+      text: "Dashboard"
+      match: "exact"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 2: Verify Text Content (Contains)
+  - id: verify_text_contains
+    name: "Verify Text - Contains Match"
+    type: browser.verify_text
+    parameters:
+      selector: ".welcome-message"  # Example selector
+      text: "Welcome"
+      match: "contains"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 3: Verify Text Content (Regex)
+  - id: verify_text_regex
+    name: "Verify Text - Regex Match"
+    type: browser.verify_text
+    parameters:
+      selector: ".timestamp"  # Example selector
+      text: "\\d{4}-\\d{2}-\\d{2}"  # Match date format YYYY-MM-DD
+      match: "regex"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 4: Verify Element Attribute (Class)
+  - id: verify_attribute_class
+    name: "Verify Attribute - Class"
+    type: browser.verify_attribute
+    parameters:
+      selector: "#status-indicator"  # Example selector
+      attribute: "class"
+      value: "status-ok"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 5: Verify Element Attribute (Value for Input)
+  - id: verify_attribute_value
+    name: "Verify Attribute - Input Value"
+    type: browser.verify_attribute
+    parameters:
+      selector: "input#setpoint-value"  # Example input selector
+      attribute: "value"
+      value: "100"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 6: Verify Element Attribute (Disabled State)
+  - id: verify_attribute_disabled
+    name: "Verify Attribute - Disabled State"
+    type: browser.verify_attribute
+    parameters:
+      selector: "#submit-button"  # Example button selector
+      attribute: "disabled"
+      value: null  # Check if disabled attribute exists
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 7: Verify Element State - Visible
+  - id: verify_state_visible
+    name: "Verify State - Element Visible"
+    type: browser.verify_state
+    parameters:
+      selector: ".main-panel"  # Example selector
+      state: "visible"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 8: Verify Element State - Hidden
+  - id: verify_state_hidden
+    name: "Verify State - Element Hidden"
+    type: browser.verify_state
+    parameters:
+      selector: ".loading-spinner"  # Example selector - should be hidden after load
+      state: "hidden"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 9: Verify Element State - Enabled
+  - id: verify_state_enabled
+    name: "Verify State - Button Enabled"
+    type: browser.verify_state
+    parameters:
+      selector: "#action-button"  # Example button
+      state: "enabled"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Example 10: Verify Element State - Disabled
+  - id: verify_state_disabled
+    name: "Verify State - Button Disabled"
+    type: browser.verify_state
+    parameters:
+      selector: "#locked-button"  # Example locked button
+      state: "disabled"
+      timeout: 5000
+    timeout: 10
+    on_failure: continue
+
+  # Step 11: Take final screenshot
+  - id: final_screenshot
+    name: "Capture Final Screenshot"
+    type: browser.screenshot
+    parameters:
+      name: "verification_examples_complete"
+      full_page: true
+    timeout: 10
+    on_failure: continue
+
+metadata:
+  author: "Ignition Automation Toolkit"
+  category: "perspective"
+  tags: ["verification", "testing", "examples", "browser"]
+  created: "2025-11-17"
+  notes: |
+    This playbook demonstrates the three new verification step types:
+
+    1. browser.verify_text - Verify element text content
+       - match: "exact" - Text must match exactly
+       - match: "contains" - Text must contain the specified string
+       - match: "regex" - Text must match the regular expression
+
+    2. browser.verify_attribute - Verify element attributes
+       - Can verify any attribute: class, id, value, disabled, aria-*, data-*, etc.
+       - Useful for checking input values, button states, custom attributes
+
+    3. browser.verify_state - Verify element visibility and enabled/disabled state
+       - state: "visible" - Element is visible and interactable
+       - state: "hidden" - Element is hidden or not displayed
+       - state: "enabled" - Element is enabled (not disabled)
+       - state: "disabled" - Element has disabled attribute
+
+    All selectors in this playbook are examples - adjust them to match your actual Perspective views.
+
+    Usage:
+    - Set on_failure: "abort" for critical verifications that must pass
+    - Set on_failure: "continue" for optional verifications (testing/debugging)
+    - All verification steps return detailed output in the execution results

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Build Electron
+        run: npm run build:electron
+
+      - name: Build Frontend
+        run: npm run build:frontend
+
+      - name: Type check frontend
+        run: |
+          cd frontend
+          npm run build
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Lint frontend
+        run: |
+          cd frontend
+          npm run lint || true

@@ -1,0 +1,98 @@
+name: "Gateway Login"
+version: "2.0"
+description: "Login to Ignition Gateway with credentials"
+domain: gateway
+group: "Gateway (Base Playbooks)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: username
+    type: string
+    required: true
+    description: "Gateway username"
+
+  - name: password
+    type: string
+    required: true
+    description: "Gateway password"
+
+steps:
+  - id: step1
+    name: "Step 1: Open Gateway Webpage"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      timeout: 30000
+
+  - id: step2
+    name: "Step 2: Click Login Button"
+    type: browser.click
+    parameters:
+      selector: "a.login-link, a[href*='login'], button.login-button, #login-button, [data-testid='login'], nav a:has-text('Login')"
+      timeout: 10000
+
+  - id: step3
+    name: "Step 3: Wait for login form"
+    type: browser.wait
+    parameters:
+      selector: "input[name='j_username'], input[name='username'], input[type='text']"
+      timeout: 10000
+
+  - id: step4
+    name: "Step 4: Enter Username"
+    type: browser.fill
+    parameters:
+      selector: "input[name='j_username'], input[name='username'], input[type='text'], input[placeholder*='username' i]"
+      value: "{{ parameter.username }}"
+      timeout: 10000
+
+  - id: step5
+    name: "Step 5: Capture page after username entry"
+    type: browser.screenshot
+    parameters:
+      path: "after_username_entry.png"
+      timeout: 10000
+
+  - id: step6
+    name: "Step 6: Click Continue Button"
+    type: browser.click
+    parameters:
+      selector: "text='CONTINUE'"
+      timeout: 10000
+      retry_count: 3
+
+  - id: step7
+    name: "Step 7: Enter Password"
+    type: browser.fill
+    parameters:
+      selector: "input[name='j_password'], input[name='password'], input[type='password']"
+      value: "{{ parameter.password }}"
+      timeout: 10000
+
+  - id: step8
+    name: "Step 8: Click Continue Button (After Password)"
+    type: browser.click
+    parameters:
+      selector: "text='CONTINUE'"
+      timeout: 10000
+      retry_count: 3
+
+  - id: step9
+    name: "Step 9: Wait for Dashboard"
+    type: browser.wait
+    parameters:
+      selector: ".home-page, .ia_homePage, [data-page='home'], nav"
+      timeout: 15000
+
+  - id: step10
+    name: "Step 10: Verify Login Success - Navigate to Licensing Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/licensing"
+      timeout: 10000
