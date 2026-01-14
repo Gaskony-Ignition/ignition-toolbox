@@ -147,7 +147,7 @@ function sendStatusToRenderer(channel: string, status: UpdateStatus): void {
 /**
  * Show dialog when update is available
  */
-async function showUpdateDialog(info: { version: string; releaseNotes?: string | string[] | null }): Promise<void> {
+async function showUpdateDialog(info: { version: string; releaseNotes?: unknown }): Promise<void> {
   if (!mainWindow) return;
 
   const result = await dialog.showMessageBox(mainWindow, {

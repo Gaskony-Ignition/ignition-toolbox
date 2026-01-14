@@ -38,6 +38,22 @@ export class PythonBackend {
    */
   private findPythonExecutable(): string {
     const isDev = !app.isPackaged;
+    const backendPath = this.getBackendPath();
+
+    // First, check for a virtual environment in the backend directory
+    const venvPaths = [
+      path.join(backendPath, '.venv', 'bin', 'python'),      // Linux/Mac .venv
+      path.join(backendPath, '.venv', 'Scripts', 'python.exe'), // Windows .venv
+      path.join(backendPath, 'venv', 'bin', 'python'),       // Linux/Mac venv
+      path.join(backendPath, 'venv', 'Scripts', 'python.exe'),  // Windows venv
+    ];
+
+    for (const venvPython of venvPaths) {
+      if (fs.existsSync(venvPython)) {
+        console.log(`Using virtual environment Python: ${venvPython}`);
+        return venvPython;
+      }
+    }
 
     if (isDev) {
       // Development: use system Python

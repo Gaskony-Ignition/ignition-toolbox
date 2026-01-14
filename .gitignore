@@ -14,6 +14,7 @@ backend/**/*.pyo
 backend/**/*.egg-info/
 backend/.venv/
 backend/venv/
+backend/data/
 
 # IDE
 .idea/
