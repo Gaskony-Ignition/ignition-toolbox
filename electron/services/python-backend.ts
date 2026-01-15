@@ -200,10 +200,13 @@ export class PythonBackend {
 
       let started = false;
       let startupTimeout: NodeJS.Timeout | null = null;
+      let stdoutBuffer = '';
+      let stderrBuffer = '';
 
       // Handle stdout
       this.process.stdout?.on('data', (data: Buffer) => {
         const output = data.toString();
+        stdoutBuffer += output;
         console.log('[Python]', output.trim());
 
         // Check for startup message
@@ -220,6 +223,7 @@ export class PythonBackend {
       // Handle stderr
       this.process.stderr?.on('data', (data: Buffer) => {
         const output = data.toString();
+        stderrBuffer += output;
         console.error('[Python Error]', output.trim());
       });
 
@@ -229,7 +233,15 @@ export class PythonBackend {
         this.process = null;
 
         if (!started) {
-          reject(new Error(`Python backend failed to start (exit code: ${code})`));
+          // Include captured output in error message for debugging
+          let errorDetails = `Exit code: ${code}`;
+          if (stderrBuffer.trim()) {
+            errorDetails += `\n\nStderr:\n${stderrBuffer.slice(-1000)}`; // Last 1000 chars
+          }
+          if (stdoutBuffer.trim() && !stderrBuffer.trim()) {
+            errorDetails += `\n\nStdout:\n${stdoutBuffer.slice(-1000)}`;
+          }
+          reject(new Error(errorDetails));
         } else if (!this.isShuttingDown && this.restartCount < this.maxRestarts) {
           // Attempt restart
           console.log(`Attempting to restart backend (attempt ${this.restartCount + 1}/${this.maxRestarts})`);
