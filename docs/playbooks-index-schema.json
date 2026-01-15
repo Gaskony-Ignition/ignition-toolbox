@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Playbook Index Schema",
+  "description": "Schema for the playbooks-index.json manifest file published to GitHub Releases",
+  "type": "object",
+  "required": ["version", "published_at", "playbooks"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Version of the playbook library (semver)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "example": "1.0.0"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this index was published",
+      "example": "2025-11-19T10:00:00Z"
+    },
+    "repository": {
+      "type": "string",
+      "description": "GitHub repository URL",
+      "example": "https://github.com/nigelgwork/ignition-playground"
+    },
+    "playbooks": {
+      "type": "object",
+      "description": "Map of playbook paths to their metadata",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["version", "domain", "verified", "description", "download_url", "checksum"],
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "Playbook version (semver)",
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "example": "4.0"
+          },
+          "domain": {
+            "type": "string",
+            "enum": ["gateway", "perspective", "designer"],
+            "description": "Playbook domain (gateway, perspective, or designer)"
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "Whether this playbook has been verified/approved"
+          },
+          "verified_by": {
+            "type": "string",
+            "description": "Who verified this playbook",
+            "example": "Nigel G"
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the playbook was verified"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what the playbook does"
+          },
+          "download_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "GitHub Releases download URL for the YAML file"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "SHA256 checksum of the YAML file (format: sha256:hexdigest)"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "description": "File size in bytes",
+            "minimum": 0
+          },
+          "dependencies": {
+            "type": "array",
+            "description": "List of required playbook paths",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "author": {
+            "type": "string",
+            "description": "Playbook author name"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags/categories for filtering",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "group": {
+            "type": "string",
+            "description": "UI grouping for organization"
+          },
+          "release_notes": {
+            "type": "string",
+            "description": "Release notes for this version"
+          }
+        }
+      }
+    }
+  }
+}
