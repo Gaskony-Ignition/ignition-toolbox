@@ -534,8 +534,6 @@ export function Settings() {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      width: '100%',
-      minHeight: 0,
     }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, flexShrink: 0 }}>
@@ -545,7 +543,7 @@ export function Settings() {
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3, flex: 1, width: '100%' }}>
+      <Box sx={{ display: 'flex', gap: 3, flex: 1 }}>
         {/* Sidebar */}
         <Paper
           elevation={0}
@@ -599,12 +597,13 @@ export function Settings() {
         </Paper>
 
         {/* Content - fills remaining width */}
-        <Box sx={{
-          flex: '1 1 auto',
-          minWidth: 0,
-          overflow: 'auto',
-          width: '100%',
-        }}>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflow: 'auto',
+          }}
+        >
           {activeTab === 'credentials' && <Credentials />}
           {activeTab === 'executions' && <Executions />}
           {activeTab === 'updates' && renderUpdatesContent()}

@@ -21,6 +21,7 @@ import {
   KeyboardArrowDown as ArrowDownIcon,
   Key as KeyIcon,
   SystemUpdateAlt as UpdateIcon,
+  Handyman as ToolboxIcon,
 } from '@mui/icons-material';
 import { useStore } from '../store';
 import { api } from '../api/client';
@@ -134,7 +135,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           {/* Logo/Title */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GatewayIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+            <ToolboxIcon sx={{ color: 'primary.main', fontSize: 24 }} />
             <Typography variant="h6" fontWeight="bold" color="text.primary">
               Ignition Toolbox
             </Typography>
@@ -262,15 +263,11 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
         sx={{
           flex: 1,
           minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
           p: 2,
-          overflow: 'hidden',
+          overflow: 'auto',
         }}
       >
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', width: '100%' }}>
-          {children}
-        </Box>
+        {children}
       </Box>
     </Box>
   );
