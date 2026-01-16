@@ -263,7 +263,6 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
         sx={{
           flex: 1,
           minHeight: 0,
-          width: '100%',
           p: 2,
           overflow: 'auto',
         }}
