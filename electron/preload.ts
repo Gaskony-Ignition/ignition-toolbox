@@ -1,5 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Update status interface
+interface UpdateStatus {
+  checking: boolean;
+  available: boolean;
+  downloading: boolean;
+  downloaded: boolean;
+  progress?: number;
+  error?: string;
+  updateInfo?: {
+    version: string;
+    releaseDate: string;
+    releaseNotes?: string;
+  };
+}
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 
@@ -8,6 +23,12 @@ const validEventChannels = [
   'backend:status',
   'backend:error',
   'backend:log',
+  'update:checking',
+  'update:available',
+  'update:not-available',
+  'update:progress',
+  'update:downloaded',
+  'update:error',
 ] as const;
 
 type ValidEventChannel = typeof validEventChannels[number];
@@ -46,6 +67,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setSetting: (key: string, value: unknown): Promise<void> =>
     ipcRenderer.invoke('settings:set', key, value),
   getAllSettings: (): Promise<Record<string, unknown>> => ipcRenderer.invoke('settings:getAll'),
+
+  // Updates
+  checkForUpdates: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:check'),
+  downloadUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:download'),
+  installUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:install'),
+  getUpdateStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:getStatus'),
 
   // Event listeners (for backend status updates)
   on: (channel: ValidEventChannel, callback: (data: unknown) => void): (() => void) => {
@@ -97,6 +124,10 @@ declare global {
       getSetting: (key: string) => Promise<unknown>;
       setSetting: (key: string, value: unknown) => Promise<void>;
       getAllSettings: () => Promise<Record<string, unknown>>;
+      checkForUpdates: () => Promise<UpdateStatus>;
+      downloadUpdate: () => Promise<{ success: boolean }>;
+      installUpdate: () => Promise<{ success: boolean }>;
+      getUpdateStatus: () => Promise<UpdateStatus>;
       on: (channel: ValidEventChannel, callback: (data: unknown) => void) => () => void;
       off: (channel: ValidEventChannel, callback: (data: unknown) => void) => void;
     };

@@ -1,6 +1,12 @@
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron';
 import { PythonBackend } from '../services/python-backend';
 import { getSetting, setSetting, getAllSettings } from '../services/settings';
+import {
+  checkForUpdates,
+  downloadUpdate,
+  quitAndInstall,
+  getUpdateStatus,
+} from '../services/auto-updater';
 
 export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   // App info handlers
@@ -105,6 +111,25 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
 
   ipcMain.handle('settings:getAll', () => {
     return getAllSettings();
+  });
+
+  // Update handlers
+  ipcMain.handle('updates:check', async () => {
+    return checkForUpdates();
+  });
+
+  ipcMain.handle('updates:download', async () => {
+    downloadUpdate();
+    return { success: true };
+  });
+
+  ipcMain.handle('updates:install', async () => {
+    quitAndInstall();
+    return { success: true };
+  });
+
+  ipcMain.handle('updates:getStatus', () => {
+    return getUpdateStatus();
   });
 
   console.log('IPC handlers registered');

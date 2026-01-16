@@ -2,6 +2,20 @@
  * Type definitions for Electron API exposed via preload script
  */
 
+interface UpdateStatus {
+  checking: boolean;
+  available: boolean;
+  downloading: boolean;
+  downloaded: boolean;
+  progress?: number;
+  error?: string;
+  updateInfo?: {
+    version: string;
+    releaseDate: string;
+    releaseNotes?: string;
+  };
+}
+
 interface ElectronAPI {
   // App info
   getVersion: () => Promise<string>;
@@ -34,6 +48,12 @@ interface ElectronAPI {
   getSetting: (key: string) => Promise<unknown>;
   setSetting: (key: string, value: unknown) => Promise<void>;
   getAllSettings: () => Promise<Record<string, unknown>>;
+
+  // Updates
+  checkForUpdates: () => Promise<UpdateStatus>;
+  downloadUpdate: () => Promise<{ success: boolean }>;
+  installUpdate: () => Promise<{ success: boolean }>;
+  getUpdateStatus: () => Promise<UpdateStatus>;
 
   // Event listeners
   on: (channel: string, callback: (data: unknown) => void) => () => void;
