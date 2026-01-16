@@ -79,8 +79,8 @@ export function initAutoUpdater(window: BrowserWindow): void {
       return;
     }
 
-    // Show update notification
-    showUpdateDialog(info);
+    // Don't show popup - user will see indicator in header and go to Settings > Updates
+    console.log(`Update available: ${info.version}`);
   });
 
   autoUpdater.on('update-not-available', () => {
@@ -110,8 +110,8 @@ export function initAutoUpdater(window: BrowserWindow): void {
     };
     sendStatusToRenderer('update:downloaded', updateStatus);
 
-    // Show install dialog
-    showInstallDialog(info);
+    // Don't show popup - user will install from Settings > Updates
+    console.log(`Update downloaded: ${info.version}`);
   });
 
   autoUpdater.on('error', (error) => {

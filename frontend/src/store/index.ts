@@ -27,6 +27,13 @@ interface SessionCredential {
   isSessionOnly: true;
 }
 
+// Update status from Electron auto-updater
+interface UpdateStatus {
+  available: boolean;
+  downloaded: boolean;
+  version?: string;
+}
+
 interface AppState {
   // Execution updates from WebSocket
   executionUpdates: Map<string, ExecutionUpdate>;
@@ -58,6 +65,10 @@ interface AppState {
   sessionCredentials: SessionCredential[];
   addSessionCredential: (credential: SessionCredential) => void;
   removeSessionCredential: (name: string) => void;
+
+  // Update status
+  updateStatus: UpdateStatus;
+  setUpdateStatus: (status: UpdateStatus) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -107,6 +118,9 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({
       sessionCredentials: state.sessionCredentials.filter((c) => c.name !== name),
     })),
+
+  updateStatus: { available: false, downloaded: false },
+  setUpdateStatus: (status) => set({ updateStatus: status }),
 }));
 
 // Export SessionCredential type for use in other components

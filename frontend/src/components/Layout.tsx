@@ -24,12 +24,18 @@ import {
   Settings as SettingsIcon,
   KeyboardArrowDown as ArrowDownIcon,
   Key as KeyIcon,
+  SystemUpdateAlt as UpdateIcon,
 } from '@mui/icons-material';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import type { HealthResponse, CredentialInfo } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import packageJson from '../../package.json';
+
+// Check if running in Electron
+const isElectron = (): boolean => {
+  return typeof window !== 'undefined' && !!window.electronAPI;
+};
 
 // Domain tabs for playbook filtering
 export type DomainTab = 'gateway' | 'designer' | 'perspective' | 'settings';
@@ -52,6 +58,8 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
   const setTheme = useStore((state) => state.setTheme);
   const globalCredential = useStore((state) => state.globalCredential);
   const setGlobalCredential = useStore((state) => state.setGlobalCredential);
+  const updateStatus = useStore((state) => state.updateStatus);
+  const setUpdateStatus = useStore((state) => state.setUpdateStatus);
   const [health, setHealth] = useState<'healthy' | 'unhealthy'>('healthy');
   const [credentialAnchor, setCredentialAnchor] = useState<null | HTMLElement>(null);
 
@@ -61,7 +69,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
     queryFn: () => api.credentials.list(),
   });
 
-  // Fetch health on mount
+  // Fetch health on mount and listen for update events
   useEffect(() => {
     api.health()
       .then((data: HealthResponse) => {
@@ -70,7 +78,44 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
       .catch(() => {
         setHealth('unhealthy');
       });
-  }, []);
+
+    // Listen for update events from Electron
+    if (isElectron() && window.electronAPI) {
+      const unsubAvailable = window.electronAPI.on('update:available', (data: unknown) => {
+        const updateData = data as { updateInfo?: { version: string } };
+        setUpdateStatus({
+          available: true,
+          downloaded: false,
+          version: updateData.updateInfo?.version,
+        });
+      });
+
+      const unsubDownloaded = window.electronAPI.on('update:downloaded', (data: unknown) => {
+        const updateData = data as { updateInfo?: { version: string } };
+        setUpdateStatus({
+          available: true,
+          downloaded: true,
+          version: updateData.updateInfo?.version,
+        });
+      });
+
+      // Check current update status on mount
+      window.electronAPI.getUpdateStatus().then((status) => {
+        if (status.available) {
+          setUpdateStatus({
+            available: status.available,
+            downloaded: status.downloaded,
+            version: status.updateInfo?.version,
+          });
+        }
+      }).catch(() => {});
+
+      return () => {
+        unsubAvailable();
+        unsubDownloaded();
+      };
+    }
+  }, [setUpdateStatus]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -199,6 +244,29 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
               </MenuItem>
             )}
           </Menu>
+
+          {/* Update Available Indicator */}
+          {updateStatus.available && (
+            <Button
+              onClick={() => onTabChange('settings')}
+              startIcon={<UpdateIcon />}
+              size="small"
+              sx={{
+                bgcolor: 'warning.main',
+                color: 'warning.contrastText',
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                px: 1.5,
+                py: 0.5,
+                '&:hover': {
+                  bgcolor: 'warning.dark',
+                },
+              }}
+            >
+              {updateStatus.downloaded ? 'Update Ready' : 'Update Available'}
+            </Button>
+          )}
 
           {/* Health indicator */}
           <Chip
