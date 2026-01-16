@@ -210,7 +210,7 @@ export function PlaybookCodeViewer({
                   saveBtn.textContent = 'Saving...';
 
                   try {
-                    const response = await fetch('http://localhost:5000/api/playbooks/${encodeURIComponent(playbookName)}', {
+                    const response = await fetch('${api.getBaseUrl()}/api/playbooks/${encodeURIComponent(playbookName)}', {
                       method: 'PUT',
                       headers: {
                         'Content-Type': 'application/json',

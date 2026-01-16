@@ -9,12 +9,15 @@ import type { WebSocketMessage, ExecutionUpdate, ScreenshotFrame } from '../type
 // WebSocket URL - supports both web and Electron modes
 // In Electron: constructed from IPC-provided backend URL
 // In browser: use window.location
-let WS_URL = import.meta.env.VITE_WS_URL ||
-  `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/executions`;
+let WS_URL = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:5000/ws/executions';
 const WS_API_KEY = import.meta.env.VITE_WS_API_KEY || 'dev-key-change-in-production';
+let _wsInitialized = false;
+let _wsInitPromise: Promise<void> | null = null;
 
 // Initialize Electron WebSocket URL if available
-async function initializeWebSocketUrl(): Promise<void> {
+export async function initializeWebSocketUrl(): Promise<void> {
+  if (_wsInitialized) return;
+
   if (window.electronAPI?.getWebSocketUrl) {
     try {
       const baseWsUrl = await window.electronAPI.getWebSocketUrl();
@@ -22,12 +25,27 @@ async function initializeWebSocketUrl(): Promise<void> {
       console.log('Using Electron WebSocket URL:', WS_URL);
     } catch (error) {
       console.error('Failed to get Electron WebSocket URL:', error);
+      // Fallback to default
+      WS_URL = 'ws://127.0.0.1:5000/ws/executions';
     }
+  } else if (window.location.protocol !== 'file:') {
+    // Web mode - use current location
+    WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/executions`;
   }
+
+  _wsInitialized = true;
 }
 
-// Initialize on module load (non-blocking)
-initializeWebSocketUrl();
+// Get initialization promise
+export function getWsInitPromise(): Promise<void> {
+  if (!_wsInitPromise) {
+    _wsInitPromise = initializeWebSocketUrl();
+  }
+  return _wsInitPromise;
+}
+
+// Initialize on module load
+_wsInitPromise = initializeWebSocketUrl();
 
 const INITIAL_RECONNECT_DELAY = 1000; // 1 second
 const MAX_RECONNECT_DELAY = 30000; // 30 seconds

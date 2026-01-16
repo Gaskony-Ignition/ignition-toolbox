@@ -17,22 +17,41 @@ import type {
 // API Base URL - supports both web and Electron modes
 // In Electron: get from IPC (dynamic port)
 // In browser: use window.location.origin
-let API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin;
+let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+let _initialized = false;
+let _initPromise: Promise<void> | null = null;
 
 // Initialize Electron backend URL if available
-async function initializeBackendUrl(): Promise<void> {
+export async function initializeBackendUrl(): Promise<void> {
+  if (_initialized) return;
+
   if (window.electronAPI?.getBackendUrl) {
     try {
       API_BASE_URL = await window.electronAPI.getBackendUrl();
       console.log('Using Electron backend URL:', API_BASE_URL);
     } catch (error) {
       console.error('Failed to get Electron backend URL:', error);
+      // Fallback to default
+      API_BASE_URL = 'http://127.0.0.1:5000';
     }
+  } else if (window.location.protocol !== 'file:') {
+    // Web mode - use current origin
+    API_BASE_URL = window.location.origin;
   }
+
+  _initialized = true;
 }
 
-// Initialize on module load (non-blocking)
-initializeBackendUrl();
+// Get initialization promise (for awaiting before render)
+export function getInitPromise(): Promise<void> {
+  if (!_initPromise) {
+    _initPromise = initializeBackendUrl();
+  }
+  return _initPromise;
+}
+
+// Initialize on module load (non-blocking, but can be awaited)
+_initPromise = initializeBackendUrl();
 
 class APIError extends Error {
   status: number;
