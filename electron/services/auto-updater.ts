@@ -37,9 +37,9 @@ let mainWindow: BrowserWindow | null = null;
 export function initAutoUpdater(window: BrowserWindow): void {
   mainWindow = window;
 
-  // Configure auto-updater
+  // Configure auto-updater - user-initiated only, no forced behavior
   autoUpdater.autoDownload = false; // Manual download
-  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.autoInstallOnAppQuit = false; // Don't auto-install on quit - let user decide
 
   // Set up GitHub private repo token if available
   const githubToken = getSetting('githubToken');
@@ -125,9 +125,9 @@ export function initAutoUpdater(window: BrowserWindow): void {
     console.error('Auto-updater error:', error);
   });
 
-  // Check for updates on startup if enabled
+  // Check for updates on startup only if explicitly enabled (opt-in)
   const checkOnStartup = getSetting('checkForUpdatesOnStartup');
-  if (checkOnStartup !== false) {
+  if (checkOnStartup === true) {
     // Delay initial check to let app fully load
     setTimeout(() => {
       checkForUpdates().catch(console.error);

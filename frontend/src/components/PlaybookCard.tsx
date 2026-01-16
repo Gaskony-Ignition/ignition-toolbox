@@ -508,9 +508,9 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
         {/* Execute Button */}
         <Tooltip title={
           isDisabled ? 'Enable this playbook first' :
-          selectedCredential ? `Execute with global credential: ${selectedCredential.name}` :
-          savedConfig ? 'Execute with saved configuration' :
-          'Select a global credential or configure this playbook first'
+          !selectedCredential ? 'Select a global credential first (in header dropdown)' :
+          paramsConfigured ? `Execute with credential: ${selectedCredential.name}` :
+          'Configure required parameters first'
         }>
           <span style={{ flex: 1 }}>
             <Button
@@ -519,7 +519,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
               startIcon={<PlayIcon />}
               onClick={handleExecuteClick}
               fullWidth
-              disabled={isDisabled || (!savedConfig && !selectedCredential)}
+              disabled={isDisabled || !paramsConfigured}
               aria-label={`Execute ${playbook.name} playbook`}
             >
               Execute

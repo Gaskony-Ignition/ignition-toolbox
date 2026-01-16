@@ -20,6 +20,11 @@ import FolderIcon from '@mui/icons-material/Folder';
 import type { ParameterInfo, CredentialInfo } from '../types/api';
 import FolderBrowserDialog from './FolderBrowserDialog';
 
+// Check if running in Electron
+const isElectron = (): boolean => {
+  return typeof window !== 'undefined' && !!window.electronAPI;
+};
+
 interface ParameterInputProps {
   parameter: ParameterInfo;
   value: string;
@@ -44,6 +49,28 @@ export function ParameterInput({
                           parameter.name.toLowerCase().includes('directory') ||
                           parameter.name.toLowerCase().includes('folder') ||
                           parameter.name.toLowerCase().includes('dir');
+
+  // Handle folder browse - use native Electron dialog if available
+  const handleBrowseFolder = async () => {
+    if (isElectron() && window.electronAPI) {
+      try {
+        const result = await window.electronAPI.openFileDialog({
+          title: 'Select Folder',
+          properties: ['openDirectory'],
+        });
+        if (result && result.length > 0) {
+          handleChange(result[0]);
+        }
+      } catch (error) {
+        console.error('Failed to open folder dialog:', error);
+        // Fall back to custom dialog
+        setFolderDialogOpen(true);
+      }
+    } else {
+      // Use custom dialog for web/non-Electron
+      setFolderDialogOpen(true);
+    }
+  };
 
   return (
     <FormControl fullWidth>
@@ -132,7 +159,7 @@ export function ParameterInput({
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    onClick={() => setFolderDialogOpen(true)}
+                    onClick={handleBrowseFolder}
                     edge="end"
                     size="small"
                     sx={{ color: '#00ff00' }}

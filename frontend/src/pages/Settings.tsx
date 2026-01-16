@@ -297,6 +297,17 @@ export function Settings() {
                 {updateStatus.error}
               </Alert>
             )}
+
+            {/* Update Settings */}
+            <Divider />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Update Settings
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Updates are manual only. Check for updates when you want, download when ready, and install when convenient.
+              </Typography>
+            </Box>
           </Stack>
         </Paper>
       )}
