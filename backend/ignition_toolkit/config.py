@@ -6,9 +6,15 @@ Provides consistent, environment-independent paths for data storage.
 
 import logging
 import os
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def _is_frozen() -> bool:
+    """Check if running as a frozen PyInstaller executable."""
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 
 def setup_environment():
@@ -17,12 +23,26 @@ def setup_environment():
 
     This must be called before any other imports that depend on environment variables
     (e.g., Playwright, which uses HOME for browser cache).
+
+    When running as a frozen executable, uses IGNITION_TOOLKIT_DATA to avoid
+    writing to protected directories like Program Files.
     """
     # Set consistent Playwright browsers path
     if "PLAYWRIGHT_BROWSERS_PATH" not in os.environ:
-        # Calculate from package location instead of hardcoded path
-        package_root = Path(__file__).parent.parent.resolve()
-        browsers_path = package_root / "data" / ".playwright-browsers"
+        if _is_frozen():
+            # Frozen mode: use environment variable from Electron
+            env_data = os.environ.get("IGNITION_TOOLKIT_DATA")
+            if env_data:
+                browsers_path = Path(env_data) / ".playwright-browsers"
+            else:
+                # Fallback to user home directory
+                browsers_path = Path.home() / ".ignition-toolkit" / ".playwright-browsers"
+        else:
+            # Development mode: use package-relative path
+            package_root = Path(__file__).parent.parent.resolve()
+            browsers_path = package_root / "data" / ".playwright-browsers"
+
+        browsers_path.mkdir(parents=True, exist_ok=True)
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers_path)
         logger.debug(f"Set PLAYWRIGHT_BROWSERS_PATH={browsers_path}")
 
@@ -36,22 +56,32 @@ def get_toolkit_data_dir() -> Path:
     Get the toolkit data directory (credentials, database, etc.)
 
     Priority order:
-    1. IGNITION_TOOLKIT_DATA environment variable (if set)
-    2. Project directory: <package_root>/data/.ignition-toolkit
+    1. IGNITION_TOOLKIT_DATA environment variable (if set, or if frozen)
+    2. Project directory: <package_root>/data/.ignition-toolkit (development only)
     3. Fallback: ~/.ignition-toolkit (user's home directory)
 
     This ensures credentials are stored in a consistent location regardless
-    of installation method or operating system.
+    of installation method or operating system, and avoids writing to
+    protected directories like Program Files.
 
     Returns:
         Path to data directory
     """
-    # Check environment variable override
+    # Check environment variable override (always used in frozen mode)
     env_path = os.getenv("IGNITION_TOOLKIT_DATA")
     if env_path:
         path = Path(env_path).expanduser().resolve()
+        path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Using data directory from IGNITION_TOOLKIT_DATA: {path}")
         return path
+
+    # If running as frozen executable without env var, use home directory
+    # This prevents attempting to write to Program Files
+    if _is_frozen():
+        fallback = Path.home() / ".ignition-toolkit"
+        fallback.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Using fallback data directory (frozen mode): {fallback}")
+        return fallback
 
     # Calculate project root from package location
     package_root = Path(__file__).parent.parent.resolve()
@@ -60,11 +90,13 @@ def get_toolkit_data_dir() -> Path:
     project_data_dir = package_root / "data" / ".ignition-toolkit"
     if (package_root / "data").exists() or (package_root / "playbooks").exists():
         # We're in development mode - use project-relative directory
+        project_data_dir.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Using project data directory: {project_data_dir}")
         return project_data_dir
 
     # Fallback to user's home directory (works on all platforms)
     fallback = Path.home() / ".ignition-toolkit"
+    fallback.mkdir(parents=True, exist_ok=True)
     logger.debug(f"Using fallback data directory: {fallback}")
     return fallback
 

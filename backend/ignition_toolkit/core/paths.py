@@ -7,12 +7,26 @@ This module provides reliable path resolution that works regardless of:
 - Current working directory
 - Where the server is started from
 - Installation method (pip install -e . vs direct run)
+- Running as frozen PyInstaller executable
 
 All paths are calculated dynamically from the installed package location.
+For frozen executables, writable paths use the IGNITION_TOOLKIT_DATA env var
+to avoid writing to protected directories like Program Files.
 """
 
 import os
+import sys
 from pathlib import Path
+
+
+def is_frozen() -> bool:
+    """
+    Check if running as a frozen PyInstaller executable.
+
+    Returns:
+        bool: True if running as frozen executable, False otherwise
+    """
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 # === Core Project Structure ===
 
@@ -160,6 +174,9 @@ def get_data_dir() -> Path:
     """
     Get the data directory for browser artifacts, screenshots, etc.
 
+    When running as a frozen PyInstaller executable, uses the IGNITION_TOOLKIT_DATA
+    environment variable (set by Electron) to avoid writing to Program Files.
+
     Returns:
         Path: Absolute path to data/ directory
 
@@ -168,6 +185,20 @@ def get_data_dir() -> Path:
         >>> print(data)
         /git/ignition-playground/data
     """
+    # When running as frozen executable, use environment variable from Electron
+    # This avoids writing to protected directories like C:\Program Files
+    if is_frozen():
+        env_data = os.environ.get("IGNITION_TOOLKIT_DATA")
+        if env_data:
+            data_dir = Path(env_data)
+            data_dir.mkdir(parents=True, exist_ok=True)
+            return data_dir
+        # Fallback to user home directory if env var not set
+        data_dir = Path.home() / ".ignition-toolkit" / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir
+
+    # Development mode: use project-relative directory
     data_dir = get_package_root() / "data"
     data_dir.mkdir(exist_ok=True)
     return data_dir
@@ -247,7 +278,10 @@ def get_user_data_dir() -> Path:
     """
     Get the user's data directory for credentials, database, etc.
 
-    Uses XDG_DATA_HOME if set, otherwise ~/.ignition-toolkit/
+    Priority order:
+    1. IGNITION_TOOLKIT_DATA environment variable (always used in frozen mode)
+    2. XDG_DATA_HOME/ignition-toolkit (if XDG_DATA_HOME is set)
+    3. ~/.ignition-toolkit/ (fallback)
 
     Returns:
         Path: Absolute path to user data directory
@@ -257,6 +291,21 @@ def get_user_data_dir() -> Path:
         >>> print(user_data)
         /root/.ignition-toolkit
     """
+    # In frozen mode, always use the environment variable from Electron
+    # This ensures we never try to write to Program Files
+    env_data = os.environ.get("IGNITION_TOOLKIT_DATA")
+    if env_data:
+        user_dir = Path(env_data)
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+
+    # If frozen without env var, use home directory
+    if is_frozen():
+        user_dir = Path.home() / ".ignition-toolkit"
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir
+
+    # Development mode: use XDG or home directory
     xdg_data_home = os.environ.get("XDG_DATA_HOME")
 
     if xdg_data_home:
@@ -264,7 +313,7 @@ def get_user_data_dir() -> Path:
     else:
         user_dir = Path.home() / ".ignition-toolkit"
 
-    user_dir.mkdir(exist_ok=True)
+    user_dir.mkdir(parents=True, exist_ok=True)
     return user_dir
 
 
@@ -409,6 +458,7 @@ ensure_directories()
 # === Public API ===
 
 __all__ = [
+    "is_frozen",  # Check if running as PyInstaller executable
     "get_package_root",
     "get_package_dir",
     "get_playbooks_dir",  # Deprecated - use get_builtin_playbooks_dir
