@@ -24,20 +24,20 @@ const queryClient = new QueryClient({
   },
 });
 
-// Warp Terminal Color Palette
-const warpColors = {
+// Dark Navy Blue Color Palette (matching CW Dashboard)
+const themeColors = {
   dark: {
-    background: '#01050d',
-    surface: '#161b22',
-    surfaceVariant: '#0d1117',
-    border: '#30363d',
-    primary: '#58a6ff',
-    secondary: '#1f6feb',
-    success: '#3fb950',
-    warning: '#d29922',
-    error: '#f85149',
-    text: '#c9d1d9',
-    textSecondary: '#8b949e',
+    background: '#0F172A',      // Navy blue background
+    surface: '#1E293B',         // Lighter panel surface
+    surfaceVariant: '#1E293B',
+    border: '#334155',          // Slate border
+    primary: '#3B82F6',         // Blue 500
+    secondary: '#1D4ED8',       // Blue 700
+    success: '#22C55E',         // Green 500
+    warning: '#F59E0B',         // Amber 500
+    error: '#EF4444',           // Red 500
+    text: '#F8FAFC',            // Slate 50
+    textSecondary: '#94A3B8',   // Slate 400
   },
   light: {
     background: '#ffffff',
@@ -62,7 +62,7 @@ function AppContent() {
 
   // Create theme based on current mode from store
   const theme = useMemo(() => {
-    const colors = warpColors[themeMode];
+    const colors = themeColors[themeMode];
 
     return createTheme({
       palette: {
@@ -155,7 +155,7 @@ function ExecutionDetailWrapper() {
 
   // Create theme
   const theme = useMemo(() => {
-    const colors = warpColors[themeMode];
+    const colors = themeColors[themeMode];
     return createTheme({
       palette: {
         mode: themeMode,

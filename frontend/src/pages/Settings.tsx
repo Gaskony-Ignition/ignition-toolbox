@@ -397,27 +397,32 @@ export function Settings() {
   );
 
   return (
-    <Box sx={{ height: 'calc(100vh - 88px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Box sx={{
+      height: 'calc(100vh - 72px)',
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, flexShrink: 0 }}>
-        <SettingsIcon sx={{ color: 'text.secondary' }} />
+        <SettingsIcon sx={{ color: 'primary.main' }} />
         <Typography variant="h5" fontWeight="bold">
           Settings
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', gap: 3, flex: 1, minHeight: 0, width: '100%' }}>
         {/* Sidebar */}
         <Paper
           elevation={0}
           sx={{
-            width: 220,
+            width: 240,
             flexShrink: 0,
             bgcolor: 'background.paper',
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 2,
-            overflow: 'hidden',
+            alignSelf: 'flex-start',
           }}
         >
           <List sx={{ p: 1 }}>
@@ -430,18 +435,21 @@ export function Settings() {
                   borderRadius: 1,
                   mb: 0.5,
                   '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
+                    bgcolor: 'rgba(59, 130, 246, 0.15)',
+                    color: 'primary.main',
                     '&:hover': {
-                      bgcolor: 'primary.dark',
+                      bgcolor: 'rgba(59, 130, 246, 0.25)',
                     },
                     '& .MuiListItemIcon-root': {
-                      color: 'primary.contrastText',
+                      color: 'primary.main',
                     },
+                  },
+                  '&:hover': {
+                    bgcolor: 'action.hover',
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: activeTab === tab.id ? 'inherit' : 'text.secondary' }}>
+                <ListItemIcon sx={{ minWidth: 36, color: activeTab === tab.id ? 'primary.main' : 'text.secondary' }}>
                   {tab.icon}
                 </ListItemIcon>
                 <ListItemText
@@ -456,8 +464,12 @@ export function Settings() {
           </List>
         </Paper>
 
-        {/* Content */}
-        <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        {/* Content - fills remaining width */}
+        <Box sx={{
+          flex: 1,
+          minWidth: 0,
+          overflow: 'auto',
+        }}>
           {activeTab === 'credentials' && <Credentials />}
           {activeTab === 'executions' && <Executions />}
           {activeTab === 'updates' && renderUpdatesContent()}

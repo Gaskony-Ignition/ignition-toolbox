@@ -128,10 +128,12 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
                   borderRadius: 1,
                   textTransform: 'none',
                   fontWeight: 500,
+                  fontSize: '0.875rem',
                   color: activeTab === tab.id ? 'primary.main' : 'text.secondary',
-                  bgcolor: activeTab === tab.id ? 'action.selected' : 'transparent',
+                  bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                   '&:hover': {
-                    bgcolor: activeTab === tab.id ? 'action.selected' : 'action.hover',
+                    bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    color: activeTab === tab.id ? 'primary.main' : 'text.primary',
                   },
                 }}
               >
