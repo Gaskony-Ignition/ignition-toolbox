@@ -7,8 +7,6 @@ import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  IconButton,
-  Chip,
   Button,
   Menu,
   MenuItem,
@@ -16,8 +14,6 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  Brightness4 as DarkModeIcon,
-  Brightness7 as LightModeIcon,
   Storage as GatewayIcon,
   DesignServices as DesignerIcon,
   Visibility as PerspectiveIcon,
@@ -28,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useStore } from '../store';
 import { api } from '../api/client';
-import type { HealthResponse, CredentialInfo } from '../types/api';
+import type { CredentialInfo } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import packageJson from '../../package.json';
 
@@ -54,13 +50,10 @@ interface LayoutProps {
 }
 
 export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
-  const theme = useStore((state) => state.theme);
-  const setTheme = useStore((state) => state.setTheme);
   const globalCredential = useStore((state) => state.globalCredential);
   const setGlobalCredential = useStore((state) => state.setGlobalCredential);
   const updateStatus = useStore((state) => state.updateStatus);
   const setUpdateStatus = useStore((state) => state.setUpdateStatus);
-  const [health, setHealth] = useState<'healthy' | 'unhealthy'>('healthy');
   const [credentialAnchor, setCredentialAnchor] = useState<null | HTMLElement>(null);
 
   // Fetch credentials for dropdown
@@ -69,17 +62,8 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
     queryFn: () => api.credentials.list(),
   });
 
-  // Fetch health on mount and listen for update events
+  // Listen for update events from Electron
   useEffect(() => {
-    api.health()
-      .then((data: HealthResponse) => {
-        setHealth(data.status === 'healthy' ? 'healthy' : 'unhealthy');
-      })
-      .catch(() => {
-        setHealth('unhealthy');
-      });
-
-    // Listen for update events from Electron
     if (isElectron() && window.electronAPI) {
       const unsubAvailable = window.electronAPI.on('update:available', (data: unknown) => {
         const updateData = data as { updateInfo?: { version: string } };
@@ -116,10 +100,6 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
       };
     }
   }, [setUpdateStatus]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleCredentialClick = (event: React.MouseEvent<HTMLElement>) => {
     setCredentialAnchor(event.currentTarget);
@@ -268,28 +248,10 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
             </Button>
           )}
 
-          {/* Health indicator */}
-          <Chip
-            label={health === 'healthy' ? 'Healthy' : 'Unhealthy'}
-            size="small"
-            color={health === 'healthy' ? 'success' : 'error'}
-            variant="outlined"
-          />
-
           {/* Version */}
           <Typography variant="caption" color="text.secondary">
             v{packageJson.version}
           </Typography>
-
-          {/* Theme Toggle */}
-          <IconButton
-            onClick={toggleTheme}
-            size="small"
-            sx={{ color: 'text.secondary' }}
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
-          </IconButton>
         </Box>
       </Box>
 

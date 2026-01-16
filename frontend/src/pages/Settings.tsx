@@ -19,6 +19,8 @@ import {
   Link,
   Divider,
   Stack,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Key as CredentialsIcon,
@@ -30,14 +32,18 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   RestartAlt as RestartIcon,
+  Palette as AppearanceIcon,
+  Brightness4 as DarkModeIcon,
+  Brightness7 as LightModeIcon,
 } from '@mui/icons-material';
 import { Credentials } from './Credentials';
 import { Executions } from './Executions';
 import { api } from '../api/client';
+import { useStore } from '../store';
 import type { HealthResponse } from '../types/api';
 import packageJson from '../../package.json';
 
-type SettingsTab = 'credentials' | 'executions' | 'updates' | 'about';
+type SettingsTab = 'credentials' | 'executions' | 'updates' | 'appearance' | 'about';
 
 interface UpdateStatus {
   checking: boolean;
@@ -57,6 +63,7 @@ const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] 
   { id: 'credentials', label: 'Gateway Credentials', icon: <CredentialsIcon /> },
   { id: 'executions', label: 'Execution History', icon: <ExecutionsIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
+  { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
   { id: 'about', label: 'About', icon: <AboutIcon /> },
 ];
 
@@ -75,6 +82,8 @@ export function Settings() {
     downloading: false,
     downloaded: false,
   });
+  const theme = useStore((state) => state.theme);
+  const setTheme = useStore((state) => state.setTheme);
 
   // Get app version and health on mount
   useEffect(() => {
@@ -396,11 +405,63 @@ export function Settings() {
     </Box>
   );
 
+  const renderAppearanceContent = () => (
+    <Box>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Appearance
+      </Typography>
+
+      <Paper
+        sx={{
+          p: 3,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+          Theme
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {theme === 'dark' ? (
+              <DarkModeIcon sx={{ color: 'primary.main' }} />
+            ) : (
+              <LightModeIcon sx={{ color: 'warning.main' }} />
+            )}
+            <Box>
+              <Typography variant="body1" fontWeight="medium">
+                {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {theme === 'dark'
+                  ? 'Using dark theme with navy blue background'
+                  : 'Using light theme with white background'}
+              </Typography>
+            </Box>
+          </Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={theme === 'dark'}
+                onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                color="primary"
+              />
+            }
+            label=""
+          />
+        </Box>
+      </Paper>
+    </Box>
+  );
+
   return (
     <Box sx={{
-      height: 'calc(100vh - 72px)',
       display: 'flex',
       flexDirection: 'column',
+      height: '100%',
       width: '100%',
     }}>
       {/* Header */}
@@ -473,6 +534,7 @@ export function Settings() {
           {activeTab === 'credentials' && <Credentials />}
           {activeTab === 'executions' && <Executions />}
           {activeTab === 'updates' && renderUpdatesContent()}
+          {activeTab === 'appearance' && renderAppearanceContent()}
           {activeTab === 'about' && renderAboutContent()}
         </Box>
       </Box>
