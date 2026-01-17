@@ -11,6 +11,8 @@ import { Layout, type DomainTab } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
 import { ExecutionDetail } from './pages/ExecutionDetail';
 import { Settings } from './pages/Settings';
+import { APIExplorer } from './pages/APIExplorer';
+import { StackBuilder } from './pages/StackBuilder';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
 
@@ -122,6 +124,10 @@ function AppContent() {
         return <Playbooks domainFilter="designer" />;
       case 'perspective':
         return <Playbooks domainFilter="perspective" />;
+      case 'api':
+        return <APIExplorer />;
+      case 'stackbuilder':
+        return <StackBuilder />;
       case 'settings':
         return <Settings />;
       default:

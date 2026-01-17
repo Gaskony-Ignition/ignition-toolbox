@@ -331,6 +331,238 @@ export const api = {
   },
 
   /**
+   * API Explorer
+   */
+  apiExplorer: {
+    listApiKeys: () => fetchJSON<any[]>('/api/explorer/api-keys'),
+
+    createApiKey: (data: {
+      name: string;
+      gateway_url: string;
+      api_key: string;
+      description?: string;
+    }) =>
+      fetchJSON<any>('/api/explorer/api-keys', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    updateApiKey: (name: string, data: {
+      gateway_url?: string;
+      api_key?: string;
+      description?: string;
+    }) =>
+      fetchJSON<any>(`/api/explorer/api-keys/${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    deleteApiKey: (name: string) =>
+      fetchJSON<{ message: string; name: string }>(
+        `/api/explorer/api-keys/${encodeURIComponent(name)}`,
+        { method: 'DELETE' }
+      ),
+
+    getGatewayInfo: (request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<any>('/api/explorer/gateway-info', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    fetchOpenAPI: (request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<any>('/api/explorer/openapi', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    listResources: (resourceType: string, request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<any>(`/api/explorer/resources/${resourceType}`, {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    executeRequest: (request: {
+      gateway_url: string;
+      method: string;
+      path: string;
+      headers?: Record<string, string>;
+      query_params?: Record<string, string>;
+      body?: any;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<any>('/api/explorer/request', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    scanProjects: (request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<{ message: string }>('/api/explorer/scan/projects', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    scanConfig: (request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<{ message: string }>('/api/explorer/scan/config', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
+
+    testConnection: (request: {
+      gateway_url: string;
+      api_key_name?: string;
+      api_key?: string;
+    }) =>
+      fetchJSON<{ success: boolean; message: string; gateway_version?: string }>(
+        '/api/explorer/test-connection',
+        {
+          method: 'POST',
+          body: JSON.stringify(request),
+        }
+      ),
+  },
+
+  /**
+   * Stack Builder
+   */
+  stackBuilder: {
+    getCatalog: () => fetchJSON<any>('/api/stackbuilder/catalog'),
+
+    getApplications: () => fetchJSON<any[]>('/api/stackbuilder/catalog/applications'),
+
+    getCategories: () => fetchJSON<any[]>('/api/stackbuilder/catalog/categories'),
+
+    getVersions: (appId: string) =>
+      fetchJSON<{ versions: string[] }>(`/api/stackbuilder/versions/${encodeURIComponent(appId)}`),
+
+    detectIntegrations: (config: {
+      instances: Array<{
+        app_id: string;
+        instance_name: string;
+        config: Record<string, unknown>;
+      }>;
+      global_settings?: {
+        stack_name?: string;
+        timezone?: string;
+        restart_policy?: string;
+      };
+    }) =>
+      fetchJSON<any>('/api/stackbuilder/detect-integrations', {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }),
+
+    generate: (config: {
+      instances: Array<{
+        app_id: string;
+        instance_name: string;
+        config: Record<string, unknown>;
+      }>;
+      global_settings?: {
+        stack_name?: string;
+        timezone?: string;
+        restart_policy?: string;
+      };
+      integration_settings?: Record<string, any>;
+    }) =>
+      fetchJSON<{
+        docker_compose: string;
+        env: string;
+        readme: string;
+        config_files: Record<string, string>;
+      }>('/api/stackbuilder/generate', {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }),
+
+    download: async (config: {
+      instances: Array<{
+        app_id: string;
+        instance_name: string;
+        config: Record<string, unknown>;
+      }>;
+      global_settings?: {
+        stack_name?: string;
+        timezone?: string;
+        restart_policy?: string;
+      };
+      integration_settings?: Record<string, any>;
+    }) => {
+      const response = await fetch(`${API_BASE_URL}/api/stackbuilder/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+
+      if (!response.ok) {
+        throw new APIError('Download failed', response.status);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${config.global_settings?.stack_name || 'iiot-stack'}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    },
+
+    listStacks: () => fetchJSON<any[]>('/api/stackbuilder/stacks'),
+
+    getStack: (id: number) => fetchJSON<any>(`/api/stackbuilder/stacks/${id}`),
+
+    saveStack: (data: {
+      stack_name: string;
+      description?: string;
+      config_json: Record<string, any>;
+      global_settings?: Record<string, any>;
+    }) =>
+      fetchJSON<any>('/api/stackbuilder/stacks', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    updateStack: (id: number, data: {
+      stack_name: string;
+      description?: string;
+      config_json: Record<string, any>;
+      global_settings?: Record<string, any>;
+    }) =>
+      fetchJSON<any>(`/api/stackbuilder/stacks/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    deleteStack: (id: number) =>
+      fetchJSON<{ message: string; id: number }>(
+        `/api/stackbuilder/stacks/${id}`,
+        { method: 'DELETE' }
+      ),
+  },
+
+  /**
    * Get the base URL for API calls
    */
   getBaseUrl: () => API_BASE_URL,

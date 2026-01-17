@@ -22,12 +22,14 @@ from fastapi.staticfiles import StaticFiles
 from ignition_toolkit import __version__
 from ignition_toolkit.api.middleware import RateLimitMiddleware
 from ignition_toolkit.api.routers import health_router
+from ignition_toolkit.api.routers.api_explorer import router as api_explorer_router
 from ignition_toolkit.api.routers.config import router as config_router
 from ignition_toolkit.api.routers.credentials import router as credentials_router
 from ignition_toolkit.api.routers.executions import router as executions_router
 from ignition_toolkit.api.routers.filesystem import router as filesystem_router
 from ignition_toolkit.api.routers.playbooks import router as playbooks_router
 from ignition_toolkit.api.routers.schedules import router as schedules_router
+from ignition_toolkit.api.routers.stackbuilder import router as stackbuilder_router
 from ignition_toolkit.api.routers.updates import router as updates_router
 from ignition_toolkit.api.routers.websockets import router as websockets_router
 from ignition_toolkit.playbook.engine import PlaybookEngine
@@ -67,6 +69,12 @@ app.include_router(filesystem_router)
 
 # Register updates router (v4.1.0)
 app.include_router(updates_router)
+
+# Register API Explorer router
+app.include_router(api_explorer_router)
+
+# Register Stack Builder router
+app.include_router(stackbuilder_router)
 
 # Register WebSocket router
 app.include_router(websockets_router)

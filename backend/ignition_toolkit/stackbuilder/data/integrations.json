@@ -1,0 +1,572 @@
+{
+  "integration_types": {
+    "reverse_proxy": {
+      "name": "Reverse Proxy",
+      "description": "Provides HTTP/HTTPS routing and load balancing for web services",
+      "providers": ["traefik", "nginx-proxy-manager"],
+      "mutually_exclusive": true,
+      "auto_configure_targets": [
+        "ignition", "grafana", "nodered", "n8n", "keycloak",
+        "portainer", "dozzle", "emqx", "rabbitmq", "prometheus",
+        "guacamole", "authentik", "authelia", "mailhog", "vault",
+        "whatupdocker", "pgadmin", "phpmyadmin"
+      ]
+    },
+    "oauth_provider": {
+      "name": "OAuth/SSO Provider",
+      "description": "Provides single sign-on and OAuth2 authentication",
+      "providers": ["keycloak", "authentik", "authelia"],
+      "mutually_exclusive": false,
+      "clients": ["grafana", "portainer", "n8n", "vault", "guacamole"]
+    },
+    "db_provider": {
+      "name": "Database Provider",
+      "description": "Provides database storage for other services",
+      "providers": ["postgres", "mariadb", "mssql"],
+      "mutually_exclusive": false,
+      "clients": ["ignition", "grafana", "keycloak", "guacamole", "nodered"]
+    },
+    "mqtt_broker": {
+      "name": "MQTT Broker",
+      "description": "Provides MQTT messaging for IoT devices",
+      "providers": ["emqx", "mosquitto"],
+      "mutually_exclusive": false,
+      "clients": ["ignition", "nodered"]
+    },
+    "metrics_collector": {
+      "name": "Metrics Collector",
+      "description": "Collects and stores metrics/time-series data",
+      "providers": ["prometheus"],
+      "mutually_exclusive": false,
+      "targets": ["ignition", "traefik", "postgres", "mariadb", "emqx", "vault"]
+    },
+    "visualization": {
+      "name": "Visualization Platform",
+      "description": "Provides dashboards and data visualization",
+      "providers": ["grafana"],
+      "data_sources": ["prometheus", "postgres", "mariadb", "mssql"]
+    },
+    "secrets_management": {
+      "name": "Secrets Management",
+      "description": "Centralized secrets and credential storage",
+      "providers": ["vault"],
+      "clients": ["ignition", "grafana", "keycloak", "postgres", "mariadb"]
+    },
+    "email_testing": {
+      "name": "Email Testing",
+      "description": "SMTP server for testing email notifications",
+      "providers": ["mailhog"],
+      "clients": ["ignition", "grafana", "n8n", "keycloak"]
+    }
+  },
+
+  "service_capabilities": {
+    "ignition": {
+      "provides": [],
+      "consumes": ["reverse_proxy", "db_provider", "mqtt_broker", "metrics_collector", "email_testing", "secrets_management"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 8088}, {"name": "https", "container": 8043}],
+          "default_subdomain": "ignition",
+          "health_check": "/StatusPing"
+        },
+        "db_provider": {
+          "type": "client",
+          "supports": ["postgres", "mariadb", "mssql"],
+          "jdbc_drivers": {
+            "postgres": "org.postgresql.Driver",
+            "mariadb": "org.mariadb.jdbc.Driver",
+            "mssql": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+          },
+          "auto_register": true,
+          "api_endpoint": "/system/gwinfo"
+        },
+        "mqtt_broker": {
+          "type": "client",
+          "requires_module": "mqtt-engine",
+          "supports": ["emqx", "mosquitto"],
+          "config_file": "mqtt-engine.xml"
+        },
+        "email_testing": {
+          "type": "client",
+          "env_vars": {
+            "GATEWAY_SMTP_HOST": "{mailhog_host}",
+            "GATEWAY_SMTP_PORT": "1025",
+            "GATEWAY_SMTP_FROM": "noreply@ignition.local"
+          }
+        }
+      }
+    },
+
+    "traefik": {
+      "provides": ["reverse_proxy"],
+      "consumes": ["metrics_collector"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "provider",
+          "method": "docker_labels",
+          "config_files": ["traefik.yml", "dynamic/*.yml"],
+          "supports_https": true,
+          "supports_letsencrypt": true
+        }
+      }
+    },
+
+    "nginx-proxy-manager": {
+      "provides": ["reverse_proxy"],
+      "consumes": [],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "provider",
+          "method": "api_configuration",
+          "api_port": 81,
+          "api_endpoint": "/api/nginx/proxy-hosts",
+          "requires_bootstrap_script": true,
+          "supports_https": true,
+          "supports_letsencrypt": true
+        }
+      }
+    },
+
+    "keycloak": {
+      "provides": ["oauth_provider"],
+      "consumes": ["reverse_proxy", "db_provider", "email_testing"],
+      "integrations": {
+        "oauth_provider": {
+          "type": "provider",
+          "realm_name": "iiot",
+          "supports_user_import": true,
+          "api_endpoint": "/admin/realms",
+          "requires_bootstrap_script": true,
+          "client_configs": {
+            "grafana": {
+              "protocol": "openid-connect",
+              "redirect_uris": ["http://{domain}/login/generic_oauth"]
+            },
+            "portainer": {
+              "protocol": "openid-connect",
+              "redirect_uris": ["http://{domain}"]
+            },
+            "n8n": {
+              "protocol": "openid-connect",
+              "redirect_uris": ["http://{domain}/rest/oauth2-credential/callback"]
+            },
+            "vault": {
+              "protocol": "openid-connect",
+              "redirect_uris": ["http://{domain}/ui/vault/auth/oidc/oidc/callback"]
+            }
+          }
+        },
+        "db_provider": {
+          "type": "client",
+          "prefers": "postgres",
+          "env_vars": {
+            "KC_DB": "postgres",
+            "KC_DB_URL": "jdbc:postgresql://{db_host}:{db_port}/{db_name}",
+            "KC_DB_USERNAME": "{db_user}",
+            "KC_DB_PASSWORD": "{db_pass}"
+          }
+        }
+      }
+    },
+
+    "grafana": {
+      "provides": ["visualization"],
+      "consumes": ["reverse_proxy", "oauth_provider", "db_provider", "metrics_collector", "log_aggregation", "email_testing"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 3000}],
+          "default_subdomain": "grafana"
+        },
+        "oauth_provider": {
+          "type": "client",
+          "supports": ["keycloak", "authentik", "authelia"],
+          "env_vars": {
+            "GF_AUTH_GENERIC_OAUTH_ENABLED": "true",
+            "GF_AUTH_GENERIC_OAUTH_NAME": "Keycloak",
+            "GF_AUTH_GENERIC_OAUTH_CLIENT_ID": "grafana",
+            "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET": "{client_secret}",
+            "GF_AUTH_GENERIC_OAUTH_AUTH_URL": "http://{keycloak_host}:{keycloak_port}/realms/{realm}/protocol/openid-connect/auth",
+            "GF_AUTH_GENERIC_OAUTH_TOKEN_URL": "http://{keycloak_host}:{keycloak_port}/realms/{realm}/protocol/openid-connect/token",
+            "GF_AUTH_GENERIC_OAUTH_API_URL": "http://{keycloak_host}:{keycloak_port}/realms/{realm}/protocol/openid-connect/userinfo"
+          }
+        },
+        "visualization": {
+          "type": "provider",
+          "datasource_provisioning": true,
+          "provisioning_path": "/etc/grafana/provisioning/datasources",
+          "datasource_types": {
+            "prometheus": "prometheus",
+            "postgres": "postgres",
+            "mariadb": "mysql",
+            "mssql": "mssql"
+          }
+        },
+        "email_testing": {
+          "type": "client",
+          "env_vars": {
+            "GF_SMTP_ENABLED": "true",
+            "GF_SMTP_HOST": "{mailhog_host}:1025",
+            "GF_SMTP_FROM_ADDRESS": "grafana@iiot.local"
+          }
+        }
+      }
+    },
+
+    "postgres": {
+      "provides": ["db_provider"],
+      "consumes": ["reverse_proxy", "metrics_collector", "secrets_management"],
+      "integrations": {
+        "db_provider": {
+          "type": "provider",
+          "default_port": 5432,
+          "jdbc_url_template": "jdbc:postgresql://{host}:{port}/{database}",
+          "supports_ssl": true
+        }
+      }
+    },
+
+    "mariadb": {
+      "provides": ["db_provider"],
+      "consumes": ["reverse_proxy", "metrics_collector", "secrets_management"],
+      "integrations": {
+        "db_provider": {
+          "type": "provider",
+          "default_port": 3306,
+          "jdbc_url_template": "jdbc:mariadb://{host}:{port}/{database}",
+          "supports_ssl": true
+        }
+      }
+    },
+
+    "mssql": {
+      "provides": ["db_provider"],
+      "consumes": ["reverse_proxy", "metrics_collector", "secrets_management"],
+      "integrations": {
+        "db_provider": {
+          "type": "provider",
+          "default_port": 1433,
+          "jdbc_url_template": "jdbc:sqlserver://{host}:{port};databaseName={database}",
+          "supports_ssl": true
+        }
+      }
+    },
+
+    "prometheus": {
+      "provides": ["metrics_collector"],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 9090}],
+          "default_subdomain": "prometheus"
+        },
+        "metrics_collector": {
+          "type": "provider",
+          "scrape_config_file": "prometheus.yml",
+          "targets": {
+            "ignition": {"port": 8088, "path": "/metrics"},
+            "traefik": {"port": 8080, "path": "/metrics"},
+            "vault": {"port": 8200, "path": "/v1/sys/metrics"}
+          }
+        }
+      }
+    },
+
+    "emqx": {
+      "provides": ["mqtt_broker"],
+      "consumes": ["reverse_proxy", "metrics_collector"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "dashboard", "container": 18083}],
+          "default_subdomain": "mqtt"
+        },
+        "mqtt_broker": {
+          "type": "provider",
+          "mqtt_port": 1883,
+          "ws_port": 8083,
+          "dashboard_port": 18083
+        }
+      }
+    },
+
+    "mosquitto": {
+      "provides": ["mqtt_broker"],
+      "consumes": [],
+      "integrations": {
+        "mqtt_broker": {
+          "type": "provider",
+          "mqtt_port": 1883,
+          "ws_port": 9001
+        }
+      }
+    },
+
+    "vault": {
+      "provides": ["secrets_management"],
+      "consumes": ["reverse_proxy", "oauth_provider", "metrics_collector"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 8200}],
+          "default_subdomain": "vault"
+        },
+        "secrets_management": {
+          "type": "provider",
+          "requires_bootstrap_script": true,
+          "kv_mount_path": "iiot"
+        }
+      }
+    },
+
+    "portainer": {
+      "provides": [],
+      "consumes": ["reverse_proxy", "oauth_provider"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "https", "container": 9443}],
+          "default_subdomain": "portainer"
+        },
+        "oauth_provider": {
+          "type": "client",
+          "supports": ["keycloak", "authentik"],
+          "env_vars": {
+            "PORTAINER_AUTH_PROVIDER": "oauth",
+            "PORTAINER_OAUTH_CLIENT_ID": "portainer",
+            "PORTAINER_OAUTH_AUTHORIZE_URL": "http://{keycloak_host}:{keycloak_port}/realms/{realm}/protocol/openid-connect/auth",
+            "PORTAINER_OAUTH_TOKEN_URL": "http://{keycloak_host}:{keycloak_port}/realms/{realm}/protocol/openid-connect/token"
+          }
+        }
+      }
+    },
+
+    "nodered": {
+      "provides": [],
+      "consumes": ["reverse_proxy", "db_provider", "mqtt_broker", "email_testing"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 1880}],
+          "default_subdomain": "nodered"
+        },
+        "mqtt_broker": {
+          "type": "client",
+          "auto_configure_nodes": true
+        }
+      }
+    },
+
+    "n8n": {
+      "provides": [],
+      "consumes": ["reverse_proxy", "oauth_provider", "db_provider", "email_testing"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 5678}],
+          "default_subdomain": "n8n"
+        },
+        "oauth_provider": {
+          "type": "client",
+          "supports": ["keycloak"],
+          "env_vars": {
+            "N8N_AUTH_OAUTH_ENABLED": "true"
+          }
+        }
+      }
+    },
+
+    "mailhog": {
+      "provides": ["email_testing"],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 8025}],
+          "default_subdomain": "mail"
+        },
+        "email_testing": {
+          "type": "provider",
+          "smtp_port": 1025,
+          "web_port": 8025
+        }
+      }
+    },
+
+    "dozzle": {
+      "provides": [],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 8080}],
+          "default_subdomain": "logs"
+        }
+      }
+    },
+
+    "whatupdocker": {
+      "provides": [],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 3000}],
+          "default_subdomain": "updates"
+        }
+      }
+    },
+
+    "guacamole": {
+      "provides": [],
+      "consumes": ["reverse_proxy", "oauth_provider", "db_provider"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 8080}],
+          "default_subdomain": "guacamole"
+        },
+        "db_provider": {
+          "type": "client",
+          "requires": "mariadb",
+          "auto_add_dependency": true
+        }
+      }
+    },
+
+    "pgadmin": {
+      "provides": [],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 80}],
+          "default_subdomain": "pgadmin"
+        }
+      }
+    },
+
+    "phpmyadmin": {
+      "provides": [],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 80}],
+          "default_subdomain": "phpmyadmin"
+        }
+      }
+    },
+
+    "authentik": {
+      "provides": ["oauth_provider"],
+      "consumes": ["reverse_proxy", "db_provider"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 9000}],
+          "default_subdomain": "authentik"
+        }
+      }
+    },
+
+    "authelia": {
+      "provides": ["oauth_provider"],
+      "consumes": ["reverse_proxy", "db_provider"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "http", "container": 9091}],
+          "default_subdomain": "authelia"
+        }
+      }
+    },
+
+    "rabbitmq": {
+      "provides": [],
+      "consumes": ["reverse_proxy"],
+      "integrations": {
+        "reverse_proxy": {
+          "type": "web_service",
+          "ports": [{"name": "management", "container": 15672}],
+          "default_subdomain": "rabbitmq"
+        }
+      }
+    }
+  },
+
+  "integration_rules": {
+    "mutual_exclusivity": [
+      {
+        "group": "reverse_proxy",
+        "services": ["traefik", "nginx-proxy-manager"],
+        "message": "Only one reverse proxy can be selected. Choose either Traefik or Nginx Proxy Manager."
+      },
+      {
+        "group": "primary_oauth",
+        "services": ["keycloak", "authentik", "authelia"],
+        "message": "Multiple OAuth providers selected. While possible, it's recommended to use only one for simplicity.",
+        "level": "warning"
+      }
+    ],
+    "dependencies": [
+      {
+        "service": "guacamole",
+        "requires": {
+          "type": "db_provider",
+          "preferred": "mariadb",
+          "auto_add": true,
+          "message": "Guacamole requires a database. MariaDB will be automatically added."
+        }
+      },
+      {
+        "service": "keycloak",
+        "recommends": {
+          "type": "db_provider",
+          "preferred": "postgres",
+          "level": "warning",
+          "message": "Keycloak works best with PostgreSQL. Consider adding it for production use."
+        }
+      }
+    ],
+    "recommendations": [
+      {
+        "if_selected": ["ignition", "postgres"],
+        "suggest": ["grafana", "prometheus"],
+        "message": "Consider adding Grafana and Prometheus for monitoring your Ignition + PostgreSQL stack."
+      },
+      {
+        "if_selected": ["grafana"],
+        "if_not_selected": ["prometheus", "postgres", "mariadb"],
+        "message": "Grafana needs data sources. Consider adding Prometheus or a database.",
+        "level": "warning"
+      },
+      {
+        "if_selected": ["keycloak"],
+        "suggest_for": ["grafana", "portainer", "n8n", "vault"],
+        "message": "Enable OAuth integration with Keycloak for enhanced security.",
+        "level": "info"
+      }
+    ]
+  },
+
+  "config_templates": {
+    "traefik_label": [
+      "traefik.enable=true",
+      "traefik.http.routers.{service_name}.rule=Host(`{subdomain}.{domain}`)",
+      "traefik.http.routers.{service_name}.entrypoints=web",
+      "traefik.http.services.{service_name}.loadbalancer.server.port={port}"
+    ],
+    "traefik_https_label": [
+      "traefik.enable=true",
+      "traefik.http.routers.{service_name}.rule=Host(`{subdomain}.{domain}`)",
+      "traefik.http.routers.{service_name}.entrypoints=websecure",
+      "traefik.http.routers.{service_name}.tls=true",
+      "traefik.http.routers.{service_name}.tls.certresolver=letsencrypt",
+      "traefik.http.services.{service_name}.loadbalancer.server.port={port}"
+    ]
+  }
+}

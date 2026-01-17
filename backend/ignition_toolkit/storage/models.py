@@ -447,3 +447,73 @@ class TestSuiteExecutionModel(Base):
             "execution_order": self.execution_order,
             "failed_component_ids": self.failed_component_ids,
         }
+
+
+class SavedStackModel(Base):
+    """
+    Stores user's saved Docker Compose stack configurations for Stack Builder
+
+    Allows users to save, load, and modify stack configurations.
+    """
+
+    __tablename__ = "saved_stacks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    stack_name = Column(String(255), nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    config_json = Column(JSON, nullable=False)  # Service instances and their configurations
+    global_settings = Column(JSON, nullable=True)  # Timezone, restart policy, etc.
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    # Indexes for performance
+    __table_args__ = (Index("idx_saved_stacks_stack_name", "stack_name"),)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "stack_name": self.stack_name,
+            "description": self.description,
+            "config_json": self.config_json,
+            "global_settings": self.global_settings,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class APIKeyModel(Base):
+    """
+    Stores Ignition Gateway API keys for API Explorer
+
+    Allows users to store and manage API keys for different gateways.
+    Keys are encrypted using Fernet (same pattern as credentials vault).
+    """
+
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), nullable=False, unique=True)
+    gateway_url = Column(String(500), nullable=False)
+    api_key_encrypted = Column(Text, nullable=False)  # Fernet encrypted
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    last_used = Column(DateTime, nullable=True)
+
+    # Indexes for performance
+    __table_args__ = (
+        Index("idx_api_keys_name", "name"),
+        Index("idx_api_keys_gateway_url", "gateway_url"),
+    )
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary (excluding encrypted key)"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "gateway_url": self.gateway_url,
+            "has_api_key": bool(self.api_key_encrypted),
+            "description": self.description,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_used": self.last_used.isoformat() if self.last_used else None,
+        }
