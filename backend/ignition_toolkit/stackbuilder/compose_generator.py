@@ -247,6 +247,7 @@ class ComposeGenerator:
                     integration_settings,
                     integrations,
                     keycloak_clients,
+                    instances,
                 )
 
                 service["environment"] = env
@@ -262,6 +263,12 @@ class ComposeGenerator:
                 if instance["app_id"] == "keycloak" and keycloak_clients:
                     volumes.append(
                         f"./configs/{service_name}/import:/opt/keycloak/data/import:ro"
+                    )
+
+                # Add Mosquitto config volume for authentication
+                if instance["app_id"] == "mosquitto":
+                    volumes.append(
+                        f"./configs/{service_name}:/mosquitto/config:ro"
                     )
 
                 service["volumes"] = volumes
@@ -286,6 +293,15 @@ class ComposeGenerator:
                 if labels:
                     service["labels"] = labels
 
+            # Add depends_on for service ordering
+            dependencies = self._get_service_dependencies(
+                instance["app_id"], instances, integrations
+            )
+            if dependencies:
+                service["depends_on"] = {
+                    dep: {"condition": "service_started"} for dep in dependencies
+                }
+
             compose["services"][service_name] = service
 
             # Add to env file
@@ -309,7 +325,7 @@ class ComposeGenerator:
 
         # Generate integration config files
         self._generate_integration_configs(
-            instances, integration_results, integration_settings, config_files, keycloak_realm_config
+            instances, integration_results, integration_settings, config_files, keycloak_realm_config, stack_name
         )
 
         # Generate Prometheus configs
@@ -423,6 +439,48 @@ class ComposeGenerator:
         zip_buffer.seek(0)
         return zip_buffer.getvalue()
 
+    def _get_service_dependencies(
+        self, app_id: str, instances: list[dict], integrations: dict
+    ) -> list[str]:
+        """
+        Determine service dependencies for depends_on ordering.
+
+        Returns list of instance names that this service should depend on.
+        """
+        dependencies = []
+
+        # Database dependencies
+        db_dependent_services = {"keycloak", "grafana", "n8n"}
+        if app_id in db_dependent_services:
+            db_int = integrations.get("db_provider", {})
+            for provider in db_int.get("providers", []):
+                dependencies.append(provider["instance_name"])
+
+        # Keycloak (OAuth provider) dependencies for OAuth clients
+        oauth_client_services = {"grafana", "n8n"}
+        if app_id in oauth_client_services:
+            oauth_int = integrations.get("oauth_provider", {})
+            for provider in oauth_int.get("providers", []):
+                if provider["service_id"] == "keycloak":
+                    dependencies.append(provider["instance_name"])
+
+        # MQTT broker dependencies for Ignition
+        if app_id == "ignition":
+            mqtt_int = integrations.get("mqtt_broker", {})
+            for provider in mqtt_int.get("providers", []):
+                dependencies.append(provider["instance_name"])
+
+        # Prometheus dependency for Grafana
+        if app_id == "grafana":
+            for inst in instances:
+                if inst["app_id"] == "prometheus":
+                    dependencies.append(inst["instance_name"])
+
+        # Traefik should start before web services
+        # (but we don't add dependency from services TO traefik, traefik handles late starts)
+
+        return list(set(dependencies))  # Remove duplicates
+
     def _get_host_port(self, app_id: str, config: dict, port_mapping: str) -> str:
         """Get host port for a service based on config and app type"""
         container_port = port_mapping.split(":")[1]
@@ -453,8 +511,11 @@ class ComposeGenerator:
         integration_settings: IntegrationSettings,
         integrations: dict,
         keycloak_clients: list,
+        instances: list[dict] | None = None,
     ) -> None:
         """Apply app-specific configuration mappings"""
+        if instances is None:
+            instances = []
         has_oauth_provider = "oauth_provider" in integrations
         has_email_testing = "email_testing" in integrations
 
@@ -535,6 +596,26 @@ class ComposeGenerator:
             env["KEYCLOAK_ADMIN"] = config.get("admin_username", env.get("KEYCLOAK_ADMIN"))
             env["KEYCLOAK_ADMIN_PASSWORD"] = config.get("admin_password", env.get("KEYCLOAK_ADMIN_PASSWORD"))
 
+            # Database connection for persistent storage
+            db_int = integrations.get("db_provider", {})
+            postgres_providers = [
+                p for p in db_int.get("providers", []) if p["service_id"] == "postgres"
+            ]
+            if postgres_providers:
+                # Use the first postgres instance found
+                pg_instance_name = postgres_providers[0]["instance_name"]
+                # Find the postgres instance config from instances list
+                pg_instance = next(
+                    (i for i in instances if i["instance_name"] == pg_instance_name),
+                    None
+                )
+                pg_config = pg_instance.get("config", {}) if pg_instance else {}
+
+                env["KC_DB"] = "postgres"
+                env["KC_DB_URL"] = f"jdbc:postgresql://{pg_instance_name}:5432/keycloak"
+                env["KC_DB_USERNAME"] = pg_config.get("username", "postgres")
+                env["KC_DB_PASSWORD"] = pg_config.get("password", "postgres")
+
             # Email integration
             if has_email_testing and integration_settings.email.get("auto_configure_services", True):
                 email_int = integrations["email_testing"]
@@ -589,10 +670,10 @@ class ComposeGenerator:
             "grafana": lambda c: str(c.get("port", 3000)),
             "nodered": lambda c: str(c.get("port", 1880)),
             "n8n": lambda c: str(c.get("port", 5678)),
-            "keycloak": lambda c: str(c.get("port", 8180)),
+            "keycloak": lambda c: "8080",  # Internal port (external is 8180)
             "prometheus": lambda c: "9090",
             "dozzle": lambda c: "8080",
-            "portainer": lambda c: "9000",
+            "portainer": lambda c: "9443",  # HTTPS internal port
             "mailhog": lambda c: "8025",
         }
 
@@ -629,6 +710,7 @@ class ComposeGenerator:
         integration_settings: IntegrationSettings,
         config_files: dict[str, str],
         keycloak_realm_config: dict | None,
+        stack_name: str = "iiot-stack",
     ) -> None:
         """Generate configuration files for integrations"""
         integrations = integration_results.get("integrations", {})
@@ -686,21 +768,26 @@ class ComposeGenerator:
         if has_traefik:
             enable_https = integration_settings.reverse_proxy.get("enable_https", False)
             letsencrypt_email = integration_settings.reverse_proxy.get("letsencrypt_email", "")
+            network_name = f"{stack_name}-network"
 
             config_files["configs/traefik/traefik.yml"] = generate_traefik_static_config(
                 enable_https=enable_https,
                 letsencrypt_email=letsencrypt_email,
+                network_name=network_name,
             )
 
             # Generate dynamic routing for web services
+            # Note: ports are internal container ports, not external host ports
             services_for_traefik = []
             web_service_ports = {
                 "ignition": lambda c: int(c.get("http_port", 8088)),
                 "grafana": lambda c: int(c.get("port", 3000)),
                 "nodered": lambda c: int(c.get("port", 1880)),
                 "n8n": lambda c: int(c.get("port", 5678)),
-                "keycloak": lambda c: int(c.get("port", 8180)),
+                "keycloak": lambda c: 8080,  # Internal port (external is 8180)
                 "prometheus": lambda c: 9090,
+                "dozzle": lambda c: 8080,
+                "portainer": lambda c: 9443,  # HTTPS internal port
                 "mailhog": lambda c: 8025,
             }
 
