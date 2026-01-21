@@ -15,9 +15,14 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ignition_toolkit.stackbuilder.catalog import get_service_catalog
+
+# Validation patterns for Docker-compatible names
+# Must start with alphanumeric, can contain letters, numbers, underscores, periods, hyphens
+VALID_NAME_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$"
+RESERVED_NAMES = {"docker", "host", "none", "bridge", "null", "default"}
 from ignition_toolkit.stackbuilder.compose_generator import (
     ComposeGenerator,
     GlobalSettings,
@@ -88,17 +93,45 @@ def _convert_stack_config(
 class InstanceConfig(BaseModel):
     """Configuration for a single service instance"""
 
-    app_id: str
-    instance_name: str
+    app_id: str = Field(..., min_length=1, max_length=64)
+    instance_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=VALID_NAME_PATTERN,
+        description="Docker-compatible instance name",
+    )
     config: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("instance_name")
+    @classmethod
+    def validate_instance_name(cls, v: str) -> str:
+        """Validate instance name is not reserved"""
+        if v.lower() in RESERVED_NAMES:
+            raise ValueError(f"Instance name '{v}' is reserved")
+        return v
 
 
 class GlobalSettingsRequest(BaseModel):
     """Global settings for the entire stack"""
 
-    stack_name: str = "iiot-stack"
+    stack_name: str = Field(
+        default="iiot-stack",
+        min_length=1,
+        max_length=64,
+        pattern=VALID_NAME_PATTERN,
+        description="Docker-compatible stack name",
+    )
     timezone: str = "UTC"
     restart_policy: str = "unless-stopped"
+
+    @field_validator("stack_name")
+    @classmethod
+    def validate_stack_name(cls, v: str) -> str:
+        """Validate stack name is not reserved"""
+        if v.lower() in RESERVED_NAMES:
+            raise ValueError(f"Stack name '{v}' is reserved")
+        return v
 
 
 class IntegrationSettingsRequest(BaseModel):
@@ -122,10 +155,24 @@ class StackConfig(BaseModel):
 class SavedStackCreate(BaseModel):
     """Request to save a stack configuration"""
 
-    stack_name: str = Field(..., min_length=1, max_length=255)
+    stack_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=VALID_NAME_PATTERN,
+        description="Docker-compatible stack name",
+    )
     description: str | None = None
     config_json: dict[str, Any]
     global_settings: dict[str, Any] | None = None
+
+    @field_validator("stack_name")
+    @classmethod
+    def validate_stack_name(cls, v: str) -> str:
+        """Validate stack name is not reserved"""
+        if v.lower() in RESERVED_NAMES:
+            raise ValueError(f"Stack name '{v}' is reserved")
+        return v
 
 
 class SavedStackInfo(BaseModel):

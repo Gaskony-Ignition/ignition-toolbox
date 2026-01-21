@@ -4,26 +4,70 @@ Configuration file generators for Stack Builder
 Generates config files for MQTT, Grafana datasources, Traefik, etc.
 """
 
+import base64
 import hashlib
+import os
+import secrets
 from typing import Any
 
 import yaml
 
 
+def generate_secure_password(length: int = 16) -> str:
+    """
+    Generate a cryptographically secure random password.
+
+    Args:
+        length: Desired password length (default 16)
+
+    Returns:
+        URL-safe random string suitable for passwords
+    """
+    return secrets.token_urlsafe(length)[:length]
+
+
+def generate_secure_secret(length: int = 32) -> str:
+    """
+    Generate a cryptographically secure random secret.
+
+    Args:
+        length: Desired secret length (default 32)
+
+    Returns:
+        URL-safe random string suitable for OAuth secrets, API keys, etc.
+    """
+    return secrets.token_urlsafe(length)
+
+
 def generate_mosquitto_password_file(username: str, password: str) -> str:
     """
-    Generate Mosquitto password file content
+    Generate Mosquitto password file content with proper PBKDF2-SHA512 hashing.
 
-    Note: In production, use mosquitto_passwd to generate properly hashed passwords.
-    This generates a plaintext version that Mosquitto will hash on first use.
+    Uses the Mosquitto 2.0+ password format: $7$<base64(salt+derived_key)>
+
+    Args:
+        username: MQTT username
+        password: MQTT password (will be hashed)
+
+    Returns:
+        Password file content with hashed password
     """
-    # Generate a simple hash for the password file
-    # Mosquitto will accept this format and rehash it
-    return f"{username}:{password}\n"
+    # Mosquitto 2.0+ PBKDF2-SHA512 format
+    # $7$ prefix indicates PBKDF2-SHA512
+    salt = os.urandom(12)
+    iterations = 101  # Mosquitto default
+    dk = hashlib.pbkdf2_hmac("sha512", password.encode(), salt, iterations, dklen=64)
+    hash_b64 = base64.b64encode(salt + dk).decode()
+    return f"{username}:$7${hash_b64}\n"
 
 
 def generate_prometheus_config() -> str:
-    """Generate minimal Prometheus configuration file"""
+    """
+    Generate minimal Prometheus configuration file.
+
+    Returns:
+        YAML configuration string for Prometheus with default scrape config
+    """
     return """global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -41,7 +85,18 @@ def generate_mosquitto_config(
     enable_tls: bool = False,
     tls_port: int = 8883,
 ) -> str:
-    """Generate Mosquitto configuration file"""
+    """
+    Generate Mosquitto MQTT broker configuration file.
+
+    Args:
+        username: MQTT username for authentication (empty for anonymous)
+        password: MQTT password for authentication (empty for anonymous)
+        enable_tls: Whether to enable TLS listener
+        tls_port: Port for TLS listener (default 8883)
+
+    Returns:
+        Mosquitto configuration file content
+    """
     config = []
 
     # Listener configuration
@@ -81,7 +136,17 @@ def generate_mosquitto_config(
 def generate_emqx_config(
     username: str = "", password: str = "", enable_tls: bool = False
 ) -> str:
-    """Generate EMQX configuration snippet"""
+    """
+    Generate EMQX MQTT broker configuration snippet.
+
+    Args:
+        username: MQTT username for authentication
+        password: MQTT password for authentication
+        enable_tls: Whether TLS is enabled (currently unused)
+
+    Returns:
+        YAML configuration string for EMQX authentication
+    """
     config: dict[str, Any] = {"authentication": []}
 
     if username and password:
@@ -96,13 +161,17 @@ def generate_emqx_config(
 
 def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
     """
-    Generate Grafana datasource provisioning configuration
+    Generate Grafana datasource provisioning configuration.
 
-    datasources format:
-    [
-        {"type": "prometheus", "instance_name": "prometheus", "config": {}},
-        {"type": "postgres", "instance_name": "postgres-1", "config": {...}},
-    ]
+    Args:
+        datasources: List of datasource configurations with format:
+            [
+                {"type": "prometheus", "instance_name": "prometheus", "config": {}},
+                {"type": "postgres", "instance_name": "postgres-1", "config": {...}},
+            ]
+
+    Returns:
+        YAML provisioning configuration for Grafana datasources
     """
     provisioning: dict[str, Any] = {"apiVersion": 1, "datasources": []}
 
@@ -162,10 +231,25 @@ def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
 def generate_traefik_static_config(
     enable_https: bool = False, letsencrypt_email: str = ""
 ) -> str:
-    """Generate Traefik static configuration (traefik.yml)"""
+    """
+    Generate Traefik static configuration (traefik.yml).
+
+    Args:
+        enable_https: Whether to enable HTTPS entrypoint
+        letsencrypt_email: Email for Let's Encrypt certificate generation
+
+    Returns:
+        YAML configuration string for Traefik
+    """
+    # Dashboard is enabled but secured (requires auth middleware)
+    # For development, access via: traefik:8080 from within Docker network
+    # For production, configure basicAuth or forwardAuth middleware
     config: dict[str, Any] = {
-        "api": {"dashboard": True, "insecure": True},
-        "entryPoints": {"web": {"address": ":80"}},
+        "api": {"dashboard": True, "insecure": False},
+        "entryPoints": {
+            "web": {"address": ":80"},
+            "traefik": {"address": ":8080"},  # Dashboard entrypoint
+        },
         "providers": {
             "docker": {"exposedByDefault": False, "network": "iiot-network"},
             "file": {"directory": "/etc/traefik/dynamic", "watch": True},
@@ -196,13 +280,21 @@ def generate_traefik_dynamic_config(
     enable_https: bool = False,
 ) -> str:
     """
-    Generate Traefik dynamic configuration for services
+    Generate Traefik dynamic configuration for services.
 
-    services format:
-    [
-        {"instance_name": "ignition-1", "subdomain": "ignition", "port": 8088},
-        {"instance_name": "grafana", "subdomain": "grafana", "port": 3000}
-    ]
+    Creates routers and load balancer configuration for each service.
+
+    Args:
+        services: List of service configurations with format:
+            [
+                {"instance_name": "ignition-1", "subdomain": "ignition", "port": 8088},
+                {"instance_name": "grafana", "subdomain": "grafana", "port": 3000}
+            ]
+        domain: Base domain for service routing (default "localhost")
+        enable_https: Whether to use websecure entrypoint with TLS
+
+    Returns:
+        YAML configuration string for Traefik dynamic routing
     """
     config: dict[str, Any] = {"http": {"routers": {}, "services": {}}}
 
@@ -239,13 +331,26 @@ def generate_oauth_env_vars(
     base_domain: str = "localhost",
     client_secret: str | None = None,
 ) -> dict[str, str]:
-    """Generate OAuth environment variables for a service"""
+    """
+    Generate OAuth environment variables for a service.
+
+    Args:
+        service_id: The service ID (e.g., "grafana", "n8n")
+        provider: The OAuth provider hostname (e.g., "keycloak")
+        realm_name: Keycloak realm name
+        base_domain: Base domain for callbacks
+        client_secret: OAuth client secret (generated if not provided)
+
+    Returns:
+        Dictionary of environment variables for OAuth configuration
+    """
     env_vars: dict[str, str] = {}
 
     keycloak_base = f"http://{provider}:8080/realms/{realm_name}/protocol/openid-connect"
 
     if not client_secret:
-        client_secret = f"{service_id}-secret-changeme"
+        # Generate a secure random secret if not provided
+        client_secret = generate_secure_secret(32)
 
     if service_id == "grafana":
         env_vars.update({
@@ -277,7 +382,19 @@ def generate_email_env_vars(
     mailhog_instance: str = "mailhog",
     from_address: str = "noreply@iiot.local",
 ) -> dict[str, str]:
-    """Generate email/SMTP environment variables for services"""
+    """
+    Generate email/SMTP environment variables for services.
+
+    Configures services to send email through MailHog for testing.
+
+    Args:
+        service_id: The service ID (e.g., "grafana", "ignition", "n8n", "keycloak")
+        mailhog_instance: MailHog container name (default "mailhog")
+        from_address: Email address to use as sender (default "noreply@iiot.local")
+
+    Returns:
+        Dictionary of environment variables for SMTP configuration
+    """
     env_vars: dict[str, str] = {}
 
     if service_id == "grafana":

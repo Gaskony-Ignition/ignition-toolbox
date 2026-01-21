@@ -9,6 +9,39 @@ This module provides functionality to:
 """
 
 from ignition_toolkit.stackbuilder.catalog import ServiceCatalog
+from ignition_toolkit.stackbuilder.compose_generator import ComposeGenerator
+from ignition_toolkit.stackbuilder.exceptions import (
+    CatalogError,
+    CatalogNotFoundError,
+    ConfigurationError,
+    GenerationError,
+    IntegrationConflictError,
+    IntegrationError,
+    InvalidNameError,
+    ReservedNameError,
+    ServiceDisabledError,
+    ServiceNotFoundError,
+    StackBuilderError,
+    ValidationError,
+)
 from ignition_toolkit.stackbuilder.integration_engine import IntegrationEngine
 
-__all__ = ["ServiceCatalog", "IntegrationEngine"]
+__all__ = [
+    # Core classes
+    "ServiceCatalog",
+    "IntegrationEngine",
+    "ComposeGenerator",
+    # Exceptions
+    "StackBuilderError",
+    "CatalogError",
+    "CatalogNotFoundError",
+    "ServiceNotFoundError",
+    "ServiceDisabledError",
+    "IntegrationError",
+    "IntegrationConflictError",
+    "GenerationError",
+    "ConfigurationError",
+    "ValidationError",
+    "InvalidNameError",
+    "ReservedNameError",
+]

@@ -4,6 +4,8 @@ Docker Compose Generator for Stack Builder
 Generates docker-compose.yml and related configuration files.
 """
 
+from __future__ import annotations
+
 import io
 import json
 import logging
@@ -11,6 +13,12 @@ import zipfile
 from typing import Any
 
 import yaml
+
+from ignition_toolkit.stackbuilder.types import (
+    GenerationResult,
+    InstanceConfig,
+    ServiceConfig,
+)
 
 from ignition_toolkit.stackbuilder.catalog import get_service_catalog
 from ignition_toolkit.stackbuilder.config_generators import (
@@ -778,6 +786,22 @@ echo To stop: docker compose down
 - **Stack Name**: {global_settings.stack_name}
 - **Timezone**: {global_settings.timezone}
 - **Restart Policy**: {global_settings.restart_policy}
+
+## Security Notice
+
+> **IMPORTANT:** This stack is configured for development/testing purposes.
+> Before deploying to production, ensure you:
+>
+> 1. **Change all default passwords** - Review the `.env` file and update ALL credentials
+> 2. **Secure the `.env` file** - Never commit this file to version control
+> 3. **Enable HTTPS** - Configure TLS certificates for production deployments
+> 4. **Review network exposure** - Only expose necessary ports to the network
+> 5. **Update Keycloak to production mode** - Change from `start-dev` to `start`
+> 6. **Configure proper authentication** - Set up Traefik dashboard auth if exposed
+
+Files containing sensitive information:
+- `.env` - Environment variables with passwords and secrets
+- `configs/` - Service-specific configuration files
 
 ## Services Included
 """

@@ -10,6 +10,7 @@ Ignition Toolbox is an Electron-based desktop application that provides:
 - **Real-time browser automation** with live screenshot streaming
 - **Credential management** with encrypted storage
 - **Execution history** with step-by-step results
+- **Stack Builder** for generating Docker Compose deployments with automatic service integration
 
 ## Architecture
 
@@ -81,6 +82,29 @@ ignition-toolbox/
 │   └── dist/           # Built output
 └── resources/          # Build resources (icons, etc.)
 ```
+
+## Stack Builder
+
+The Stack Builder is a visual tool for generating Docker Compose deployments for IIoT/SCADA infrastructure.
+
+### Features
+
+- **Service Catalog**: 25+ pre-configured services including Ignition, databases, MQTT brokers, and monitoring tools
+- **Automatic Integrations**: Detects and configures connections between services
+- **Complete Deployment Packages**: Generates docker-compose.yml, environment files, and startup scripts
+
+### Supported Services
+
+| Category | Services |
+|----------|----------|
+| Industrial | Ignition SCADA |
+| Databases | PostgreSQL, MariaDB, MSSQL |
+| Messaging | EMQX, Mosquitto |
+| Auth | Keycloak |
+| Monitoring | Grafana, Prometheus |
+| DevOps | Portainer, Node-RED, n8n |
+
+For detailed documentation, see [backend/ignition_toolkit/stackbuilder/README.md](backend/ignition_toolkit/stackbuilder/README.md).
 
 ## License
 

@@ -348,7 +348,19 @@ def _generate_ignition_client(base_domain: str, protocol: str) -> dict[str, Any]
 def generate_keycloak_readme_section(
     realm_name: str, clients: list[dict[str, Any]]
 ) -> str:
-    """Generate README section with Keycloak setup instructions"""
+    """
+    Generate README section with Keycloak setup instructions.
+
+    Note: Client secrets are NOT included in the README for security.
+    They can be found in the .env file or Keycloak admin console.
+
+    Args:
+        realm_name: The Keycloak realm name
+        clients: List of OAuth client configurations
+
+    Returns:
+        Markdown content for the README
+    """
     content = f"""
 ## Keycloak SSO Configuration
 
@@ -362,27 +374,29 @@ The realm configuration is automatically imported on first startup.
 
 ### OAuth Client Credentials
 
-Use these credentials to configure OAuth in your applications:
+The following OAuth clients have been configured:
 
 """
 
     for client in clients:
         client_id = client.get("clientId")
-        client_secret = client.get("secret", "N/A")
-
+        # Don't expose secrets in README - reference .env file instead
         content += f"""
 #### {client.get("name", client_id)}
 - **Client ID:** `{client_id}`
-- **Client Secret:** `{client_secret}`
+- **Client Secret:** See `.env` file or Keycloak admin console
 - **Scopes:** openid, profile, email, roles
 
 """
 
     content += f"""
+> **Security Note:** Client secrets are stored in the `.env` file.
+> Keep this file secure and never commit it to version control.
+
 ### Accessing Keycloak Admin Console
 
 1. Navigate to Keycloak: `http://keycloak.localhost` (or your configured domain)
-2. Login with admin credentials (from your configuration)
+2. Login with admin credentials (from your `.env` file)
 3. Select the `{realm_name}` realm from the dropdown
 
 ### Default Roles
