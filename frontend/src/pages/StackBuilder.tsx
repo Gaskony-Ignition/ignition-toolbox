@@ -2,7 +2,7 @@
  * Stack Builder page for generating Docker Compose stacks
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -176,16 +176,16 @@ function ServiceConfigDialog({
     enabled: !!service,
   });
 
-  // Reset state when dialog opens with new service
-  useState(() => {
+  // Reset state when dialog opens with new service or instance
+  useEffect(() => {
     if (instance) {
       setInstanceName(instance.instance_name);
-      setConfig((instance.config as Record<string, string>) || {});
+      setConfig((instance.config as Record<string, string | string[] | boolean>) || {});
     } else if (service) {
       setInstanceName(`${service.id}-1`);
       setConfig({});
     }
-  });
+  }, [instance, service]);
 
   const handleSave = () => {
     if (!service) return;

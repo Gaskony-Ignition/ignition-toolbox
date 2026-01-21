@@ -34,6 +34,53 @@ router = APIRouter(prefix="/api/stackbuilder", tags=["stackbuilder"])
 
 
 # ============================================================================
+# Helper Functions
+# ============================================================================
+
+
+def _convert_stack_config(
+    stack_config: "StackConfig",
+) -> tuple[list[dict], GlobalSettings | None, IntegrationSettings | None]:
+    """
+    Convert Pydantic StackConfig to generator-compatible format.
+
+    Args:
+        stack_config: The StackConfig from the API request
+
+    Returns:
+        Tuple of (instances list, global settings, integration settings)
+    """
+    instances = [
+        {
+            "app_id": inst.app_id,
+            "instance_name": inst.instance_name,
+            "config": inst.config,
+        }
+        for inst in stack_config.instances
+    ]
+
+    global_settings = None
+    if stack_config.global_settings:
+        global_settings = GlobalSettings(
+            stack_name=stack_config.global_settings.stack_name,
+            timezone=stack_config.global_settings.timezone,
+            restart_policy=stack_config.global_settings.restart_policy,
+        )
+
+    integration_settings = None
+    if stack_config.integration_settings:
+        integration_settings = IntegrationSettings(
+            reverse_proxy=stack_config.integration_settings.reverse_proxy,
+            mqtt=stack_config.integration_settings.mqtt,
+            oauth=stack_config.integration_settings.oauth,
+            database=stack_config.integration_settings.database,
+            email=stack_config.integration_settings.email,
+        )
+
+    return instances, global_settings, integration_settings
+
+
+# ============================================================================
 # Pydantic Models
 # ============================================================================
 
@@ -216,15 +263,7 @@ async def detect_integrations(stack_config: StackConfig):
     based on selected services
     """
     try:
-        instances = [
-            {
-                "app_id": inst.app_id,
-                "instance_name": inst.instance_name,
-                "config": inst.config,
-            }
-            for inst in stack_config.instances
-        ]
-
+        instances, _, _ = _convert_stack_config(stack_config)
         engine = get_integration_engine()
         detection_result = engine.detect_integrations(instances)
         detection_result["summary"] = engine.get_integration_summary(detection_result)
@@ -245,33 +284,7 @@ async def detect_integrations(stack_config: StackConfig):
 async def generate_stack(stack_config: StackConfig):
     """Generate docker-compose.yml and configuration files"""
     try:
-        instances = [
-            {
-                "app_id": inst.app_id,
-                "instance_name": inst.instance_name,
-                "config": inst.config,
-            }
-            for inst in stack_config.instances
-        ]
-
-        global_settings = None
-        if stack_config.global_settings:
-            global_settings = GlobalSettings(
-                stack_name=stack_config.global_settings.stack_name,
-                timezone=stack_config.global_settings.timezone,
-                restart_policy=stack_config.global_settings.restart_policy,
-            )
-
-        integration_settings = None
-        if stack_config.integration_settings:
-            integration_settings = IntegrationSettings(
-                reverse_proxy=stack_config.integration_settings.reverse_proxy,
-                mqtt=stack_config.integration_settings.mqtt,
-                oauth=stack_config.integration_settings.oauth,
-                database=stack_config.integration_settings.database,
-                email=stack_config.integration_settings.email,
-            )
-
+        instances, global_settings, integration_settings = _convert_stack_config(stack_config)
         generator = ComposeGenerator()
         result = generator.generate(instances, global_settings, integration_settings)
 
@@ -291,39 +304,11 @@ async def generate_stack(stack_config: StackConfig):
 async def download_stack(stack_config: StackConfig):
     """Download complete stack as ZIP file"""
     try:
-        instances = [
-            {
-                "app_id": inst.app_id,
-                "instance_name": inst.instance_name,
-                "config": inst.config,
-            }
-            for inst in stack_config.instances
-        ]
-
-        global_settings = None
-        if stack_config.global_settings:
-            global_settings = GlobalSettings(
-                stack_name=stack_config.global_settings.stack_name,
-                timezone=stack_config.global_settings.timezone,
-                restart_policy=stack_config.global_settings.restart_policy,
-            )
-
-        integration_settings = None
-        if stack_config.integration_settings:
-            integration_settings = IntegrationSettings(
-                reverse_proxy=stack_config.integration_settings.reverse_proxy,
-                mqtt=stack_config.integration_settings.mqtt,
-                oauth=stack_config.integration_settings.oauth,
-                database=stack_config.integration_settings.database,
-                email=stack_config.integration_settings.email,
-            )
-
+        instances, global_settings, integration_settings = _convert_stack_config(stack_config)
         generator = ComposeGenerator()
         zip_content = generator.generate_zip(instances, global_settings, integration_settings)
 
-        stack_name = "iiot-stack"
-        if global_settings:
-            stack_name = global_settings.stack_name
+        stack_name = global_settings.stack_name if global_settings else "iiot-stack"
 
         return StreamingResponse(
             iter([zip_content]),
@@ -689,33 +674,7 @@ async def generate_offline_bundle(stack_config: StackConfig):
     - README with instructions
     """
     try:
-        instances = [
-            {
-                "app_id": inst.app_id,
-                "instance_name": inst.instance_name,
-                "config": inst.config,
-            }
-            for inst in stack_config.instances
-        ]
-
-        global_settings = None
-        if stack_config.global_settings:
-            global_settings = GlobalSettings(
-                stack_name=stack_config.global_settings.stack_name,
-                timezone=stack_config.global_settings.timezone,
-                restart_policy=stack_config.global_settings.restart_policy,
-            )
-
-        integration_settings = None
-        if stack_config.integration_settings:
-            integration_settings = IntegrationSettings(
-                reverse_proxy=stack_config.integration_settings.reverse_proxy,
-                mqtt=stack_config.integration_settings.mqtt,
-                oauth=stack_config.integration_settings.oauth,
-                database=stack_config.integration_settings.database,
-                email=stack_config.integration_settings.email,
-            )
-
+        instances, global_settings, integration_settings = _convert_stack_config(stack_config)
         generator = ComposeGenerator()
         result = generator.generate(instances, global_settings, integration_settings)
 
