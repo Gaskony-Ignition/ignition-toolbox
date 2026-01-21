@@ -229,7 +229,9 @@ def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
 
 
 def generate_traefik_static_config(
-    enable_https: bool = False, letsencrypt_email: str = ""
+    enable_https: bool = False,
+    letsencrypt_email: str = "",
+    network_name: str = "iiot-stack-network",
 ) -> str:
     """
     Generate Traefik static configuration (traefik.yml).
@@ -237,6 +239,7 @@ def generate_traefik_static_config(
     Args:
         enable_https: Whether to enable HTTPS entrypoint
         letsencrypt_email: Email for Let's Encrypt certificate generation
+        network_name: Docker network name for Traefik to monitor
 
     Returns:
         YAML configuration string for Traefik
@@ -251,7 +254,7 @@ def generate_traefik_static_config(
             "traefik": {"address": ":8080"},  # Dashboard entrypoint
         },
         "providers": {
-            "docker": {"exposedByDefault": False, "network": "iiot-network"},
+            "docker": {"exposedByDefault": False, "network": network_name},
             "file": {"directory": "/etc/traefik/dynamic", "watch": True},
         },
         "log": {"level": "INFO"},

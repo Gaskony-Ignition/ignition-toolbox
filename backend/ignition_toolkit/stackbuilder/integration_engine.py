@@ -304,9 +304,17 @@ class IntegrationEngine:
         self, providers: list[str], selected_services: list[str], instances: list[dict]
     ) -> dict:
         """Detect OAuth/SSO integrations"""
-        integration: dict[str, Any] = {"providers": providers, "clients": []}
+        integration: dict[str, Any] = {"providers": [], "clients": []}
 
         for provider_id in providers:
+            # Build provider info dict (matching db_provider format)
+            instance = next((i for i in instances if i["app_id"] == provider_id), None)
+            if instance:
+                integration["providers"].append({
+                    "service_id": provider_id,
+                    "instance_name": instance.get("instance_name"),
+                    "config": instance.get("config", {}),
+                })
             provider_caps = self.service_capabilities.get(provider_id, {})
             provider_integration = provider_caps.get("integrations", {}).get("oauth_provider", {})
 
@@ -523,7 +531,8 @@ class IntegrationEngine:
 
         if "oauth_provider" in integrations:
             oauth = integrations["oauth_provider"]
-            lines.append(f"## OAuth/SSO: {', '.join(oauth['providers'])}")
+            provider_names = [p["service_id"] for p in oauth["providers"]]
+            lines.append(f"## OAuth/SSO: {', '.join(provider_names)}")
             lines.append(f"Configured {len(oauth['clients'])} clients:")
             for client in oauth["clients"]:
                 lines.append(f"  - {client['instance_name']} -> {client['provider']}")
