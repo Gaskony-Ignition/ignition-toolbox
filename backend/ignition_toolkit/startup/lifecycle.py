@@ -97,21 +97,31 @@ async def lifespan(app: FastAPI):
             set_component_degraded("playbooks", str(e))
 
         # Phase 5: Playwright Browser (NON-FATAL but required for playbook execution)
-        # NOTE: Browser installation can take minutes to download ~170MB, so we only
-        # CHECK if installed during startup. Actual installation happens on first playbook run.
-        logger.info("Phase 5/8: Playwright Browser Check")
+        # Automatically download browser on first startup if not installed
+        logger.info("Phase 5/8: Playwright Browser Installation")
         try:
-            from ignition_toolkit.startup.playwright_installer import is_browser_installed
+            from ignition_toolkit.startup.playwright_installer import (
+                is_browser_installed,
+                ensure_browser_installed,
+            )
 
             if is_browser_installed():
                 set_component_healthy("browser", "Chromium browser ready")
                 logger.info("✅ Playwright browser ready")
             else:
-                # Don't block startup with browser download - it will install on first use
-                set_component_degraded("browser", "Browser not installed - will download on first playbook run")
-                logger.warning("⚠️  Browser not installed - will download on first playbook run (~170MB)")
+                # Automatically download browser during startup
+                logger.info("🔄 Browser not installed - downloading Chromium (~170MB)...")
+                set_component_degraded("browser", "Downloading browser...")
+
+                success = await ensure_browser_installed()
+                if success:
+                    set_component_healthy("browser", "Chromium browser installed")
+                    logger.info("✅ Playwright browser installed successfully")
+                else:
+                    set_component_degraded("browser", "Browser installation failed - playbooks may not work")
+                    logger.warning("⚠️  Browser installation failed - playbooks may not work")
         except Exception as e:
-            logger.warning(f"⚠️  Browser check failed: {e}")
+            logger.warning(f"⚠️  Browser installation failed: {e}")
             set_component_degraded("browser", str(e))
 
         # Phase 6: Frontend Build (NON-FATAL, production only)

@@ -55,6 +55,9 @@ def is_browser_installed() -> bool:
     """
     Check if Playwright Chromium browser is installed.
 
+    Checks for both regular chromium and headless shell variants,
+    as Playwright versions may use different browser packages.
+
     Returns:
         True if browser appears to be installed, False otherwise
     """
@@ -64,26 +67,36 @@ def is_browser_installed() -> bool:
         logger.info(f"Playwright browsers directory not found: {browsers_path}")
         return False
 
-    # Look for chromium directory
-    chromium_dirs = list(browsers_path.glob("chromium-*"))
-    if not chromium_dirs:
-        logger.info("No Chromium browser found in Playwright cache")
-        return False
+    # Check for different Chromium variants (newer Playwright uses chromium_headless_shell)
+    # Pattern: chromium-*, chromium_headless_shell-*
+    browser_patterns = ["chromium-*", "chromium_headless_shell-*"]
 
-    # Check if the browser executable exists
-    for chromium_dir in chromium_dirs:
-        if sys.platform == "win32":
-            exe_path = chromium_dir / "chrome-win" / "chrome.exe"
-        elif sys.platform == "darwin":
-            exe_path = chromium_dir / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium"
-        else:
-            exe_path = chromium_dir / "chrome-linux" / "chrome"
+    for pattern in browser_patterns:
+        chromium_dirs = list(browsers_path.glob(pattern))
+        for chromium_dir in chromium_dirs:
+            # Check for executables based on platform and browser variant
+            if sys.platform == "win32":
+                exe_paths = [
+                    chromium_dir / "chrome-win" / "chrome.exe",
+                    chromium_dir / "chrome-win" / "headless_shell.exe",
+                ]
+            elif sys.platform == "darwin":
+                exe_paths = [
+                    chromium_dir / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
+                    chromium_dir / "chrome-mac" / "headless_shell",
+                ]
+            else:
+                exe_paths = [
+                    chromium_dir / "chrome-linux" / "chrome",
+                    chromium_dir / "chrome-linux" / "headless_shell",
+                ]
 
-        if exe_path.exists():
-            logger.info(f"Found Chromium browser at: {exe_path}")
-            return True
+            for exe_path in exe_paths:
+                if exe_path.exists():
+                    logger.info(f"Found Chromium browser at: {exe_path}")
+                    return True
 
-    logger.info("Chromium browser directory exists but executable not found")
+    logger.info("No Chromium browser executable found in Playwright cache")
     return False
 
 
@@ -272,9 +285,12 @@ def get_browser_info() -> dict:
     }
 
     if browsers_path.exists():
-        chromium_dirs = list(browsers_path.glob("chromium-*"))
-        if chromium_dirs:
-            info["chromium_installed"] = True
-            info["chromium_path"] = str(chromium_dirs[0])
+        # Check for both chromium variants
+        for pattern in ["chromium-*", "chromium_headless_shell-*"]:
+            chromium_dirs = list(browsers_path.glob(pattern))
+            if chromium_dirs:
+                info["chromium_installed"] = True
+                info["chromium_path"] = str(chromium_dirs[0])
+                break
 
     return info
