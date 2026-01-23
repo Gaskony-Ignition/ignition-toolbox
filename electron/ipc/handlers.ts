@@ -152,86 +152,91 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
       },
     });
 
-    // Open DevTools docked to bottom for debugging
-    designerWindow.webContents.openDevTools({ mode: 'bottom' });
+    // Open DevTools docked to right for debugging
+    designerWindow.webContents.openDevTools({ mode: 'right' });
 
-    // Comprehensive event logging
+    // First show a diagnostic page, then navigate to target
+    const diagnosticHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>CloudDesigner Loading...</title>
+        <style>
+          body { background: #1a1a2e; color: #fff; font-family: system-ui; padding: 40px; }
+          .log { background: #0a0a1e; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow: auto; }
+          .log div { margin: 4px 0; }
+          .info { color: #6eb5ff; }
+          .success { color: #6bff6b; }
+          .error { color: #ff6b6b; }
+          .warn { color: #ffb86b; }
+          h1 { color: #6eb5ff; }
+        </style>
+      </head>
+      <body>
+        <h1>CloudDesigner Diagnostic</h1>
+        <p>Target URL: <strong>${targetUrl}</strong></p>
+        <h3>Event Log:</h3>
+        <div id="log" class="log"></div>
+        <script>
+          function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = new Date().toISOString().substr(11, 12) + ' - ' + msg;
+            document.getElementById('log').appendChild(div);
+            console.log('[CloudDesigner] ' + msg);
+          }
+          log('Diagnostic page loaded', 'success');
+          log('Will attempt to navigate to: ${targetUrl}');
+          window.cloudDesignerLog = log;
+        </script>
+      </body>
+      </html>
+    `;
+
+    // Load diagnostic page first
+    await designerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(diagnosticHtml)}`);
+
+    // Log events to both main process and inject into page
+    const logToPage = (msg: string, type = 'info') => {
+      console.log(`CloudDesigner: ${msg}`);
+      designerWindow.webContents.executeJavaScript(
+        `window.cloudDesignerLog && window.cloudDesignerLog(${JSON.stringify(msg)}, ${JSON.stringify(type)})`
+      ).catch(() => {});
+    };
+
     designerWindow.webContents.on('did-start-loading', () => {
-      console.log('CloudDesigner: did-start-loading');
-      designerWindow.setTitle(`Ignition Designer - Loading...`);
+      logToPage('did-start-loading', 'info');
     });
 
     designerWindow.webContents.on('did-stop-loading', () => {
-      console.log('CloudDesigner: did-stop-loading');
+      logToPage('did-stop-loading', 'info');
     });
 
     designerWindow.webContents.on('did-finish-load', () => {
       const url = designerWindow.webContents.getURL();
-      console.log(`CloudDesigner: did-finish-load - URL: ${url}`);
+      logToPage(`did-finish-load - URL: ${url}`, 'success');
       designerWindow.setTitle(`Ignition Designer - ${url}`);
     });
 
     designerWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
-      console.error(`CloudDesigner: did-fail-load - Code: ${errorCode}, Desc: ${errorDescription}, URL: ${validatedURL}`);
+      logToPage(`FAILED - Code: ${errorCode}, Desc: ${errorDescription}, URL: ${validatedURL}`, 'error');
       designerWindow.setTitle(`Ignition Designer - FAILED`);
-
-      // Show error page
-      designerWindow.loadURL(`data:text/html;charset=utf-8,
-        <!DOCTYPE html>
-        <html>
-        <head><title>CloudDesigner Error</title></head>
-        <body style="background:#1a1a2e;color:#fff;font-family:system-ui;padding:40px;">
-          <h1 style="color:#ff6b6b;">Failed to Load CloudDesigner</h1>
-          <div style="background:#2a2a4e;padding:20px;border-radius:8px;margin:20px 0;">
-            <p><strong>URL:</strong> ${validatedURL}</p>
-            <p><strong>Error Code:</strong> ${errorCode}</p>
-            <p><strong>Description:</strong> ${errorDescription}</p>
-          </div>
-          <h2>Troubleshooting:</h2>
-          <ol style="line-height:2;">
-            <li>Make sure the Docker container is running</li>
-            <li>Check if port 8080 is accessible: <code>curl http://localhost:8080</code></li>
-            <li>Check Docker logs: <code>docker logs clouddesigner-nginx</code></li>
-          </ol>
-        </body>
-        </html>
-      `);
     });
 
     designerWindow.webContents.on('dom-ready', () => {
-      console.log('CloudDesigner: dom-ready');
+      logToPage('dom-ready', 'info');
     });
 
     designerWindow.webContents.on('did-navigate', (_event, url) => {
-      console.log(`CloudDesigner: did-navigate to ${url}`);
-    });
-
-    designerWindow.webContents.on('did-navigate-in-page', (_event, url) => {
-      console.log(`CloudDesigner: did-navigate-in-page to ${url}`);
+      logToPage(`did-navigate to ${url}`, 'info');
     });
 
     designerWindow.webContents.on('render-process-gone', (_event, details) => {
-      console.error(`CloudDesigner: render-process-gone - reason: ${details.reason}`);
+      logToPage(`render-process-gone - reason: ${details.reason}`, 'error');
     });
 
-    designerWindow.webContents.on('unresponsive', () => {
-      console.warn('CloudDesigner: window became unresponsive');
-    });
-
-    designerWindow.webContents.on('responsive', () => {
-      console.log('CloudDesigner: window became responsive again');
-    });
-
-    // Log console messages from the loaded page
-    designerWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-      const levelStr = ['verbose', 'info', 'warning', 'error'][level] || 'unknown';
-      console.log(`CloudDesigner console [${levelStr}]: ${message} (${sourceId}:${line})`);
-    });
-
-    // Handle certificate errors
-    designerWindow.webContents.on('certificate-error', (event, url, error, certificate, callback) => {
-      console.warn(`CloudDesigner: certificate-error for ${url}: ${error}`);
-      // Allow localhost certificates
+    designerWindow.webContents.on('certificate-error', (event, url, error, _certificate, callback) => {
+      logToPage(`certificate-error for ${url}: ${error}`, 'warn');
       if (url.includes('localhost')) {
         event.preventDefault();
         callback(true);
@@ -240,9 +245,12 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
       }
     });
 
-    console.log(`CloudDesigner: Calling loadURL(${targetUrl})`);
+    // Wait a moment then navigate to target
+    logToPage('Waiting 2 seconds before navigating...', 'info');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    logToPage(`Now navigating to ${targetUrl}...`, 'info');
     designerWindow.loadURL(targetUrl);
-    console.log('CloudDesigner: loadURL called');
 
     return true;
   });
