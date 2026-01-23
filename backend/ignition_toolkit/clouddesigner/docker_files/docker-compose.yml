@@ -32,7 +32,8 @@ services:
       test: ["CMD", "nc", "-z", "localhost", "4822"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 15s  # Give guacd time to start
 
   guacamole:
     image: guacamole/guacamole:1.5.4
@@ -56,9 +57,10 @@ services:
       - ./guacamole/extensions:/etc/guacamole/extensions:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/guacamole/"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 60s  # Give Tomcat/Guacamole time to initialize
 
   designer-desktop:
     build:
@@ -98,7 +100,8 @@ services:
       test: ["CMD", "nc", "-z", "localhost", "5901"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 30s  # Give VNC server time to start
 
 networks:
   clouddesigner-net:
