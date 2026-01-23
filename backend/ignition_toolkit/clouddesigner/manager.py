@@ -80,15 +80,23 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
 
     # Different ways to invoke docker via WSL
     # Each entry is (command_to_test, docker_command_prefix)
+    # Include sudo variants for when Docker requires root access
     wsl_commands = [
         (["wsl", "docker", "--version"], ["wsl", "docker"]),
         (["wsl", "-e", "docker", "--version"], ["wsl", "-e", "docker"]),
         (["wsl", "--", "docker", "--version"], ["wsl", "--", "docker"]),
+        # Try with sudo (for Docker installed as root only)
+        (["wsl", "sudo", "docker", "--version"], ["wsl", "sudo", "docker"]),
+        (["wsl", "-e", "sudo", "docker", "--version"], ["wsl", "-e", "sudo", "docker"]),
         # Try specific common distributions
         (["wsl", "-d", "Ubuntu", "docker", "--version"], ["wsl", "-d", "Ubuntu", "docker"]),
+        (["wsl", "-d", "Ubuntu", "sudo", "docker", "--version"], ["wsl", "-d", "Ubuntu", "sudo", "docker"]),
         (["wsl", "-d", "Ubuntu-22.04", "docker", "--version"], ["wsl", "-d", "Ubuntu-22.04", "docker"]),
+        (["wsl", "-d", "Ubuntu-22.04", "sudo", "docker", "--version"], ["wsl", "-d", "Ubuntu-22.04", "sudo", "docker"]),
         (["wsl", "-d", "Ubuntu-24.04", "docker", "--version"], ["wsl", "-d", "Ubuntu-24.04", "docker"]),
+        (["wsl", "-d", "Ubuntu-24.04", "sudo", "docker", "--version"], ["wsl", "-d", "Ubuntu-24.04", "sudo", "docker"]),
         (["wsl", "-d", "Debian", "docker", "--version"], ["wsl", "-d", "Debian", "docker"]),
+        (["wsl", "-d", "Debian", "sudo", "docker", "--version"], ["wsl", "-d", "Debian", "sudo", "docker"]),
         (["wsl", "-d", "docker-desktop", "docker", "--version"], ["wsl", "-d", "docker-desktop", "docker"]),
     ]
 
@@ -160,13 +168,18 @@ def _check_wsl_docker_running() -> bool:
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
             logger.debug(f"WSL Docker daemon check failed: {e}")
 
-    # Fallback: try multiple approaches including specific distros
+    # Fallback: try multiple approaches including specific distros and sudo
     wsl_commands = [
         ["wsl", "docker", "info"],
+        ["wsl", "sudo", "docker", "info"],
         ["wsl", "-d", "Ubuntu", "docker", "info"],
+        ["wsl", "-d", "Ubuntu", "sudo", "docker", "info"],
         ["wsl", "-d", "Ubuntu-22.04", "docker", "info"],
+        ["wsl", "-d", "Ubuntu-22.04", "sudo", "docker", "info"],
         ["wsl", "-d", "Ubuntu-24.04", "docker", "info"],
+        ["wsl", "-d", "Ubuntu-24.04", "sudo", "docker", "info"],
         ["wsl", "-d", "Debian", "docker", "info"],
+        ["wsl", "-d", "Debian", "sudo", "docker", "info"],
     ]
 
     for cmd in wsl_commands:
