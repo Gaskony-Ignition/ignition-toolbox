@@ -59,6 +59,7 @@ import { PlaybookStepsDialog } from '../components/PlaybookStepsDialog';
 import { PlaybookLibraryDialog } from '../components/PlaybookLibraryDialog';
 import { PlaybookUpdatesDialog } from '../components/PlaybookUpdatesDialog';
 import { useStore } from '../store';
+import { useDensity } from '../hooks/useDensity';
 import type { PlaybookInfo } from '../types/api';
 
 // Sortable playbook card wrapper
@@ -303,6 +304,7 @@ interface PlaybooksProps {
 }
 
 export function Playbooks({ domainFilter }: PlaybooksProps) {
+  const { gap, gridSpacing } = useDensity();
   const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookInfo | null>(null);
   const [dragEnabled, setDragEnabled] = useState(false);
   const [stepsDialogPlaybook, setStepsDialogPlaybook] = useState<PlaybookInfo | null>(null);
@@ -871,7 +873,7 @@ metadata:
             {(() => {
               const { grouped, ungrouped } = groupPlaybooks(filteredPlaybooks);
               return (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
                   {/* Ungrouped playbooks */}
                   {ungrouped.length > 0 && (
                     <Box
@@ -884,7 +886,7 @@ metadata:
                           lg: 'repeat(4, 1fr)',
                           xl: 'repeat(5, 1fr)',
                         },
-                        gap: 2,
+                        gap: gridSpacing,
                       }}
                     >
                       {ungrouped.map((playbook) => (
@@ -933,7 +935,7 @@ metadata:
                               lg: 'repeat(4, 1fr)',
                               xl: 'repeat(5, 1fr)',
                             },
-                            gap: 2,
+                            gap: gridSpacing,
                           }}
                         >
                           {groupPlaybooks.map((playbook) => (
@@ -962,7 +964,7 @@ metadata:
       {!isLoading && !error && !domainFilter && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
           <SortableContext items={categoryOrder} strategy={verticalListSortingStrategy}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
               {categoryOrder.map((categoryId) => {
                 // Category configuration
                 const categoryConfig = {
@@ -1008,7 +1010,7 @@ metadata:
                           return (
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={categoryConfig.dragHandler}>
                               <SortableContext items={allPlaybookIds} strategy={verticalListSortingStrategy}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
                                   {/* Ungrouped playbooks */}
                                   {ungrouped.length > 0 && (
                                     <Box
@@ -1021,7 +1023,7 @@ metadata:
                                           lg: 'repeat(3, 1fr)',
                                           xl: 'repeat(4, 1fr)',
                                         },
-                                        gap: 4,
+                                        gap: gridSpacing,
                                       }}
                                     >
                                       {ungrouped.map((playbook) => (
@@ -1073,7 +1075,7 @@ metadata:
                                               lg: 'repeat(3, 1fr)',
                                               xl: 'repeat(4, 1fr)',
                                             },
-                                            gap: 4,
+                                            gap: gridSpacing,
                                           }}
                                         >
                                           {groupPlaybooks.map((playbook) => (
@@ -1111,7 +1113,7 @@ metadata:
                                     lg: 'repeat(3, 1fr)',
                                     xl: 'repeat(4, 1fr)',
                                   },
-                                  gap: 4,
+                                  gap: gridSpacing,
                                 }}
                               >
                                 {categoryConfig.playbooks.map((playbook) => (

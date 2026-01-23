@@ -110,7 +110,8 @@ class ExecutionService:
         playbook = PlaybookLoader.load_from_file(full_playbook_path)
 
         # Step 1.5: Ensure browser is installed for playbooks that need it
-        if playbook.domain and playbook.domain.lower() != "gateway":
+        playbook_domain = playbook.metadata.get("domain")
+        if playbook_domain and playbook_domain.lower() != "gateway":
             await self._ensure_browser_available()
 
         # Step 2: Apply credential autofill
