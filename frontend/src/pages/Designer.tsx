@@ -59,7 +59,7 @@ export function Designer() {
   // Query recent logs for Docker detection debugging
   const { data: logsData, refetch: refetchLogs } = useQuery({
     queryKey: ['docker-detection-logs'],
-    queryFn: () => api.logs.getRecent(50),
+    queryFn: () => api.logs.get({ limit: 100 }),
     enabled: showDebug,
   });
 
