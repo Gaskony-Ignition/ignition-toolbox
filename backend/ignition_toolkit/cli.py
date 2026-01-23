@@ -77,14 +77,15 @@ def init() -> None:
     )
 
     # Create data directory
-    data_dir = Path("./data")
-    data_dir.mkdir(exist_ok=True)
-    console.print(f"✅ Data directory created: [green]{data_dir.absolute()}[/green]")
+    from ignition_toolkit.core.paths import get_data_dir, get_playbooks_dir
+    data_dir = get_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    console.print(f"✅ Data directory created: [green]{data_dir}[/green]")
 
     # Create playbooks directory
-    playbooks_dir = Path("./playbooks")
-    playbooks_dir.mkdir(exist_ok=True)
-    console.print(f"✅ Playbooks directory created: [green]{playbooks_dir.absolute()}[/green]")
+    playbooks_dir = get_playbooks_dir()
+    playbooks_dir.mkdir(parents=True, exist_ok=True)
+    console.print(f"✅ Playbooks directory created: [green]{playbooks_dir}[/green]")
 
     console.print("\n[bold green]✅ Initialization complete![/bold green]")
     console.print("\nNext steps:")
@@ -358,11 +359,10 @@ def playbook() -> None:
 @playbook.command("list")
 def playbook_list() -> None:
     """List available playbooks"""
-    from pathlib import Path
-
     from rich.table import Table
+    from ignition_toolkit.core.paths import get_playbooks_dir
 
-    playbooks_dir = Path("./playbooks")
+    playbooks_dir = get_playbooks_dir()
     if not playbooks_dir.exists():
         console.print("\n[yellow]No playbooks directory found[/yellow]\n")
         return

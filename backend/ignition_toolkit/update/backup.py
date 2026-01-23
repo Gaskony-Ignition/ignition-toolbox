@@ -43,10 +43,10 @@ def backup_user_data() -> Path:
             shutil.copy2(key_file, backup_dir / "encryption.key")
             logger.info("Backed up encryption key")
 
-        # Backup database
-        db_file = user_data_dir / "database.db"
+        # Backup database (actual filename is ignition_toolkit.db)
+        db_file = user_data_dir / "ignition_toolkit.db"
         if db_file.exists():
-            shutil.copy2(db_file, backup_dir / "database.db")
+            shutil.copy2(db_file, backup_dir / "ignition_toolkit.db")
             logger.info("Backed up database")
 
         # Backup custom playbooks (if outside package)
@@ -59,8 +59,9 @@ def backup_user_data() -> Path:
             for playbook in playbooks_dir.rglob("*.yaml"):
                 # Check if it's a custom playbook (not built-in)
                 # Built-in playbooks are in gateway/, perspective/, designer/, examples/
-                relative_path = playbook.relative_to(playbooks_dir)
-                if not str(relative_path).startswith(("gateway/", "perspective/", "designer/", "examples/")):
+                # Normalize to forward slashes for cross-platform compatibility
+                relative_path_str = str(playbook.relative_to(playbooks_dir)).replace("\\", "/")
+                if not relative_path_str.startswith(("gateway/", "perspective/", "designer/", "examples/")):
                     custom_playbooks.append(playbook)
 
             if custom_playbooks:
@@ -118,9 +119,9 @@ def restore_backup(backup_dir: Path) -> bool:
             logger.info("Restored encryption key")
 
         # Restore database
-        db_backup = backup_dir / "database.db"
+        db_backup = backup_dir / "ignition_toolkit.db"
         if db_backup.exists():
-            shutil.copy2(db_backup, user_data_dir / "database.db")
+            shutil.copy2(db_backup, user_data_dir / "ignition_toolkit.db")
             logger.info("Restored database")
 
         # Restore custom playbooks

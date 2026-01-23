@@ -193,7 +193,7 @@ def check_database_locks() -> bool:
     from ignition_toolkit.core.paths import get_user_data_dir
 
     data_dir = get_user_data_dir()
-    db_file = data_dir / "database.db"
+    db_file = data_dir / "ignition_toolkit.db"
 
     if not db_file.exists():
         return True  # No database yet, no locks

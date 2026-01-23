@@ -191,7 +191,8 @@ async def list_playbooks():
                 loader = PlaybookLoader()
                 playbook = loader.load_from_file(yaml_file)
 
-                relative_path = str(yaml_file.relative_to(playbooks_dir))
+                # Normalize path to use forward slashes for consistency across platforms
+                relative_path = str(yaml_file.relative_to(playbooks_dir)).replace("\\", "/")
 
                 if relative_path in seen_paths:
                     logger.debug(f"Skipping {relative_path} from {source} (already loaded)")
@@ -340,16 +341,16 @@ async def update_playbook(request: PlaybookUpdateRequest):
     """
     metadata_store = get_metadata_store()
     try:
-        playbooks_dir = Path("playbooks")
+        playbooks_dir = get_playbooks_dir()
         playbook_path = playbooks_dir / request.playbook_path
 
         # Security check: ensure path is within playbooks directory
         try:
             playbook_path = playbook_path.resolve()
-            playbooks_dir = playbooks_dir.resolve()
-            if not str(playbook_path).startswith(str(playbooks_dir)):
-                raise HTTPException(status_code=400, detail="Invalid playbook path")
-        except Exception:
+            playbooks_dir_resolved = playbooks_dir.resolve()
+            # Use relative_to() for safe path validation instead of string comparison
+            playbook_path.relative_to(playbooks_dir_resolved)
+        except ValueError:
             raise HTTPException(status_code=400, detail="Invalid playbook path")
 
         if not playbook_path.exists():
