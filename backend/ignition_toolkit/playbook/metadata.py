@@ -120,6 +120,16 @@ class PlaybookMetadataStore:
         except Exception as e:
             logger.error(f"Error saving playbook metadata: {e}")
 
+    def _normalize_path(self, playbook_path: str) -> str:
+        """
+        Normalize playbook path to use forward slashes consistently.
+
+        This ensures paths work the same on Windows and Unix, and that
+        paths stored with backslashes can be found with forward slashes.
+        """
+        # Always use forward slashes for consistency
+        return playbook_path.replace("\\", "/")
+
     def get_metadata(self, playbook_path: str) -> PlaybookMetadata:
         """
         Get metadata for a playbook (creates default if not exists)
@@ -130,10 +140,13 @@ class PlaybookMetadataStore:
         Returns:
             Playbook metadata
         """
-        if playbook_path not in self._metadata:
-            self._metadata[playbook_path] = PlaybookMetadata(playbook_path=playbook_path)
+        # Normalize path to use forward slashes
+        normalized_path = self._normalize_path(playbook_path)
+
+        if normalized_path not in self._metadata:
+            self._metadata[normalized_path] = PlaybookMetadata(playbook_path=normalized_path)
             self._save()
-        return self._metadata[playbook_path]
+        return self._metadata[normalized_path]
 
     def update_metadata(self, playbook_path: str, metadata: PlaybookMetadata):
         """
@@ -143,7 +156,10 @@ class PlaybookMetadataStore:
             playbook_path: Relative path from playbooks directory
             metadata: Updated metadata
         """
-        self._metadata[playbook_path] = metadata
+        normalized_path = self._normalize_path(playbook_path)
+        # Also normalize the path stored in the metadata object
+        metadata.playbook_path = normalized_path
+        self._metadata[normalized_path] = metadata
         self._save()
 
     def increment_revision(self, playbook_path: str):
@@ -153,10 +169,11 @@ class PlaybookMetadataStore:
         Args:
             playbook_path: Relative path from playbooks directory
         """
-        metadata = self.get_metadata(playbook_path)
+        normalized_path = self._normalize_path(playbook_path)
+        metadata = self.get_metadata(normalized_path)
         metadata.increment_revision()
-        self.update_metadata(playbook_path, metadata)
-        logger.info(f"Incremented revision for {playbook_path} to r{metadata.revision}")
+        self.update_metadata(normalized_path, metadata)
+        logger.info(f"Incremented revision for {normalized_path} to r{metadata.revision}")
 
     def mark_verified(self, playbook_path: str, verified_by: str = "user"):
         """
@@ -166,10 +183,11 @@ class PlaybookMetadataStore:
             playbook_path: Relative path from playbooks directory
             verified_by: Who verified the playbook
         """
-        metadata = self.get_metadata(playbook_path)
+        normalized_path = self._normalize_path(playbook_path)
+        metadata = self.get_metadata(normalized_path)
         metadata.mark_verified(verified_by)
-        self.update_metadata(playbook_path, metadata)
-        logger.info(f"Marked {playbook_path} as verified by {verified_by}")
+        self.update_metadata(normalized_path, metadata)
+        logger.info(f"Marked {normalized_path} as verified by {verified_by}")
 
     def unmark_verified(self, playbook_path: str):
         """
@@ -178,10 +196,11 @@ class PlaybookMetadataStore:
         Args:
             playbook_path: Relative path from playbooks directory
         """
-        metadata = self.get_metadata(playbook_path)
+        normalized_path = self._normalize_path(playbook_path)
+        metadata = self.get_metadata(normalized_path)
         metadata.unmark_verified()
-        self.update_metadata(playbook_path, metadata)
-        logger.info(f"Unmarked {playbook_path} as verified")
+        self.update_metadata(normalized_path, metadata)
+        logger.info(f"Unmarked {normalized_path} as verified")
 
     def set_enabled(self, playbook_path: str, enabled: bool):
         """
@@ -191,10 +210,11 @@ class PlaybookMetadataStore:
             playbook_path: Relative path from playbooks directory
             enabled: True to enable, False to disable
         """
-        metadata = self.get_metadata(playbook_path)
+        normalized_path = self._normalize_path(playbook_path)
+        metadata = self.get_metadata(normalized_path)
         metadata.enabled = enabled
-        self.update_metadata(playbook_path, metadata)
-        logger.info(f"Set {playbook_path} enabled={enabled}")
+        self.update_metadata(normalized_path, metadata)
+        logger.info(f"Set {normalized_path} enabled={enabled}")
 
     def list_all(self) -> dict[str, PlaybookMetadata]:
         """
