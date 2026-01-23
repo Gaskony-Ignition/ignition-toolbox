@@ -53,8 +53,20 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
     Returns:
         Tuple of (available: bool, version: str | None)
     """
-    if platform.system() != "Windows":
+    current_platform = platform.system()
+    logger.info(f"WSL Docker check - Platform: {current_platform}")
+
+    if current_platform != "Windows":
+        logger.info("WSL Docker check skipped - not on Windows")
         return False, None
+
+    # First check if wsl.exe exists
+    wsl_path = shutil.which("wsl")
+    if not wsl_path:
+        logger.info("WSL not found in PATH")
+        return False, None
+
+    logger.info(f"WSL found at: {wsl_path}")
 
     # Different ways to invoke docker via WSL
     wsl_commands = [
@@ -65,7 +77,7 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
 
     for cmd in wsl_commands:
         try:
-            logger.debug(f"Trying WSL Docker detection: {' '.join(cmd)}")
+            logger.info(f"Trying WSL Docker: {' '.join(cmd)}")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -73,20 +85,22 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
                 timeout=30,  # Longer timeout for WSL startup
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
+            logger.info(f"WSL Docker result: returncode={result.returncode}, stdout={result.stdout[:100] if result.stdout else ''}, stderr={result.stderr[:100] if result.stderr else ''}")
             if result.returncode == 0:
                 version = result.stdout.strip()
                 logger.info(f"Docker found via WSL: {version}")
                 return True, version
             else:
-                logger.debug(f"WSL Docker command failed: {result.stderr}")
-        except FileNotFoundError:
-            logger.debug("WSL not found on system")
+                logger.info(f"WSL Docker command failed: {result.stderr}")
+        except FileNotFoundError as e:
+            logger.info(f"WSL command not found: {e}")
             return False, None
         except subprocess.TimeoutExpired:
-            logger.debug(f"WSL Docker command timed out: {cmd}")
+            logger.info(f"WSL Docker command timed out: {cmd}")
         except OSError as e:
-            logger.debug(f"WSL Docker check error: {e}")
+            logger.info(f"WSL Docker check error: {e}")
 
+    logger.info("All WSL Docker detection methods failed")
     return False, None
 
 
@@ -128,13 +142,19 @@ def _find_docker_executable() -> str | None:
     Returns:
         Path to docker executable, or None if not found
     """
+    current_platform = platform.system()
+    logger.info(f"Finding Docker executable - Platform: {current_platform}")
+
     # First, try to find docker in PATH
     docker_path = shutil.which("docker")
     if docker_path:
+        logger.info(f"Docker found in PATH: {docker_path}")
         return docker_path
 
+    logger.info("Docker not found in PATH, checking platform-specific locations")
+
     # On Linux (including WSL), check standard Linux paths
-    if platform.system() == "Linux":
+    if current_platform == "Linux":
         linux_paths = [
             Path("/usr/bin/docker"),
             Path("/usr/local/bin/docker"),
@@ -159,7 +179,8 @@ def _find_docker_executable() -> str | None:
                     return str(path)
 
     # On Windows, check common Docker Desktop installation paths
-    if platform.system() == "Windows":
+    if current_platform == "Windows":
+        logger.info("Checking Windows Docker Desktop paths...")
         common_paths = [
             Path(os.environ.get("ProgramFiles", "C:\\Program Files"))
             / "Docker"
@@ -180,16 +201,21 @@ def _find_docker_executable() -> str | None:
         ]
 
         for path in common_paths:
+            logger.info(f"Checking path: {path} - exists: {path.exists()}")
             if path.exists():
                 logger.info(f"Found Docker at: {path}")
                 return str(path)
 
         # Check if Docker is available via WSL
+        logger.info("Docker Desktop not found, checking WSL...")
         wsl_available, wsl_version = _check_wsl_docker()
         if wsl_available:
             logger.info(f"Using Docker via WSL: {wsl_version}")
             return "wsl docker"  # Special marker for WSL Docker
 
+        logger.info("Docker not found via WSL either")
+
+    logger.info("Docker executable not found anywhere")
     return None
 
 
