@@ -244,7 +244,7 @@ export function Settings() {
                 <Typography variant="body2" color="text.secondary">
                   Current Version
                 </Typography>
-                <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>
+                <Typography variant="h5" fontWeight="bold">
                   v{appVersion}
                 </Typography>
               </Box>

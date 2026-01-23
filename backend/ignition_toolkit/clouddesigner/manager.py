@@ -41,6 +41,32 @@ def _is_wsl() -> bool:
         return False
 
 
+def _check_wsl_docker() -> bool:
+    """
+    Check if Docker is available inside WSL (for Windows with WSL2 backend).
+
+    Returns:
+        True if Docker is available via WSL, False otherwise
+    """
+    if platform.system() != "Windows":
+        return False
+
+    try:
+        result = subprocess.run(
+            ["wsl", "docker", "--version"],
+            capture_output=True,
+            timeout=15,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        if result.returncode == 0:
+            logger.info("Docker found via WSL")
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+        logger.debug(f"WSL Docker check failed: {e}")
+
+    return False
+
+
 def _find_docker_executable() -> str | None:
     """
     Find the Docker executable path.
@@ -50,6 +76,7 @@ def _find_docker_executable() -> str | None:
     2. Linux standard paths: /usr/bin/docker, /usr/local/bin/docker
     3. WSL Windows paths: /mnt/c/Program Files/Docker/...
     4. Native Windows paths (for Windows host)
+    5. WSL Docker (for Windows with Docker in WSL2)
 
     Returns:
         Path to docker executable, or None if not found
@@ -110,6 +137,10 @@ def _find_docker_executable() -> str | None:
                 logger.info(f"Found Docker at: {path}")
                 return str(path)
 
+        # Check if Docker is available via WSL
+        if _check_wsl_docker():
+            return "wsl docker"  # Special marker for WSL Docker
+
     return None
 
 
@@ -118,10 +149,14 @@ def _get_docker_command() -> list[str]:
     Get the Docker command with proper path handling.
 
     Returns:
-        List containing the docker command (may include full path on Windows)
+        List containing the docker command (may include full path on Windows,
+        or ["wsl", "docker"] for WSL Docker on Windows)
     """
     docker_path = _find_docker_executable()
     if docker_path:
+        # Handle WSL Docker special case
+        if docker_path == "wsl docker":
+            return ["wsl", "docker"]
         return [docker_path]
 
     # Fall back to just "docker" and let subprocess handle it
