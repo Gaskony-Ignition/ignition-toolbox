@@ -22,6 +22,10 @@ _CREATION_FLAGS = (
     subprocess.CREATE_NO_WINDOW if platform.system() == "Windows" else 0
 )
 
+# Cache for the working WSL Docker command prefix
+# This stores the command that successfully found Docker (e.g., ["wsl", "-d", "Ubuntu", "docker"])
+_wsl_docker_command: list[str] | None = None
+
 
 def _is_wsl() -> bool:
     """
@@ -53,7 +57,12 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
 
     Returns:
         Tuple of (available: bool, version: str | None)
+
+    Side effect:
+        Sets _wsl_docker_command global with the working command prefix
     """
+    global _wsl_docker_command
+
     current_platform = platform.system()
     logger.info(f"WSL Docker check - Platform: {current_platform}")
 
@@ -70,23 +79,24 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
     logger.info(f"WSL found at: {wsl_path}")
 
     # Different ways to invoke docker via WSL
+    # Each entry is (command_to_test, docker_command_prefix)
     wsl_commands = [
-        ["wsl", "docker", "--version"],
-        ["wsl", "-e", "docker", "--version"],
-        ["wsl", "--", "docker", "--version"],
+        (["wsl", "docker", "--version"], ["wsl", "docker"]),
+        (["wsl", "-e", "docker", "--version"], ["wsl", "-e", "docker"]),
+        (["wsl", "--", "docker", "--version"], ["wsl", "--", "docker"]),
         # Try specific common distributions
-        ["wsl", "-d", "Ubuntu", "docker", "--version"],
-        ["wsl", "-d", "Ubuntu-22.04", "docker", "--version"],
-        ["wsl", "-d", "Ubuntu-24.04", "docker", "--version"],
-        ["wsl", "-d", "Debian", "docker", "--version"],
-        ["wsl", "-d", "docker-desktop", "docker", "--version"],
+        (["wsl", "-d", "Ubuntu", "docker", "--version"], ["wsl", "-d", "Ubuntu", "docker"]),
+        (["wsl", "-d", "Ubuntu-22.04", "docker", "--version"], ["wsl", "-d", "Ubuntu-22.04", "docker"]),
+        (["wsl", "-d", "Ubuntu-24.04", "docker", "--version"], ["wsl", "-d", "Ubuntu-24.04", "docker"]),
+        (["wsl", "-d", "Debian", "docker", "--version"], ["wsl", "-d", "Debian", "docker"]),
+        (["wsl", "-d", "docker-desktop", "docker", "--version"], ["wsl", "-d", "docker-desktop", "docker"]),
     ]
 
-    for cmd in wsl_commands:
+    for test_cmd, docker_prefix in wsl_commands:
         try:
-            logger.info(f"Trying WSL Docker: {' '.join(cmd)}")
+            logger.info(f"Trying WSL Docker: {' '.join(test_cmd)}")
             result = subprocess.run(
-                cmd,
+                test_cmd,
                 capture_output=True,
                 text=True,
                 timeout=30,  # Longer timeout for WSL startup
@@ -96,8 +106,11 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
             if result.returncode == 0:
                 version = result.stdout.strip()
                 # Extract distro name for logging if using -d flag
-                distro = cmd[cmd.index("-d") + 1] if "-d" in cmd else "default"
+                distro = test_cmd[test_cmd.index("-d") + 1] if "-d" in test_cmd else "default"
                 logger.info(f"Docker found via WSL ({distro}): {version}")
+                # Cache the working command prefix for future use
+                _wsl_docker_command = docker_prefix
+                logger.info(f"Cached WSL Docker command: {_wsl_docker_command}")
                 return True, version
             else:
                 logger.info(f"WSL Docker command failed: {result.stderr[:100] if result.stderr else 'no error'}")
@@ -105,7 +118,7 @@ def _check_wsl_docker() -> tuple[bool, str | None]:
             logger.info(f"WSL command not found: {e}")
             return False, None
         except subprocess.TimeoutExpired:
-            logger.info(f"WSL Docker command timed out: {cmd}")
+            logger.info(f"WSL Docker command timed out: {test_cmd}")
         except OSError as e:
             logger.info(f"WSL Docker check error: {e}")
 
@@ -117,13 +130,37 @@ def _check_wsl_docker_running() -> bool:
     """
     Check if Docker daemon is running inside WSL.
 
+    Uses the cached WSL Docker command if available.
+
     Returns:
         True if Docker daemon is accessible via WSL
     """
+    global _wsl_docker_command
+
     if platform.system() != "Windows":
         return False
 
-    # Try multiple approaches including specific distros
+    # If we have a cached working command, try that first
+    if _wsl_docker_command:
+        try:
+            cmd = _wsl_docker_command + ["info"]
+            logger.info(f"Checking WSL Docker daemon with cached command: {' '.join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if result.returncode == 0:
+                logger.info(f"WSL Docker daemon running via cached command")
+                return True
+            else:
+                logger.info(f"WSL Docker daemon not running: {result.stderr[:100] if result.stderr else 'no error'}")
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+            logger.debug(f"WSL Docker daemon check failed: {e}")
+
+    # Fallback: try multiple approaches including specific distros
     wsl_commands = [
         ["wsl", "docker", "info"],
         ["wsl", "-d", "Ubuntu", "docker", "info"],
@@ -247,12 +284,18 @@ def _get_docker_command() -> list[str]:
 
     Returns:
         List containing the docker command (may include full path on Windows,
-        or ["wsl", "docker"] for WSL Docker on Windows)
+        or the cached WSL Docker command for WSL Docker on Windows)
     """
+    global _wsl_docker_command
+
     docker_path = _find_docker_executable()
     if docker_path:
-        # Handle WSL Docker special case
+        # Handle WSL Docker special case - use cached command if available
         if docker_path == "wsl docker":
+            if _wsl_docker_command:
+                logger.info(f"Using cached WSL Docker command: {_wsl_docker_command}")
+                return _wsl_docker_command.copy()
+            # Fallback if cache not set (shouldn't happen)
             return ["wsl", "docker"]
         return [docker_path]
 
