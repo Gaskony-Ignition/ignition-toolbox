@@ -16,15 +16,18 @@ from pathlib import Path
 API_KEY_HEADER = "X-API-Key"
 api_key_scheme = APIKeyHeader(name=API_KEY_HEADER, auto_error=False)
 
-# API key storage location
-API_KEY_FILE = Path.home() / ".ignition-toolkit" / "api.key"
+
+def _get_api_key_file() -> Path:
+    """Get the path to the API key file using the correct data directory."""
+    from ignition_toolkit.config import get_toolkit_data_dir
+    return get_toolkit_data_dir() / "api.key"
 
 
 def get_or_generate_api_key() -> str:
     """
     Get existing API key or generate a new one.
 
-    API key is stored in ~/.ignition-toolkit/api.key
+    API key is stored in the toolkit data directory.
     If the file doesn't exist, a new secure key is generated.
 
     Returns:
@@ -35,10 +38,12 @@ def get_or_generate_api_key() -> str:
     if env_key:
         return env_key
 
+    api_key_file = _get_api_key_file()
+
     # Try to load existing key from file
-    if API_KEY_FILE.exists():
+    if api_key_file.exists():
         try:
-            api_key = API_KEY_FILE.read_text().strip()
+            api_key = api_key_file.read_text().strip()
             if api_key:
                 return api_key
         except Exception:
@@ -49,12 +54,12 @@ def get_or_generate_api_key() -> str:
 
     # Save to file with restricted permissions
     try:
-        API_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        API_KEY_FILE.write_text(api_key)
-        API_KEY_FILE.chmod(0o600)  # Owner read/write only
+        api_key_file.parent.mkdir(parents=True, exist_ok=True)
+        api_key_file.write_text(api_key)
+        api_key_file.chmod(0o600)  # Owner read/write only
     except Exception as e:
         # Log warning but continue (key still works from memory)
-        print(f"Warning: Could not save API key to {API_KEY_FILE}: {e}")
+        print(f"Warning: Could not save API key to {api_key_file}: {e}")
 
     return api_key
 
@@ -160,11 +165,12 @@ def print_api_key_info():
         else:
             redacted_key = "********"
 
+        api_key_file = _get_api_key_file()
         print("\n" + "=" * 70)
         print("🔒 API AUTHENTICATION ENABLED")
         print("=" * 70)
         print(f"API Key: {redacted_key} (redacted for security)")
-        print(f"Stored in: {API_KEY_FILE}")
+        print(f"Stored in: {api_key_file}")
         print("")
         print("Include this key in all API requests:")
         print(f'  X-API-Key: <your-key>')
@@ -173,5 +179,5 @@ def print_api_key_info():
         print(f'  curl -H "X-API-Key: <your-key>" http://localhost:5000/api/playbooks')
         print("")
         print("📖 To view full API key:")
-        print(f"  cat {API_KEY_FILE}")
+        print(f"  cat {api_key_file}")
         print("=" * 70 + "\n")
