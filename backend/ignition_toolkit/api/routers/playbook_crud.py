@@ -223,8 +223,17 @@ async def list_playbooks():
 
                 meta = metadata_store.get_metadata(relative_path)
 
-                yaml_verified = playbook.metadata.get("verified")
-                verified_status = yaml_verified if yaml_verified is not None else meta.verified
+                # Metadata store is the source of truth for verified status
+                # YAML verified field is only used to initialize on first load (when origin is unknown)
+                if meta.origin == "unknown":
+                    # First time seeing this playbook - check YAML for initial verified state
+                    yaml_verified = playbook.metadata.get("verified")
+                    if yaml_verified and not meta.verified:
+                        meta.verified = True
+                        meta.verified_by = "yaml"
+                        metadata_store.update_metadata(relative_path, meta)
+
+                verified_status = meta.verified
 
                 if meta.origin == "unknown":
                     meta.origin = source
