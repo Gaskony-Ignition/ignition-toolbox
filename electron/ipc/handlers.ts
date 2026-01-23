@@ -141,7 +141,22 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
+        webSecurity: false, // Allow loading localhost content
       },
+    });
+
+    // Debug: open DevTools to see any errors
+    designerWindow.webContents.openDevTools();
+
+    // Log load events for debugging
+    designerWindow.webContents.on('did-start-loading', () => {
+      console.log('CloudDesigner: started loading');
+    });
+    designerWindow.webContents.on('did-finish-load', () => {
+      console.log('CloudDesigner: finished loading');
+    });
+    designerWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+      console.error(`CloudDesigner: failed to load - ${errorCode}: ${errorDescription}`);
     });
 
     designerWindow.loadURL('http://localhost:8080');
