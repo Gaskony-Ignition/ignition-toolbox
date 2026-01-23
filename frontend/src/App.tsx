@@ -10,6 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout, type DomainTab } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
 import { Designer } from './pages/Designer';
+import { Executions } from './pages/Executions';
 import { ExecutionDetail } from './pages/ExecutionDetail';
 import { Settings } from './pages/Settings';
 import { APIExplorer } from './pages/APIExplorer';
@@ -125,6 +126,8 @@ function AppContent() {
         return <Designer />;
       case 'perspective':
         return <Playbooks domainFilter="perspective" />;
+      case 'executions':
+        return <Executions />;
       case 'api':
         return <APIExplorer />;
       case 'stackbuilder':

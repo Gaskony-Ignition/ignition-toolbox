@@ -224,13 +224,9 @@ export function ExecutionDetail() {
 
   return (
     <Box sx={{
-      position: 'fixed',
-      left: 240, // Drawer width
-      right: 0,
-      top: 64, // AppBar height
-      bottom: 0,
       display: 'flex',
       flexDirection: 'column',
+      height: 'calc(100vh - 56px - 32px)', // Viewport minus header (56px) and padding (2*16px)
       overflow: 'hidden',
       bgcolor: 'background.default',
     }}>
