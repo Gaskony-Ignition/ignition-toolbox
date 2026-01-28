@@ -112,13 +112,11 @@ export function Designer() {
     }
   };
 
-  // Handle open designer window
+  // Handle open designer in browser
   const handleOpenDesigner = () => {
-    if (window.electronAPI?.cloudDesigner?.openWindow) {
-      // Electron mode - open in popup window
-      window.electronAPI.cloudDesigner.openWindow();
+    if (window.electronAPI?.openExternal) {
+      window.electronAPI.openExternal('http://localhost:8080');
     } else {
-      // Browser mode - open in new tab
       window.open('http://localhost:8080', '_blank');
     }
   };
