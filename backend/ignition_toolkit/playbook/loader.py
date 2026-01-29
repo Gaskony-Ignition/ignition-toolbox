@@ -51,7 +51,7 @@ class PlaybookLoader:
             raise PlaybookLoadError(f"Playbook file not found: {file_path}")
 
         try:
-            with open(file_path) as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
         except yaml.YAMLError as e:
             raise PlaybookLoadError(f"Invalid YAML syntax: {e}")
@@ -98,7 +98,7 @@ class PlaybookLoader:
 
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding='utf-8') as f:
                 yaml.safe_dump(data, f, default_flow_style=False, sort_keys=False)
         except Exception as e:
             raise PlaybookLoadError(f"Error writing file: {e}")

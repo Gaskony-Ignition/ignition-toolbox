@@ -75,7 +75,7 @@ def backup_user_data() -> Path:
 
         # Create backup manifest
         manifest_path = backup_dir / "MANIFEST.txt"
-        with open(manifest_path, "w") as f:
+        with open(manifest_path, "w", encoding='utf-8') as f:
             f.write(f"Backup created: {datetime.now().isoformat()}\n")
             f.write(f"Files backed up:\n")
             for file in backup_dir.glob("*"):

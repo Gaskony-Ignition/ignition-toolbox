@@ -259,7 +259,7 @@ async def export_playbook(playbook_path: str):
         loader = PlaybookLoader()
         playbook = loader.load_from_file(validated_path)
 
-        with open(validated_path) as f:
+        with open(validated_path, encoding='utf-8') as f:
             yaml_content = f.read()
 
         playbooks_dir = get_playbooks_dir()
@@ -327,7 +327,7 @@ async def import_playbook(request: PlaybookImportRequest):
                 target_file = target_dir / f"{safe_name}_{counter}.yaml"
                 counter += 1
 
-        with open(target_file, 'w') as f:
+        with open(target_file, 'w', encoding='utf-8') as f:
             f.write(request.yaml_content)
 
         logger.info(f"Imported playbook to: {target_file}")

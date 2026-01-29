@@ -36,7 +36,7 @@ class ServiceCatalog:
     def _load_catalog(self) -> dict[str, Any]:
         """Load the catalog from JSON file"""
         try:
-            with open(self.catalog_path) as f:
+            with open(self.catalog_path, encoding='utf-8') as f:
                 return json.load(f)
         except FileNotFoundError:
             logger.error(f"Catalog file not found: {self.catalog_path}")

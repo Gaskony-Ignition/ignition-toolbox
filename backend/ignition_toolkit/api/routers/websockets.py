@@ -190,7 +190,7 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
             if ".backup." in yaml_file.name:
                 continue
             try:
-                with open(yaml_file) as f:
+                with open(yaml_file, encoding='utf-8') as f:
                     playbook_data = yaml.safe_load(f)
                     if playbook_data and playbook_data.get("name") == playbook_name:
                         playbook_path = str(yaml_file.absolute())

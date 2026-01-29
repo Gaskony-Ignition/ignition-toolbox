@@ -47,7 +47,7 @@ class PerspectiveDiscoverPageHandler(StepHandler):
             )
 
         logger.info("Reading component discovery script...")
-        with open(script_path, "r") as f:
+        with open(script_path, "r", encoding='utf-8') as f:
             discovery_script = f.read()
         logger.info(f"Discovery script loaded ({len(discovery_script)} characters)")
 

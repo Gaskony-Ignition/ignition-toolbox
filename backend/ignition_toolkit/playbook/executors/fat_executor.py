@@ -66,7 +66,7 @@ class FATGenerateReportHandler(StepHandler):
 
         report_path = report_dir / f"{report_id}.html"
 
-        with open(report_path, "w") as f:
+        with open(report_path, "w", encoding='utf-8') as f:
             f.write(report_html)
 
         logger.info(

@@ -359,7 +359,7 @@ async def update_playbook(request: PlaybookUpdateRequest):
         backup_path = playbook_path.with_suffix(
             f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
         )
-        backup_path.write_text(playbook_path.read_text())
+        backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
         logger.info(f"Created backup: {backup_path}")
 
         try:
@@ -367,7 +367,7 @@ async def update_playbook(request: PlaybookUpdateRequest):
         except yaml.YAMLError as e:
             raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
 
-        playbook_path.write_text(request.yaml_content)
+        playbook_path.write_text(request.yaml_content, encoding='utf-8')
         logger.info(f"Updated playbook: {playbook_path}")
 
         metadata_store.increment_revision(request.playbook_path)
@@ -398,7 +398,7 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
         if not playbook_path.exists():
             raise HTTPException(status_code=404, detail="Playbook not found")
 
-        with open(playbook_path) as f:
+        with open(playbook_path, encoding='utf-8') as f:
             playbook_data = yaml.safe_load(f)
 
         if request.name is not None:
@@ -409,9 +409,9 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
         backup_path = playbook_path.with_suffix(
             f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
         )
-        backup_path.write_text(playbook_path.read_text())
+        backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
 
-        with open(playbook_path, "w") as f:
+        with open(playbook_path, "w", encoding='utf-8') as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         metadata_store.increment_revision(request.playbook_path)
@@ -441,7 +441,7 @@ async def edit_step(request: StepEditRequest):
     try:
         playbook_path = validate_playbook_path(request.playbook_path)
 
-        with open(playbook_path) as f:
+        with open(playbook_path, encoding='utf-8') as f:
             playbook_data = yaml.safe_load(f)
 
         step_found = False
@@ -456,7 +456,7 @@ async def edit_step(request: StepEditRequest):
         if not step_found:
             raise HTTPException(status_code=404, detail=f"Step not found: {request.step_id}")
 
-        with open(playbook_path, "w") as f:
+        with open(playbook_path, "w", encoding='utf-8') as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         logger.info(f"Updated step '{request.step_id}' in {playbook_path}")

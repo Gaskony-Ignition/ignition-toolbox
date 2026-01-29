@@ -133,7 +133,7 @@ class PlaybookRegistry:
             return
 
         try:
-            with open(self.registry_path, "r") as f:
+            with open(self.registry_path, "r", encoding='utf-8') as f:
                 data = json.load(f)
 
             # Load installed playbooks
@@ -178,7 +178,7 @@ class PlaybookRegistry:
         }
 
         # Write to file
-        with open(self.registry_path, "w") as f:
+        with open(self.registry_path, "w", encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
         logger.info(f"Saved registry to {self.registry_path}")

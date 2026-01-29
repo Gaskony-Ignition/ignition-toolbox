@@ -139,7 +139,7 @@ class PlaybookExporter:
             strip_credentials: Strip credential values
         """
         json_data = PlaybookExporter.export(playbook, strip_credentials)
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding='utf-8') as f:
             f.write(json_data)
 
     @staticmethod
@@ -157,7 +157,7 @@ class PlaybookExporter:
             PlaybookLoadError: If file cannot be read
         """
         try:
-            with open(file_path) as f:
+            with open(file_path, encoding='utf-8') as f:
                 json_data = f.read()
         except Exception as e:
             raise PlaybookLoadError(f"Error reading file: {e}")

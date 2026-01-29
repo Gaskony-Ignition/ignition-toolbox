@@ -131,7 +131,7 @@ class PlaybookInstaller:
 
         # Write playbook file
         logger.info(f"Installing to: {install_path}")
-        with open(install_path, "w") as f:
+        with open(install_path, "w", encoding='utf-8') as f:
             f.write(yaml_content)
 
         # Register in registry

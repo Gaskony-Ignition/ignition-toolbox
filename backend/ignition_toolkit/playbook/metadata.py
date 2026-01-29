@@ -100,7 +100,7 @@ class PlaybookMetadataStore:
         """Load metadata from file"""
         if self.metadata_file.exists():
             try:
-                with open(self.metadata_file) as f:
+                with open(self.metadata_file, encoding='utf-8') as f:
                     data = json.load(f)
                     self._metadata = {path: PlaybookMetadata(**meta) for path, meta in data.items()}
                 logger.debug(f"Loaded metadata for {len(self._metadata)} playbooks")
@@ -114,7 +114,7 @@ class PlaybookMetadataStore:
         """Save metadata to file"""
         try:
             data = {path: asdict(meta) for path, meta in self._metadata.items()}
-            with open(self.metadata_file, "w") as f:
+            with open(self.metadata_file, "w", encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
             logger.debug(f"Saved metadata for {len(self._metadata)} playbooks")
         except Exception as e:

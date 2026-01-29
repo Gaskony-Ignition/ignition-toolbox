@@ -714,7 +714,7 @@ async def get_playbook_code(execution_id: str, engine: PlaybookEngine = Depends(
     if not playbook_path or not playbook_path.exists():
         raise HTTPException(status_code=404, detail="Playbook file not found")
 
-    yaml_content = playbook_path.read_text()
+    yaml_content = playbook_path.read_text(encoding='utf-8')
 
     state = engine.get_current_execution()
     playbook_name = state.playbook_name if state else "Unknown"
@@ -752,11 +752,11 @@ async def update_playbook_code(
     backup_path = playbook_path.with_suffix(
         f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
     )
-    backup_path.write_text(playbook_path.read_text())
+    backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
     logger.info(f"Created backup: {backup_path}")
 
     # Write new content
-    playbook_path.write_text(request.code)
+    playbook_path.write_text(request.code, encoding='utf-8')
     logger.info(f"Updated playbook code: {playbook_path}")
 
     return {

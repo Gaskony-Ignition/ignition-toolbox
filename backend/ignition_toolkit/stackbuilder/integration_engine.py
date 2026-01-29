@@ -32,7 +32,7 @@ class IntegrationEngine:
     def _load_integrations(self) -> dict[str, Any]:
         """Load integrations configuration from JSON file"""
         try:
-            with open(self.integrations_path) as f:
+            with open(self.integrations_path, encoding='utf-8') as f:
                 return json.load(f)
         except FileNotFoundError:
             logger.error(f"Integrations file not found: {self.integrations_path}")
