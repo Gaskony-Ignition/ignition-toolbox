@@ -52,9 +52,9 @@ services:
       clouddesigner-net:
         ipv4_address: 10.100.0.3
     volumes:
-      - ./guacamole/guacamole.properties:/etc/guacamole/guacamole.properties:ro
-      - ./guacamole/user-mapping.xml:/etc/guacamole/user-mapping.xml:ro
-      - ./guacamole/extensions:/etc/guacamole/extensions:ro
+      - ./guacamole/guacamole.properties:/etc/guacamole/guacamole.properties
+      - ./guacamole/user-mapping.xml:/etc/guacamole/user-mapping.xml
+      - ./guacamole/extensions:/etc/guacamole/extensions
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/guacamole/"]
       interval: 10s
