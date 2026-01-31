@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
+import { exec } from 'child_process';
+import * as fs from 'fs';
 import { PythonBackend } from './services/python-backend';
 import { registerIpcHandlers } from './ipc/handlers';
 import { initAutoUpdater } from './services/auto-updater';
@@ -13,6 +15,46 @@ let mainWindow: BrowserWindow | null = null;
 let pythonBackend: PythonBackend | null = null;
 
 const isDev = !app.isPackaged;
+
+// Check if running in WSL2
+function isWSL(): boolean {
+  if (process.platform !== 'linux') return false;
+  try {
+    const release = fs.readFileSync('/proc/version', 'utf8').toLowerCase();
+    return release.includes('microsoft') || release.includes('wsl');
+  } catch {
+    return false;
+  }
+}
+
+// Open URL in default browser, handling WSL2 environments
+async function openExternalUrl(url: string): Promise<void> {
+  if (isWSL()) {
+    // In WSL2, use cmd.exe to open URLs in Windows default browser
+    return new Promise((resolve, reject) => {
+      // Escape the URL for Windows command line
+      const escapedUrl = url.replace(/"/g, '\\"');
+      exec(`cmd.exe /c start "" "${escapedUrl}"`, (error) => {
+        if (error) {
+          console.error('Failed to open URL via cmd.exe:', error);
+          // Fallback to wslview if available
+          exec(`wslview "${escapedUrl}"`, (err2) => {
+            if (err2) {
+              reject(err2);
+            } else {
+              resolve();
+            }
+          });
+        } else {
+          resolve();
+        }
+      });
+    });
+  } else {
+    // Standard Electron shell.openExternal for non-WSL environments
+    return shell.openExternal(url);
+  }
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -47,7 +89,9 @@ function createWindow(): void {
 
   // Handle external links
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    openExternalUrl(url).catch((err) => {
+      console.error('Failed to open external URL:', err);
+    });
     return { action: 'deny' };
   });
 

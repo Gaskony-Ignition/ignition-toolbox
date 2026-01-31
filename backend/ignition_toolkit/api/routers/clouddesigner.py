@@ -142,6 +142,7 @@ async def start_clouddesigner(request: StartRequest):
         StartResponse with success status and output/error
     """
     try:
+        logger.info(f"[CloudDesigner API] Start request: gateway_url={request.gateway_url}, credential_name={request.credential_name}")
         manager = get_clouddesigner_manager()
 
         # Check Docker first (run in thread to avoid blocking event loop)

@@ -1,4 +1,6 @@
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron';
+import { exec } from 'child_process';
+import * as fs from 'fs';
 import { PythonBackend } from '../services/python-backend';
 import { getSetting, setSetting, getAllSettings } from '../services/settings';
 import {
@@ -7,6 +9,43 @@ import {
   quitAndInstall,
   getUpdateStatus,
 } from '../services/auto-updater';
+
+// Check if running in WSL2
+function isWSL(): boolean {
+  if (process.platform !== 'linux') return false;
+  try {
+    const release = fs.readFileSync('/proc/version', 'utf8').toLowerCase();
+    return release.includes('microsoft') || release.includes('wsl');
+  } catch {
+    return false;
+  }
+}
+
+// Open URL in default browser, handling WSL2 environments
+async function openExternalUrl(url: string): Promise<void> {
+  if (isWSL()) {
+    // In WSL2, use cmd.exe to open URLs in Windows default browser
+    return new Promise((resolve, reject) => {
+      const escapedUrl = url.replace(/"/g, '\\"');
+      exec(`cmd.exe /c start "" "${escapedUrl}"`, (error) => {
+        if (error) {
+          console.error('Failed to open URL via cmd.exe:', error);
+          exec(`wslview "${escapedUrl}"`, (err2) => {
+            if (err2) {
+              reject(err2);
+            } else {
+              resolve();
+            }
+          });
+        } else {
+          resolve();
+        }
+      });
+    });
+  } else {
+    return shell.openExternal(url);
+  }
+}
 
 export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   // App info handlers
@@ -89,7 +128,7 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
       if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
         throw new Error(`Invalid protocol: ${parsed.protocol}`);
       }
-      await shell.openExternal(url);
+      await openExternalUrl(url);
     } catch (error) {
       console.error('Failed to open external URL:', error);
       throw error;

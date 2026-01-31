@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ignition Designer Autostart
+Comment=Auto-launch Ignition Designer on login with credentials
+Exec=/usr/local/bin/launch-designer.sh
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true

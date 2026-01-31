@@ -559,23 +559,32 @@ class CloudDesignerManager:
             env["IGNITION_CREDENTIAL_NAME"] = credential_name
             try:
                 vault = get_credential_vault()
+                logger.info(f"[CloudDesigner] Looking up credential '{credential_name}' from vault at {vault.vault_path}")
+                logger.info(f"[CloudDesigner] Credentials file exists: {vault.credentials_file.exists()}")
+
+                # List all available credentials for debugging
+                all_creds = vault.list_credentials()
+                logger.info(f"[CloudDesigner] Available credentials: {[c.name for c in all_creds]}")
+
                 credential = vault.get_credential(credential_name)
                 if credential:
                     env["IGNITION_USERNAME"] = credential.username
                     env["IGNITION_PASSWORD"] = credential.password
-                    logger.info(f"Loaded credentials for '{credential_name}' (user: {credential.username})")
+                    logger.info(f"[CloudDesigner] ✓ Loaded credentials for '{credential_name}' (user: {credential.username})")
                 else:
-                    logger.warning(f"Credential '{credential_name}' not found in vault")
+                    logger.warning(f"[CloudDesigner] ✗ Credential '{credential_name}' not found in vault")
+                    logger.warning(f"[CloudDesigner] Available credentials: {[c.name for c in all_creds]}")
             except Exception as e:
-                logger.warning(f"Failed to load credentials: {e}")
+                logger.exception(f"[CloudDesigner] Failed to load credentials: {e}")
 
         try:
-            logger.info(f"Starting CloudDesigner stack with gateway: {gateway_url}")
+            logger.info(f"[Docker CloudDesigner] Starting stack with gateway: {gateway_url}")
             docker_cmd = _get_docker_command()
+            logger.info(f"[Docker CloudDesigner] Using docker command: {docker_cmd}")
 
             # First, clean up any existing containers and volumes to avoid stale state
-            logger.info("Cleaning up existing containers and volumes...")
-            subprocess.run(
+            logger.info("[Docker CloudDesigner] Step 1/4: Cleaning up existing containers and volumes...")
+            cleanup_result = subprocess.run(
                 docker_cmd + ["compose", "down", "-v"],
                 cwd=self.compose_dir,
                 env=env,
@@ -586,10 +595,14 @@ class CloudDesignerManager:
                 timeout=60,
                 creationflags=_CREATION_FLAGS,
             )
+            if cleanup_result.returncode != 0:
+                logger.warning(f"[Docker CloudDesigner] Cleanup warning (non-fatal): {cleanup_result.stderr}")
+            else:
+                logger.info("[Docker CloudDesigner] Cleanup completed successfully")
 
             # Remove guacamole image to clear any cached state from HTTP_AUTH_ENABLED
-            logger.info("Removing guacamole image to ensure fresh state...")
-            subprocess.run(
+            logger.info("[Docker CloudDesigner] Step 2/4: Removing guacamole image to ensure fresh state...")
+            rmi_result = subprocess.run(
                 docker_cmd + ["rmi", "guacamole/guacamole:1.5.4"],
                 capture_output=True,
                 text=True,
@@ -598,8 +611,13 @@ class CloudDesignerManager:
                 timeout=30,
                 creationflags=_CREATION_FLAGS,
             )
+            if rmi_result.returncode != 0:
+                logger.info("[Docker CloudDesigner] Guacamole image not cached (this is OK)")
+            else:
+                logger.info("[Docker CloudDesigner] Guacamole image removed successfully")
 
             # Use --no-cache to ensure designer-desktop is built fresh
+            logger.info("[Docker CloudDesigner] Step 3/4: Building designer-desktop image (this may take several minutes)...")
             result = subprocess.run(
                 docker_cmd + ["compose", "build", "--no-cache", "designer-desktop"],
                 cwd=self.compose_dir,
@@ -613,8 +631,15 @@ class CloudDesignerManager:
             )
 
             if result.returncode != 0:
-                logger.warning(f"Designer-desktop build warning: {result.stderr}")
+                logger.error(f"[Docker CloudDesigner] Build failed: {result.stderr}")
+                return {
+                    "success": False,
+                    "error": f"Docker build failed: {result.stderr or 'Unknown build error'}",
+                    "output": result.stdout,
+                }
+            logger.info("[Docker CloudDesigner] Build completed successfully")
 
+            logger.info("[Docker CloudDesigner] Step 4/4: Starting containers with docker compose up...")
             result = subprocess.run(
                 docker_cmd + ["compose", "up", "-d"],
                 cwd=self.compose_dir,
@@ -623,36 +648,38 @@ class CloudDesignerManager:
                 text=True,
                 encoding='utf-8',
                 errors='replace',  # Handle encoding errors gracefully
-                timeout=1200,  # 20 minute timeout for first-time image build
+                timeout=300,  # 5 minute timeout for compose up (images already built)
                 creationflags=_CREATION_FLAGS,
             )
 
             if result.returncode == 0:
-                logger.info("CloudDesigner stack started successfully")
+                logger.info("[Docker CloudDesigner] Stack started successfully! Access at http://localhost:8080")
                 return {
                     "success": True,
                     "output": result.stdout,
                 }
             else:
-                logger.error(f"Failed to start CloudDesigner: {result.stderr}")
+                logger.error(f"[Docker CloudDesigner] Failed to start stack: {result.stderr}")
                 return {
                     "success": False,
-                    "error": result.stderr or "Unknown error",
+                    "error": result.stderr or "Unknown error starting containers",
                     "output": result.stdout,
                 }
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"[Docker CloudDesigner] Timeout during startup: {e}")
             return {
                 "success": False,
-                "error": "Docker compose timed out after 20 minutes. The image may still be building - check 'docker ps' or try again.",
+                "error": "Docker operation timed out. The build may still be in progress - check 'docker ps' or try again.",
             }
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            logger.error(f"[Docker CloudDesigner] Docker not found: {e}")
             return {
                 "success": False,
                 "error": "Docker not found. Please install Docker Desktop.",
             }
         except Exception as e:
-            logger.exception("Error starting CloudDesigner")
+            logger.exception(f"[Docker CloudDesigner] Unexpected error during startup: {e}")
             return {
                 "success": False,
                 "error": str(e),

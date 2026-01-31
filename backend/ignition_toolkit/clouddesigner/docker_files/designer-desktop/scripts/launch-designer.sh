@@ -1,43 +1,56 @@
 #!/bin/bash
 # designer-desktop/scripts/launch-designer.sh
+#
+# Launches the Ignition Designer with auto-login support.
+# Reads credentials from environment variables and passes them to the launcher.
 
+set -e
+
+# Configuration from environment or arguments
 GATEWAY_URL="${1:-$IGNITION_GATEWAY_URL}"
-PROJECT="${2:-}"
-DESIGNER_MEMORY="${DESIGNER_MEMORY:-2048}"
-DESIGNER_DIR="/home/designer/.ignition/designer-launcher"
-LAUNCHER_JAR="$DESIGNER_DIR/designer-launcher.jar"
+LAUNCHER_DIR="/home/designer/.local/share/designerlauncher"
+LOG_FILE="/tmp/launch-designer.log"
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+log "=========================================="
+log "CloudDesigner Auto-Launch"
+log "=========================================="
 
 # Check if launcher exists
-if [ ! -f "$LAUNCHER_JAR" ]; then
-    echo "Designer launcher not found. Downloading..."
-    /usr/local/bin/download-designer.sh "$GATEWAY_URL"
+if [ ! -f "$LAUNCHER_DIR/designerlauncher.sh" ]; then
+    log "ERROR: Designer launcher not found at $LAUNCHER_DIR"
+    log "The launcher should have been initialized by start-desktop.sh"
+    exit 1
 fi
-
-# Build Java options
-JAVA_OPTS="$DESIGNER_JAVA_OPTS"
-JAVA_OPTS="$JAVA_OPTS -Xmx${DESIGNER_MEMORY}m"
-JAVA_OPTS="$JAVA_OPTS -Xms512m"
-
-# Ignition 8.3 specific options
-JAVA_OPTS="$JAVA_OPTS -Dignition.script.project.library.enabled=true"
-
-echo "Starting Ignition Designer..."
-echo "Gateway: $GATEWAY_URL"
-echo "Memory: ${DESIGNER_MEMORY}MB"
 
 # Build launcher arguments
 LAUNCHER_ARGS=""
 
 # Add gateway URL if provided
 if [ -n "$GATEWAY_URL" ]; then
+    log "Gateway URL: $GATEWAY_URL"
     LAUNCHER_ARGS="$LAUNCHER_ARGS -g $GATEWAY_URL"
+else
+    log "WARNING: No gateway URL provided"
 fi
 
 # Add credentials for auto-login if provided
 if [ -n "$IGNITION_USERNAME" ] && [ -n "$IGNITION_PASSWORD" ]; then
-    echo "Auto-login enabled for user: $IGNITION_USERNAME"
+    log "Auto-login enabled for user: $IGNITION_USERNAME"
     LAUNCHER_ARGS="$LAUNCHER_ARGS -u $IGNITION_USERNAME -p $IGNITION_PASSWORD"
+else
+    log "No credentials provided - manual login required"
+    log "  IGNITION_USERNAME is ${IGNITION_USERNAME:+set}${IGNITION_USERNAME:-not set}"
+    log "  IGNITION_PASSWORD is ${IGNITION_PASSWORD:+set}${IGNITION_PASSWORD:-not set}"
 fi
 
-cd "$DESIGNER_DIR"
-exec java $JAVA_OPTS -jar designer-launcher.jar $LAUNCHER_ARGS "$@"
+log "Launcher args: $LAUNCHER_ARGS"
+log "Launching designer..."
+
+# Use the bundled launcher which has its own Java runtime
+cd "$LAUNCHER_DIR"
+exec ./designerlauncher.sh $LAUNCHER_ARGS "$@"

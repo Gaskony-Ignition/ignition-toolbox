@@ -5,7 +5,7 @@
  * along with Designer-specific playbooks.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -56,13 +56,6 @@ export function Designer() {
     refetchInterval: 30000, // Check every 30s
   });
 
-  // Query recent logs for Docker detection debugging
-  const { data: logsData, refetch: refetchLogs } = useQuery({
-    queryKey: ['docker-detection-logs'],
-    queryFn: () => api.logs.get({ limit: 100 }),
-    enabled: showDebug,
-  });
-
   // Query container status
   const {
     data: containerStatus,
@@ -74,9 +67,10 @@ export function Designer() {
     enabled: dockerStatus?.running === true,
   });
 
-  // Start mutation
+  // Start mutation - pass both gateway URL and credential name for auto-login
   const startMutation = useMutation({
-    mutationFn: (gatewayUrl: string) => api.cloudDesigner.start(gatewayUrl),
+    mutationFn: ({ gatewayUrl, credentialName }: { gatewayUrl: string; credentialName?: string }) =>
+      api.cloudDesigner.start(gatewayUrl, credentialName),
     onSuccess: (data) => {
       if (!data.success) {
         setStartError(data.error || 'Failed to start CloudDesigner');
@@ -89,6 +83,14 @@ export function Designer() {
     onError: (error: Error) => {
       setStartError(error.message);
     },
+  });
+
+  // Query recent logs for debugging - also poll while starting (must be after startMutation)
+  const { data: logsData, refetch: refetchLogs } = useQuery({
+    queryKey: ['docker-detection-logs'],
+    queryFn: () => api.logs.get({ limit: 100 }),
+    enabled: showDebug || startMutation.isPending,
+    refetchInterval: startMutation.isPending ? 3000 : false, // Poll every 3s while starting
   });
 
   // Stop mutation
@@ -108,16 +110,31 @@ export function Designer() {
   const handleStart = () => {
     if (selectedCredential?.gateway_url) {
       setStartError(null);
-      startMutation.mutate(selectedCredential.gateway_url);
+      startMutation.mutate({
+        gatewayUrl: selectedCredential.gateway_url,
+        credentialName: selectedCredential.name,
+      });
     }
   };
 
   // Handle open designer in browser
-  const handleOpenDesigner = () => {
+  const handleOpenDesigner = async () => {
+    // Use /connect endpoint for auto-login to Guacamole
+    const url = 'http://localhost:8080/connect';
+
+    // In Electron, use the IPC API which handles WSL2 properly
     if (window.electronAPI?.openExternal) {
-      window.electronAPI.openExternal('http://localhost:8080');
+      try {
+        await window.electronAPI.openExternal(url);
+      } catch (error) {
+        console.error('Failed to open URL:', error);
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(url).catch(() => {});
+        setStartError(`Could not open browser. Please navigate to: ${url}`);
+      }
     } else {
-      window.open('http://localhost:8080', '_blank');
+      // Non-Electron: use window.open
+      window.open(url, '_blank');
     }
   };
 
@@ -125,6 +142,13 @@ export function Designer() {
   const isRunning = containerStatus?.status === 'running';
   const isStarting = startMutation.isPending;
   const isStopping = stopMutation.isPending;
+
+  // Auto-expand debug panel when starting to show progress
+  useEffect(() => {
+    if (isStarting) {
+      setShowDebug(true);
+    }
+  }, [isStarting]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -246,8 +270,10 @@ Path: ${dockerStatus.docker_path || 'Not found'}`}
                     }}>
                       {logsData?.logs?.filter((log: { message: string }) =>
                         log.message.toLowerCase().includes('docker') ||
-                        log.message.toLowerCase().includes('wsl')
-                      ).map((log: { timestamp: string; level: string; message: string }, i: number) => (
+                        log.message.toLowerCase().includes('wsl') ||
+                        log.message.toLowerCase().includes('clouddesigner') ||
+                        log.message.toLowerCase().includes('compose')
+                      ).slice(0, 50).map((log: { timestamp: string; level: string; message: string }, i: number) => (
                         <Box key={i} sx={{ mb: 0.5 }}>
                           <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
                             [{log.level}]
@@ -308,6 +334,19 @@ docker info`}
               </Alert>
             )}
 
+            {/* Starting progress indicator */}
+            {isStarting && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                  Starting CloudDesigner...
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  This may take several minutes on first run while Docker images are built.
+                  The process includes: cleanup → build → start containers.
+                </Typography>
+              </Alert>
+            )}
+
             {/* Control buttons */}
             <Stack direction="row" spacing={2} alignItems="center">
               {isRunning ? (
@@ -331,11 +370,17 @@ docker info`}
                   >
                     {isStopping ? 'Stopping...' : 'Stop Container'}
                   </Button>
-                  {selectedCredential?.gateway_url && (
-                    <Typography variant="body2" color="text.secondary">
-                      Connected to: {selectedCredential.gateway_url}
-                    </Typography>
-                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    Or open directly:{' '}
+                    <a
+                      href="http://localhost:8080/connect"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'inherit' }}
+                    >
+                      http://localhost:8080/connect
+                    </a>
+                  </Typography>
                 </>
               ) : (
                 <Button
@@ -358,6 +403,78 @@ docker info`}
                 {dockerStatus.docker_path && ` (${dockerStatus.docker_path})`}
               </Typography>
             )}
+
+            {/* Debug section - also available when Docker is running for troubleshooting */}
+            <Accordion
+              expanded={showDebug}
+              onChange={() => {
+                setShowDebug(!showDebug);
+                if (!showDebug) refetchLogs();
+              }}
+              sx={{ mt: 2, bgcolor: 'background.paper' }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="body2" color="text.secondary">
+                  Troubleshooting & Logs
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom>Docker Status</Typography>
+                    <Typography variant="body2" component="pre" sx={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem',
+                      bgcolor: 'action.hover',
+                      p: 1,
+                      borderRadius: 1,
+                      overflow: 'auto'
+                    }}>
+{`Installed: ${dockerStatus.installed}
+Running: ${dockerStatus.running}
+Version: ${dockerStatus.version || 'Not detected'}
+Path: ${dockerStatus.docker_path || 'Not found'}
+Container: ${containerStatus?.status || 'not_created'}`}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="subtitle2">Recent CloudDesigner Logs</Typography>
+                      <Tooltip title="Refresh logs">
+                        <IconButton size="small" onClick={() => refetchLogs()}>
+                          <RefreshIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Box sx={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.7rem',
+                      bgcolor: 'grey.900',
+                      color: 'grey.300',
+                      p: 1,
+                      borderRadius: 1,
+                      maxHeight: 300,
+                      overflow: 'auto'
+                    }}>
+                      {logsData?.logs?.filter((log: { message: string }) =>
+                        log.message.toLowerCase().includes('docker') ||
+                        log.message.toLowerCase().includes('wsl') ||
+                        log.message.toLowerCase().includes('clouddesigner') ||
+                        log.message.toLowerCase().includes('compose')
+                      ).slice(0, 50).map((log: { timestamp: string; level: string; message: string }, i: number) => (
+                        <Box key={i} sx={{ mb: 0.5 }}>
+                          <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
+                            [{log.level}]
+                          </Typography>
+                          {' '}{log.message}
+                        </Box>
+                      )) || <Typography variant="body2" color="text.secondary">No CloudDesigner logs found. Click refresh to update.</Typography>}
+                    </Box>
+                  </Box>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
           </Box>
         )}
       </Paper>
