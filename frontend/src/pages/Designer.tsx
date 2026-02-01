@@ -21,6 +21,11 @@ import {
   AccordionDetails,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import {
   PlayArrow as StartIcon,
@@ -44,6 +49,7 @@ export function Designer() {
   const selectedCredential = useStore((state) => state.selectedCredential);
   const [startError, setStartError] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
 
   // Query Docker status
   const {
@@ -468,7 +474,7 @@ Container: ${containerStatus?.status || 'not_created'}`}
                       color="warning"
                       size="small"
                       startIcon={isCleaning ? <CircularProgress size={14} /> : <CleanupIcon />}
-                      onClick={() => cleanupMutation.mutate()}
+                      onClick={() => setShowCleanupConfirm(true)}
                       disabled={isCleaning || isStarting}
                     >
                       {isCleaning ? 'Cleaning up...' : 'Clean Up Containers'}
@@ -520,6 +526,36 @@ Container: ${containerStatus?.status || 'not_created'}`}
 
       {/* Designer Playbooks Section */}
       <Playbooks domainFilter="designer" />
+
+      {/* Cleanup Confirmation Dialog */}
+      <Dialog
+        open={showCleanupConfirm}
+        onClose={() => setShowCleanupConfirm(false)}
+      >
+        <DialogTitle>Clean Up CloudDesigner?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will forcefully remove all CloudDesigner containers, volumes, networks, and cached images.
+            Any unsaved work in the Designer will be lost and images will need to be rebuilt on next start.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowCleanupConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setShowCleanupConfirm(false);
+              cleanupMutation.mutate();
+            }}
+            color="warning"
+            variant="contained"
+            autoFocus
+          >
+            Clean Up
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
