@@ -10,6 +10,20 @@ echo "=========================================="
 # Create log directory
 mkdir -p /var/log/supervisor
 
+# Write credentials to a file for launch-designer.sh to read
+# This is more reliable than environment variable inheritance through VNC/XFCE
+CREDENTIALS_FILE="/tmp/designer-credentials.env"
+echo "# CloudDesigner credentials - auto-generated" > "$CREDENTIALS_FILE"
+echo "IGNITION_GATEWAY_URL=\"$IGNITION_GATEWAY_URL\"" >> "$CREDENTIALS_FILE"
+echo "IGNITION_USERNAME=\"$IGNITION_USERNAME\"" >> "$CREDENTIALS_FILE"
+echo "IGNITION_PASSWORD=\"$IGNITION_PASSWORD\"" >> "$CREDENTIALS_FILE"
+chmod 600 "$CREDENTIALS_FILE"
+chown designer:designer "$CREDENTIALS_FILE"
+echo "Credentials written to $CREDENTIALS_FILE"
+echo "  Gateway URL: ${IGNITION_GATEWAY_URL:-not set}"
+echo "  Username: ${IGNITION_USERNAME:-not set}"
+echo "  Password: ${IGNITION_PASSWORD:+[set]}"
+
 # Configure VNC password
 /usr/local/bin/configure-vnc.sh
 

@@ -2,14 +2,22 @@
 # designer-desktop/scripts/launch-designer.sh
 #
 # Launches the Ignition Designer with auto-login support.
-# Reads credentials from environment variables and passes them to the launcher.
+# Reads credentials from environment variables or credentials file.
 
 set -e
 
-# Configuration from environment or arguments
-GATEWAY_URL="${1:-$IGNITION_GATEWAY_URL}"
 LAUNCHER_DIR="/home/designer/.local/share/designerlauncher"
 LOG_FILE="/tmp/launch-designer.log"
+CREDENTIALS_FILE="/tmp/designer-credentials.env"
+
+# Source credentials file if it exists (written by start-desktop.sh)
+# This is more reliable than environment variable inheritance through VNC/XFCE
+if [ -f "$CREDENTIALS_FILE" ]; then
+    source "$CREDENTIALS_FILE"
+fi
+
+# Configuration from arguments (override) or environment/file
+GATEWAY_URL="${1:-$IGNITION_GATEWAY_URL}"
 
 # Logging function
 log() {
