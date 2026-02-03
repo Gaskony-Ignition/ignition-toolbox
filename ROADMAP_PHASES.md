@@ -11,20 +11,20 @@
 
 ### Tasks
 
-- [ ] **Update Electron** from v33.3.1 to v40 (latest stable)
+- [x] **Update Electron** from v33.3.1 to v40 (latest stable) ✅ DONE (v1.4.63)
   - Update `package.json`: `"electron": "^40.0.0"`
   - Update `electron-builder` to latest compatible version
   - Test all IPC handlers still work
   - Test auto-updater functionality
   - Effort: 8h
 
-- [ ] **Fix CloudDesigner startup issue**
+- [x] **Fix CloudDesigner startup issue** ✅ DONE (v1.4.65)
   - Diagnose why API requests aren't reaching backend
-  - Fix the root cause
+  - Fix the root cause (CORS policy was blocking requests)
   - Add proper error reporting
   - Effort: 8h
 
-- [ ] **Fix bare `except:` clauses** (7 instances)
+- [x] **Fix bare `except:` clauses** (7 instances) ✅ DONE (v1.4.63)
   - `designer/detector.py`
   - `designer/platform_windows.py`
   - `designer/platform_linux.py`
@@ -125,7 +125,7 @@
 
 ### 3.1 Documentation (~20h)
 
-- [ ] Create `TROUBLESHOOTING.md`
+- [x] Create `TROUBLESHOOTING.md` ✅ DONE (v1.4.66)
   - Common errors and solutions
   - Debug mode instructions
   - Log file locations
@@ -159,9 +159,9 @@
 
 ### 4.1 Playbook Management (~45h)
 
-- [ ] **Playbook Duplication UI**
+- [x] **Playbook Duplication UI** ✅ DONE (v1.4.66)
   - Add "Duplicate" button to PlaybookCard
-  - POST `/api/playbooks/{id}/duplicate` endpoint
+  - POST `/api/playbooks/duplicate` endpoint
   - Auto-rename with "(Copy)" suffix
   - Effort: 8h
 
