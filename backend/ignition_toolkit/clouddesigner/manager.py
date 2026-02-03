@@ -360,23 +360,6 @@ def _windows_to_wsl_path(windows_path: Path | str) -> str:
     return path_str.replace("\\", "/")
 
 
-def _quote_wsl_path(path: str) -> str:
-    """
-    Quote a path for use in WSL shell commands if it contains spaces.
-
-    When running subprocess with WSL, the shell inside WSL re-interprets
-    arguments, so paths with spaces need to be quoted.
-
-    Example: /mnt/c/Program Files/path -> '/mnt/c/Program Files/path'
-    """
-    if " " in path:
-        # Use single quotes to prevent shell expansion
-        # Escape any existing single quotes in the path
-        escaped = path.replace("'", "'\\''")
-        return f"'{escaped}'"
-    return path
-
-
 def _get_docker_host_ip() -> str | None:
     """
     Get the IP address that Docker containers can use to reach the host.
@@ -744,11 +727,11 @@ class CloudDesignerManager:
 
             if use_wsl:
                 wsl_compose_file = _windows_to_wsl_path(compose_file)
-                # Quote the path for WSL shell (spaces in "Program Files" etc.)
-                quoted_compose_file = _quote_wsl_path(wsl_compose_file)
-                compose_args = ["compose", "-f", quoted_compose_file]
+                # Note: Do NOT quote the path - subprocess passes arguments directly
+                # without shell interpretation, so quotes become literal characters
+                compose_args = ["compose", "-f", wsl_compose_file]
                 run_cwd = None
-                logger.info(f"[CloudDesigner] Using WSL compose file: {quoted_compose_file}")
+                logger.info(f"[CloudDesigner] Using WSL compose file: {wsl_compose_file}")
             else:
                 compose_args = ["compose"]
                 run_cwd = self.compose_dir
@@ -952,9 +935,9 @@ class CloudDesignerManager:
 
             if use_wsl:
                 wsl_compose_file = _windows_to_wsl_path(compose_file)
-                # Quote the path for WSL shell (spaces in "Program Files" etc.)
-                quoted_compose_file = _quote_wsl_path(wsl_compose_file)
-                compose_args = ["compose", "-f", quoted_compose_file]
+                # Note: Do NOT quote the path - subprocess passes arguments directly
+                # without shell interpretation, so quotes become literal characters
+                compose_args = ["compose", "-f", wsl_compose_file]
                 run_cwd = None
             else:
                 compose_args = ["compose"]
@@ -1026,9 +1009,9 @@ class CloudDesignerManager:
 
         if use_wsl:
             wsl_compose_file = _windows_to_wsl_path(compose_file)
-            # Quote the path for WSL shell (spaces in "Program Files" etc.)
-            quoted_compose_file = _quote_wsl_path(wsl_compose_file)
-            compose_args = ["compose", "-f", quoted_compose_file]
+            # Note: Do NOT quote the path - subprocess passes arguments directly
+            # without shell interpretation, so quotes become literal characters
+            compose_args = ["compose", "-f", wsl_compose_file]
             run_cwd = None
         else:
             compose_args = ["compose"]
