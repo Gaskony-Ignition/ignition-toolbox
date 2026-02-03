@@ -76,9 +76,14 @@ export function Designer() {
 
   // Start mutation - pass both gateway URL and credential name for auto-login
   const startMutation = useMutation({
-    mutationFn: ({ gatewayUrl, credentialName }: { gatewayUrl: string; credentialName?: string }) =>
-      api.cloudDesigner.start(gatewayUrl, credentialName),
+    mutationFn: async ({ gatewayUrl, credentialName }: { gatewayUrl: string; credentialName?: string }) => {
+      console.log('[CloudDesigner] Calling API start with:', { gatewayUrl, credentialName });
+      const result = await api.cloudDesigner.start(gatewayUrl, credentialName);
+      console.log('[CloudDesigner] API start result:', result);
+      return result;
+    },
     onSuccess: (data) => {
+      console.log('[CloudDesigner] onSuccess:', data);
       if (!data.success) {
         setStartError(data.error || 'Failed to start CloudDesigner');
       } else {
@@ -88,6 +93,7 @@ export function Designer() {
       queryClient.invalidateQueries({ queryKey: ['clouddesigner-status'] });
     },
     onError: (error: Error) => {
+      console.error('[CloudDesigner] onError:', error);
       setStartError(error.message);
     },
   });
@@ -132,12 +138,18 @@ export function Designer() {
 
   // Handle start button click
   const handleStart = () => {
+    console.log('[CloudDesigner] handleStart called');
+    console.log('[CloudDesigner] selectedCredential:', selectedCredential);
     if (selectedCredential?.gateway_url) {
+      console.log('[CloudDesigner] Starting with gateway:', selectedCredential.gateway_url);
       setStartError(null);
       startMutation.mutate({
         gatewayUrl: selectedCredential.gateway_url,
         credentialName: selectedCredential.name,
       });
+    } else {
+      console.log('[CloudDesigner] No gateway URL - cannot start');
+      setStartError('No gateway URL configured in selected credential');
     }
   };
 
