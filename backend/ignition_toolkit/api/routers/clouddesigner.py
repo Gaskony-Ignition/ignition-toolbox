@@ -149,8 +149,10 @@ async def start_clouddesigner(request: StartRequest):
     Returns:
         StartResponse with success status and output/error
     """
+    logger.info("[CloudDesigner API] ===== START REQUEST RECEIVED =====")
+    logger.info(f"[CloudDesigner API] Gateway URL: {request.gateway_url}")
+    logger.info(f"[CloudDesigner API] Credential: {request.credential_name}")
     try:
-        logger.info(f"[CloudDesigner API] Start request: gateway_url={request.gateway_url}, credential_name={request.credential_name}")
         manager = get_clouddesigner_manager()
 
         # Check Docker first (run in thread to avoid blocking event loop)
@@ -180,7 +182,7 @@ async def start_clouddesigner(request: StartRequest):
             error=result.get("error"),
         )
     except Exception as e:
-        logger.exception("Error starting CloudDesigner")
+        logger.exception(f"[CloudDesigner API] EXCEPTION during start: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

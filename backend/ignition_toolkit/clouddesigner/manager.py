@@ -681,6 +681,12 @@ class CloudDesignerManager:
         Returns:
             dict with success status and output/error
         """
+        logger.info(f"[CloudDesigner] ===== MANAGER START CALLED =====")
+        logger.info(f"[CloudDesigner] Gateway URL: {gateway_url}")
+        logger.info(f"[CloudDesigner] Credential: {credential_name}")
+        logger.info(f"[CloudDesigner] Compose dir: {self.compose_dir}")
+        logger.info(f"[CloudDesigner] Compose dir exists: {self.compose_dir.exists()}")
+
         if not self.compose_dir.exists():
             logger.error(f"[CloudDesigner] Docker compose directory not found: {self.compose_dir}")
             return {
