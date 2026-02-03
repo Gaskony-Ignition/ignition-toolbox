@@ -42,15 +42,17 @@ import {
   ViewComfy as ComfortableIcon,
   ViewModule as SpaciousIcon,
   GridView as GridIcon,
+  SmartToy as ChatIcon,
 } from '@mui/icons-material';
 import { Credentials } from './Credentials';
 import { Executions } from './Executions';
+import { ChatPanel } from '../components/chat/ChatPanel';
 import { api } from '../api/client';
 import { useStore } from '../store';
 import type { HealthResponse } from '../types/api';
 import packageJson from '../../package.json';
 
-type SettingsTab = 'credentials' | 'executions' | 'updates' | 'appearance' | 'about';
+type SettingsTab = 'credentials' | 'executions' | 'updates' | 'appearance' | 'chat' | 'about';
 
 interface UpdateStatus {
   checking: boolean;
@@ -71,6 +73,7 @@ const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] 
   { id: 'executions', label: 'Execution History', icon: <ExecutionsIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
   { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
+  { id: 'chat', label: 'Clawdbot', icon: <ChatIcon /> },
   { id: 'about', label: 'About', icon: <AboutIcon /> },
 ];
 
@@ -671,6 +674,26 @@ export function Settings() {
     </Box>
   );
 
+  const renderChatContent = () => (
+    <Box sx={{ width: '100%', height: 'calc(100vh - 200px)' }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Clawdbot AI Assistant
+      </Typography>
+      <Paper
+        elevation={0}
+        sx={{
+          height: 'calc(100% - 60px)',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 2,
+          overflow: 'hidden',
+        }}
+      >
+        <ChatPanel height="100%" showClearButton />
+      </Paper>
+    </Box>
+  );
+
   return (
     <Box sx={{
       display: 'flex',
@@ -750,6 +773,7 @@ export function Settings() {
           {activeTab === 'executions' && <Executions />}
           {activeTab === 'updates' && renderUpdatesContent()}
           {activeTab === 'appearance' && renderAppearanceContent()}
+          {activeTab === 'chat' && renderChatContent()}
           {activeTab === 'about' && renderAboutContent()}
         </Box>
       </Box>

@@ -15,7 +15,6 @@ import { ExecutionDetail } from './pages/ExecutionDetail';
 import { Settings } from './pages/Settings';
 import { APIExplorer } from './pages/APIExplorer';
 import { StackBuilder } from './pages/StackBuilder';
-import { Chat } from './pages/Chat';
 import { FloatingChatButton } from './components/chat/FloatingChatButton';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
@@ -134,8 +133,6 @@ function AppContent() {
         return <APIExplorer />;
       case 'stackbuilder':
         return <StackBuilder />;
-      case 'chat':
-        return <Chat />;
       case 'settings':
         return <Settings />;
       default:
@@ -149,8 +146,8 @@ function AppContent() {
       <Layout activeTab={activeTab} onTabChange={setActiveTab}>
         {renderContent()}
       </Layout>
-      {/* Floating chat button - hidden on Chat page */}
-      <FloatingChatButton hidden={activeTab === 'chat'} />
+      {/* Floating chat button */}
+      <FloatingChatButton />
     </ThemeProvider>
   );
 }

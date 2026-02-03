@@ -95,9 +95,9 @@ export function Designer() {
   // Query recent logs for debugging - also poll while starting (must be after startMutation)
   const { data: logsData, refetch: refetchLogs } = useQuery({
     queryKey: ['docker-detection-logs'],
-    queryFn: () => api.logs.get({ limit: 100 }),
+    queryFn: () => api.logs.get({ limit: 500 }),
     enabled: showDebug || startMutation.isPending,
-    refetchInterval: startMutation.isPending ? 3000 : false, // Poll every 3s while starting
+    refetchInterval: startMutation.isPending ? 1500 : false, // Poll every 1.5s while starting
   });
 
   // Stop mutation
@@ -293,19 +293,24 @@ Path: ${dockerStatus.docker_path || 'Not found'}`}
                       maxHeight: 300,
                       overflow: 'auto'
                     }}>
-                      {logsData?.logs?.filter((log: { message: string }) =>
-                        log.message.toLowerCase().includes('docker') ||
-                        log.message.toLowerCase().includes('wsl') ||
-                        log.message.toLowerCase().includes('clouddesigner') ||
-                        log.message.toLowerCase().includes('compose')
-                      ).slice(0, 50).map((log: { timestamp: string; level: string; message: string }, i: number) => (
-                        <Box key={i} sx={{ mb: 0.5 }}>
-                          <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
-                            [{log.level}]
-                          </Typography>
-                          {' '}{log.message}
-                        </Box>
-                      )) || <Typography variant="body2" color="text.secondary">No Docker-related logs found. Click refresh to re-check.</Typography>}
+                      {logsData?.logs?.slice(0, 100).map((log: { timestamp: string; level: string; message: string }, i: number) => {
+                        const isRelevant = log.message.toLowerCase().includes('docker') ||
+                          log.message.toLowerCase().includes('wsl') ||
+                          log.message.toLowerCase().includes('clouddesigner') ||
+                          log.message.toLowerCase().includes('compose');
+                        return (
+                          <Box key={i} sx={{ mb: 0.5, opacity: isRelevant ? 1 : 0.5 }}>
+                            <Typography component="span" sx={{ color: 'grey.500', fontSize: 'inherit' }}>
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </Typography>
+                            {' '}
+                            <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
+                              [{log.level}]
+                            </Typography>
+                            {' '}{log.message}
+                          </Box>
+                        );
+                      }) || <Typography variant="body2" color="text.secondary">No logs found. Click refresh to re-check.</Typography>}
                     </Box>
                   </Box>
 
@@ -500,19 +505,24 @@ Container: ${containerStatus?.status || 'not_created'}`}
                       maxHeight: 300,
                       overflow: 'auto'
                     }}>
-                      {logsData?.logs?.filter((log: { message: string }) =>
-                        log.message.toLowerCase().includes('docker') ||
-                        log.message.toLowerCase().includes('wsl') ||
-                        log.message.toLowerCase().includes('clouddesigner') ||
-                        log.message.toLowerCase().includes('compose')
-                      ).slice(0, 50).map((log: { timestamp: string; level: string; message: string }, i: number) => (
-                        <Box key={i} sx={{ mb: 0.5 }}>
-                          <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
-                            [{log.level}]
-                          </Typography>
-                          {' '}{log.message}
-                        </Box>
-                      )) || <Typography variant="body2" color="text.secondary">No CloudDesigner logs found. Click refresh to update.</Typography>}
+                      {logsData?.logs?.slice(0, 100).map((log: { timestamp: string; level: string; message: string }, i: number) => {
+                        const isRelevant = log.message.toLowerCase().includes('docker') ||
+                          log.message.toLowerCase().includes('wsl') ||
+                          log.message.toLowerCase().includes('clouddesigner') ||
+                          log.message.toLowerCase().includes('compose');
+                        return (
+                          <Box key={i} sx={{ mb: 0.5, opacity: isRelevant ? 1 : 0.5 }}>
+                            <Typography component="span" sx={{ color: 'grey.500', fontSize: 'inherit' }}>
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </Typography>
+                            {' '}
+                            <Typography component="span" sx={{ color: log.level === 'ERROR' ? 'error.main' : log.level === 'WARNING' ? 'warning.main' : 'info.main', fontSize: 'inherit' }}>
+                              [{log.level}]
+                            </Typography>
+                            {' '}{log.message}
+                          </Box>
+                        );
+                      }) || <Typography variant="body2" color="text.secondary">No logs found. Click refresh to update.</Typography>}
                     </Box>
                   </Box>
                 </Stack>
