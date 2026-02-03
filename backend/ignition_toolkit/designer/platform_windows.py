@@ -186,7 +186,7 @@ class WindowsDesignerAutomation:
                     logger.info("Login dialog closed - login successful")
                     return True
                 time.sleep(0.5)
-            except:
+            except Exception:
                 # Window no longer exists
                 logger.info("Login dialog closed - login successful")
                 return True

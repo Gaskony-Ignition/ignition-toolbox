@@ -45,8 +45,8 @@ class LinuxDesignerAutomation:
             try:
                 self.display = display.Display()
                 logger.info("X11 display connection established")
-            except:
-                logger.warning("Could not connect to X display")
+            except Exception as e:
+                logger.warning(f"Could not connect to X display: {e}")
                 self.display = None
 
     def find_designer_window(self, timeout: int = 30) -> bool:
@@ -98,7 +98,7 @@ class LinuxDesignerAutomation:
                                 self.window_id = window.id
                                 return True
 
-                    except:
+                    except Exception:
                         continue
 
                 time.sleep(1)
@@ -151,7 +151,7 @@ class LinuxDesignerAutomation:
                             logger.info(f"Found login dialog: {window_name}")
                             self.designer_window = window  # Treat as active window
                             return True
-                    except:
+                    except Exception:
                         continue
 
                 time.sleep(0.5)

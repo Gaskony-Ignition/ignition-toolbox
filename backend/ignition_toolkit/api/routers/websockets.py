@@ -378,8 +378,8 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
         logger.exception(f"Claude Code WebSocket error: {e}")
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
-        except:
-            pass
+        except Exception:
+            pass  # WebSocket already closed
 
     finally:
         # Cleanup
@@ -545,8 +545,8 @@ async def shell_terminal(websocket: WebSocket):
         logger.exception(f"Shell WebSocket error: {e}")
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
-        except:
-            pass
+        except Exception:
+            pass  # WebSocket already closed
 
     finally:
         # Cleanup
