@@ -104,10 +104,11 @@
   - Tests for YAMLParseError with line numbers
   - Tests for parameter and step validation
 
-- [ ] **API Endpoint Tests**
-  - Test all CRUD operations
-  - Test validation errors
-  - Test authentication (if added)
+- [x] **API Endpoint Tests** ✅ DONE (v1.4.68)
+  - 15 tests for playbook CRUD validation
+  - Tests for XSS/injection prevention
+  - Tests for path traversal security
+  - Tests for input validation
   - Effort: 12h
 
 - [x] **Credential Vault Tests** ✅ DONE (v1.4.68)
