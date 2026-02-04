@@ -150,16 +150,18 @@
   - Log file locations
   - Effort: 8h
 
-- [ ] Create `SECURITY.md`
-  - Credential storage locations
+- [x] Create `SECURITY.md` ✅ DONE (v1.4.68)
+  - Credential storage and encryption details
   - Key rotation procedures
-  - Production deployment security
+  - WebSocket/API security
+  - Environment variables reference
   - Effort: 6h
 
-- [ ] Create `API_GUIDE.md`
-  - Endpoint examples (curl/fetch)
-  - Error codes reference
+- [x] Create `API_GUIDE.md` ✅ DONE (v1.4.68)
+  - REST API endpoints with examples
   - WebSocket message format
+  - Error codes reference
+  - cURL and JavaScript examples
   - Effort: 6h
 
 ### 3.2 UX Improvements (~20h)
