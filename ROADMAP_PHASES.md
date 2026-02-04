@@ -302,18 +302,18 @@
 
 ### 5.2 Maintenance Features (~25h)
 
-- [x] **Database Cleanup** ✅ Partially DONE (v1.4.68)
+- [x] **Database Cleanup** ✅ DONE (v1.4.70)
   - POST /health/cleanup endpoint with dry_run support
   - Configurable older_than_days parameter
-  - [ ] Auto-delete scheduled job (APScheduler)
-  - [ ] Manual purge UI in frontend
+  - [ ] Auto-delete scheduled job (APScheduler) - deferred to Phase 6
+  - [x] Manual purge UI in frontend (DiagnosticsPanel cleanup dialog)
   - Effort: 10h
 
-- [x] **Screenshot Storage Management** ✅ Partially DONE (v1.4.68)
+- [x] **Screenshot Storage Management** ✅ DONE (v1.4.70)
   - GET /health/storage endpoint for disk usage monitoring
   - Cleanup integrated with /health/cleanup endpoint
   - [x] Compression on save (WebP format)
-  - [ ] Dashboard widget in frontend
+  - [x] Dashboard widget in frontend (DiagnosticsPanel storage stats)
   - Effort: 8h
 
 - [x] **Health Monitoring** ✅ DONE (v1.4.68)
