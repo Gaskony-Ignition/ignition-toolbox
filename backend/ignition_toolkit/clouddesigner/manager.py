@@ -215,6 +215,30 @@ class CloudDesignerManager:
                 "error": f"Docker compose directory not found: {self.compose_dir}",
             }
 
+        # Validate required subdirectories exist (critical for production builds)
+        required_dirs = ["nginx", "guacamole", "designer-desktop"]
+        required_files = ["docker-compose.yml", "designer-desktop/Dockerfile"]
+
+        for subdir in required_dirs:
+            subdir_path = self.compose_dir / subdir
+            if not subdir_path.exists():
+                logger.error(f"[CloudDesigner] Required directory not found: {subdir_path}")
+                return {
+                    "success": False,
+                    "error": f"Required Docker directory not found: {subdir}. This may indicate a packaging issue.",
+                }
+
+        for file in required_files:
+            file_path = self.compose_dir / file
+            if not file_path.exists():
+                logger.error(f"[CloudDesigner] Required file not found: {file_path}")
+                return {
+                    "success": False,
+                    "error": f"Required Docker file not found: {file}. This may indicate a packaging issue.",
+                }
+
+        logger.info(f"[CloudDesigner] All required docker files validated successfully")
+
         # Prepare environment
         env = os.environ.copy()
 
@@ -254,11 +278,16 @@ class CloudDesignerManager:
 
             if use_wsl:
                 wsl_compose_file = windows_to_wsl_path(compose_file)
+                wsl_compose_dir = windows_to_wsl_path(self.compose_dir)
                 # Note: Do NOT quote the path - subprocess passes arguments directly
                 # without shell interpretation, so quotes become literal characters
-                compose_args = ["compose", "-f", wsl_compose_file]
+                # CRITICAL: Use --project-directory to tell docker-compose where to resolve
+                # relative paths (./nginx, ./guacamole, etc.) from. Without this, relative
+                # paths in docker-compose.yml fail because cwd is unpredictable in production.
+                compose_args = ["compose", "-f", wsl_compose_file, "--project-directory", wsl_compose_dir]
                 run_cwd = None
                 logger.info(f"[CloudDesigner] Using WSL compose file: {wsl_compose_file}")
+                logger.info(f"[CloudDesigner] Using WSL project directory: {wsl_compose_dir}")
             else:
                 compose_args = ["compose"]
                 run_cwd = self.compose_dir
@@ -280,7 +309,17 @@ class CloudDesignerManager:
                 creationflags=CREATION_FLAGS,
             )
             if cleanup_result.returncode != 0:
-                logger.warning(f"[CloudDesigner] Cleanup warning (continuing): {cleanup_result.stderr[:200] if cleanup_result.stderr else 'none'}")
+                stderr = cleanup_result.stderr or ""
+                # Check for critical errors that indicate the compose file can't be found
+                if "no configuration file" in stderr.lower() or "not found" in stderr.lower():
+                    logger.error(f"[CloudDesigner] CRITICAL: Docker compose file not accessible: {stderr[:300]}")
+                    return {
+                        "success": False,
+                        "error": f"Docker compose configuration not found. This may be a path or permission issue.",
+                        "output": stderr,
+                    }
+                # Non-critical cleanup warnings (e.g., no containers to remove) - continue
+                logger.warning(f"[CloudDesigner] Cleanup warning (continuing): {stderr[:200] if stderr else 'none'}")
             else:
                 logger.info("[CloudDesigner] Step 1 complete: Cleanup successful")
 
