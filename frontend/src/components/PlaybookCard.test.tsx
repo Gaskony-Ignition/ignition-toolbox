@@ -85,7 +85,6 @@ describe('PlaybookCard', () => {
   const mockOnConfigure = vi.fn();
   const mockOnExecute = vi.fn();
   const mockOnExport = vi.fn();
-  const mockOnViewSteps = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();

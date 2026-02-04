@@ -9,6 +9,9 @@ import { Box, Paper, Typography, Chip, Tooltip, Snackbar, Alert } from '@mui/mat
 import { Computer as BrowserIcon, Pause as PausedIcon, TouchApp as ClickIcon } from '@mui/icons-material';
 import { useStore } from '../store';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('LiveBrowserView');
 
 interface LiveBrowserViewProps {
   executionId: string;
@@ -69,14 +72,14 @@ export function LiveBrowserView({ executionId }: LiveBrowserViewProps) {
     // Send click to backend to execute in actual browser
     try {
       await api.executions.clickAtCoordinates(executionId, naturalX, naturalY);
-      console.log(`Browser click executed: (${naturalX}, ${naturalY})`);
+      logger.debug(`Browser click executed: (${naturalX}, ${naturalY})`);
       setSnackbar({
         open: true,
         message: `Clicked at (${naturalX}, ${naturalY})`,
         severity: 'success',
       });
     } catch (error) {
-      console.error('Failed to click in browser:', error);
+      logger.error('Failed to click in browser:', error);
       setSnackbar({
         open: true,
         message: `Failed to click: ${error instanceof Error ? error.message : 'Unknown error'}`,

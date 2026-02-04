@@ -43,16 +43,18 @@ import {
   ViewModule as SpaciousIcon,
   GridView as GridIcon,
   SmartToy as ChatIcon,
+  BugReport as DiagnosticsIcon,
 } from '@mui/icons-material';
 import { Credentials } from './Credentials';
 import { Executions } from './Executions';
 import { ChatPanel } from '../components/chat/ChatPanel';
+import { DiagnosticsPanel } from '../components/DiagnosticsPanel';
 import { api } from '../api/client';
 import { useStore } from '../store';
 import type { HealthResponse } from '../types/api';
 import packageJson from '../../package.json';
 
-type SettingsTab = 'credentials' | 'executions' | 'updates' | 'appearance' | 'chat' | 'about';
+type SettingsTab = 'credentials' | 'executions' | 'diagnostics' | 'updates' | 'appearance' | 'chat' | 'about';
 
 interface UpdateStatus {
   checking: boolean;
@@ -71,6 +73,7 @@ interface UpdateStatus {
 const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'credentials', label: 'Gateway Credentials', icon: <CredentialsIcon /> },
   { id: 'executions', label: 'Execution History', icon: <ExecutionsIcon /> },
+  { id: 'diagnostics', label: 'Diagnostics & Logs', icon: <DiagnosticsIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
   { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
   { id: 'chat', label: 'Clawdbot', icon: <ChatIcon /> },
@@ -771,6 +774,7 @@ export function Settings() {
         >
           {activeTab === 'credentials' && <Credentials />}
           {activeTab === 'executions' && <Executions />}
+          {activeTab === 'diagnostics' && <DiagnosticsPanel />}
           {activeTab === 'updates' && renderUpdatesContent()}
           {activeTab === 'appearance' && renderAppearanceContent()}
           {activeTab === 'chat' && renderChatContent()}

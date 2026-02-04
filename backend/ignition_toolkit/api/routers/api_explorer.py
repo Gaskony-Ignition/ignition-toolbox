@@ -168,7 +168,7 @@ async def _make_gateway_request(
             # Try to parse JSON response
             try:
                 body_data = response.json()
-            except Exception:
+            except (ValueError, TypeError):
                 body_data = response.text
 
             return {

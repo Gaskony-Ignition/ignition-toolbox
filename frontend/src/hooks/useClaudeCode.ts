@@ -5,6 +5,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('useClaudeCode');
 
 /**
  * Chat message structure
@@ -91,7 +94,7 @@ export function useClaudeCode(): UseClaudeCodeResult {
         const available = await window.electronAPI!.chat.checkAvailability();
         setIsAvailable(available);
       } catch (error) {
-        console.error('[useClaudeCode] Availability check failed:', error);
+        logger.error('Availability check failed:', error);
         setIsAvailable(false);
       } finally {
         setIsCheckingAvailability(false);
@@ -138,7 +141,7 @@ export function useClaudeCode(): UseClaudeCodeResult {
       const ctx = await window.electronAPI!.chat.getContext();
       setContext(ctx);
     } catch (error) {
-      console.error('[useClaudeCode] Failed to fetch context:', error);
+      logger.error('Failed to fetch context:', error);
     }
   }, []);
 
@@ -223,7 +226,7 @@ export function useClaudeCode(): UseClaudeCodeResult {
     if (!isElectron() || !isLoading) return;
 
     window.electronAPI!.chat.cancel().catch((error: unknown) => {
-      console.error('[useClaudeCode] Failed to cancel query:', error);
+      logger.error('Failed to cancel query:', error);
     });
 
     // Mark current streaming message as cancelled

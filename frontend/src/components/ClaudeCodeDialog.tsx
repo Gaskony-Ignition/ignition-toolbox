@@ -32,6 +32,9 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import api from '../api/client';
 import { EmbeddedTerminal } from './EmbeddedTerminal';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ClaudeCodeDialog');
 
 interface ClaudeCodeDialogProps {
   open: boolean;
@@ -74,7 +77,7 @@ export function ClaudeCodeDialog({
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
       } catch (err) {
-        console.error('Failed to copy:', err);
+        logger.error('Failed to copy:', err);
       }
     }
   };

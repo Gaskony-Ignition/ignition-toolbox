@@ -200,3 +200,75 @@ export interface CloudDesignerConfig {
   container_name: string;
   default_port: number;
 }
+
+// Health and Diagnostics types
+export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+
+export interface ComponentHealth {
+  status: HealthStatus;
+  message: string;
+  last_checked: string;
+  error?: string;
+}
+
+export interface DetailedHealthResponse {
+  status: HealthStatus;
+  ready: boolean;
+  startup_time: string;
+  uptime_seconds: number;
+  errors: string[];
+  warnings: string[];
+  components: {
+    database: ComponentHealth;
+    vault: ComponentHealth;
+    playbooks: ComponentHealth;
+    browser: ComponentHealth;
+    frontend: ComponentHealth;
+    scheduler: ComponentHealth;
+  };
+}
+
+export interface DatabaseStats {
+  db_file: string;
+  db_size_bytes: number;
+  db_size_readable: string;
+  execution_count: number;
+  step_result_count: number;
+  oldest_execution: string | null;
+  newest_execution: string | null;
+  status_counts: Record<string, number>;
+}
+
+export interface StorageStats {
+  screenshots_directory: string;
+  total_size_bytes: number;
+  total_size_readable: string;
+  file_count: number;
+  oldest_screenshot: string | null;
+  newest_screenshot: string | null;
+}
+
+export interface CleanupResult {
+  dry_run: boolean;
+  older_than_days: number;
+  executions_deleted: number;
+  screenshots_deleted: number;
+  space_freed_bytes: number;
+  space_freed_readable: string;
+}
+
+export interface LogEntry {
+  timestamp: string;
+  level: string;
+  logger: string;
+  message: string;
+  execution_id: string | null;
+}
+
+export interface LogStats {
+  total_captured: number;
+  max_entries: number;
+  level_counts: Record<string, number>;
+  oldest_entry: string | null;
+  newest_entry: string | null;
+}

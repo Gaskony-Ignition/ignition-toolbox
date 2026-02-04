@@ -39,12 +39,15 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
 import { LiveBrowserView } from '../components/LiveBrowserView';
 import { ExecutionControls } from '../components/ExecutionControls';
 import { DebugPanel } from '../components/DebugPanel';
 import { PlaybookCodeViewer } from '../components/PlaybookCodeViewer';
 import { useStore } from '../store';
 import type { ExecutionStatusResponse } from '../types/api';
+
+const logger = createLogger('ExecutionDetail');
 
 export function ExecutionDetail() {
   const { executionId } = useParams<{ executionId: string }>();
@@ -295,7 +298,7 @@ export function ExecutionDetail() {
                       setDebugModeToggling(false);
                     }, 10000);
                   } catch (error) {
-                    console.error('Failed to toggle debug mode:', error);
+                    logger.error('Failed to toggle debug mode:', error);
                     alert(`Failed to toggle debug mode: ${error instanceof Error ? error.message : String(error)}`);
                     // Revert on error
                     setDebugMode(!enabled);

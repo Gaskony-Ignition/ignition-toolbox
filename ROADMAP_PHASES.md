@@ -67,8 +67,10 @@
   - Updated `playbook/loader.py` to extract line numbers from YAML errors
 - [x] WebSocket reconnection with exponential backoff ✅ Already implemented
   - `useWebSocket.ts` has backoff multiplier of 1.5x, max 30s
-- [ ] Replace generic `Exception` catches with specific types (ongoing - 243 occurrences)
-- [ ] Effort: 15h
+- [x] Replace generic `Exception` catches with specific types ✅ DONE (v1.4.70)
+  - Reduced from 21 to 12 generic catches in backend
+  - Remaining 12 are intentional for cleanup/fallback patterns (WebSocket close, X11 window ops, context managers)
+- [x] Effort: 15h
 
 ### 1.3 Logging Standardization (~15h)
 
@@ -81,8 +83,10 @@
   - Added `frontend/src/utils/logger.ts` - createLogger() with scoped prefixes
   - Debug logs disabled in production builds
   - Updated `useWebSocket.ts` to use new logger
-- [ ] Continue migrating console.log to logger (91 occurrences across 19 files)
-- [ ] Effort: 15h
+- [x] Migrated console.log to logger ✅ DONE (v1.4.70)
+  - Reduced from 108 to 26 console statements (remaining are in logger utility and test files)
+  - All 16 source files updated with scoped loggers
+- [x] Effort: 15h
 
 ---
 
@@ -125,10 +129,14 @@
 
 ### 2.2 Integration Tests (~25h)
 
-- [ ] Full playbook execution workflows
-- [ ] WebSocket message broadcasting
-- [ ] Database operations with real SQLite
-- [ ] Effort: 25h
+- [x] Database operations with real SQLite ✅ DONE (v1.4.70)
+  - 13 tests for execution lifecycle, queries, step results, concurrency
+  - Tests cascade delete, complex JSON output, model serialization
+- [x] WebSocket message broadcasting ✅ DONE (v1.4.70)
+  - 12 tests for connection management, broadcast, batching
+  - Tests connect/disconnect, broadcast to all, error handling
+- [ ] Full playbook execution workflows (requires browser/gateway)
+- [x] Effort: 25h
 
 ### 2.3 Frontend Tests (~15h)
 
@@ -148,8 +156,10 @@
   - Progress display, control buttons, step results, edge cases
 - [x] Test CredentialCard component (12 tests) ✅ DONE (v1.4.69)
   - Rendering, delete confirmation, optional fields
+- [x] Test HelpTooltip component (6 tests) ✅ DONE (v1.4.70)
+  - Rendering, size variants, accessible button
 - [ ] Test more hooks and components
-- [ ] Effort: 15h
+- [x] Effort: 15h
 
 ---
 
@@ -184,6 +194,12 @@
 - [x] Add first-time user welcome modal ✅ DONE (v1.4.68)
   - Quick start guide for new users
   - Dismissible with localStorage persistence
+- [x] Add Diagnostics & Logs panel in Settings ✅ DONE (v1.4.70)
+  - Real-time logs viewer with level filtering
+  - System health status with component breakdown
+  - Database and storage statistics
+  - Data cleanup functionality with preview
+  - Log export to file
 - [ ] Add inline help tooltips to complex fields
 - [ ] Improve error messages with recovery hints
 - [ ] Add step-by-step execution timeline view

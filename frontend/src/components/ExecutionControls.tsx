@@ -19,6 +19,9 @@ import {
   Pause as PauseIcon,
 } from '@mui/icons-material';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ExecutionControls');
 
 interface ExecutionControlsProps {
   executionId: string;
@@ -41,7 +44,7 @@ export function ExecutionControls({
       setLoading('skip');
       await api.executions.skip(executionId);
     } catch (error) {
-      console.error('Failed to skip step:', error);
+      logger.error('Failed to skip step:', error);
     } finally {
       setLoading(null);
     }
@@ -49,11 +52,11 @@ export function ExecutionControls({
 
 
   const handleCancel = async () => {
-    console.log('[ExecutionControls] Cancel button clicked, executionId:', executionId);
+    logger.debug('Cancel button clicked, executionId:', executionId);
 
     // Prevent duplicate cancel requests
     if (cancelInProgressRef.current) {
-      console.log('[ExecutionControls] Cancel already in progress, ignoring duplicate click');
+      logger.debug('Cancel already in progress, ignoring duplicate click');
       return;
     }
 
@@ -62,14 +65,14 @@ export function ExecutionControls({
     setLoading('cancel');
 
     try {
-      console.log('[ExecutionControls] Sending cancel request...');
+      logger.debug('Sending cancel request...');
       const response = await api.executions.cancel(executionId);
-      console.log('[ExecutionControls] Cancel request succeeded:', response);
+      logger.debug('Cancel request succeeded:', response);
     } catch (error) {
-      console.error('[ExecutionControls] Failed to cancel execution:', error);
+      logger.error('Failed to cancel execution:', error);
       alert(`Failed to cancel execution: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      console.log('[ExecutionControls] Cancel request complete, clearing loading state');
+      logger.debug('Cancel request complete, clearing loading state');
       cancelInProgressRef.current = false;
       setLoading(null);
     }
@@ -80,7 +83,7 @@ export function ExecutionControls({
       setLoading('pause');
       await api.executions.pause(executionId);
     } catch (error) {
-      console.error('Failed to pause execution:', error);
+      logger.error('Failed to pause execution:', error);
     } finally {
       setLoading(null);
     }
@@ -91,7 +94,7 @@ export function ExecutionControls({
       setLoading('resume');
       await api.executions.resume(executionId);
     } catch (error) {
-      console.error('Failed to resume execution:', error);
+      logger.error('Failed to resume execution:', error);
     } finally {
       setLoading(null);
     }
@@ -169,7 +172,7 @@ export function ExecutionControls({
           <span>
             <Button
               onClick={() => {
-                console.log('[ExecutionControls] Cancel button onClick fired', {
+                logger.debug('Cancel button onClick fired', {
                   isDisabled,
                   loading,
                   cancelInProgress: cancelInProgressRef.current,

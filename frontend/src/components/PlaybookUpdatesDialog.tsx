@@ -39,6 +39,9 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('PlaybookUpdatesDialog');
 
 interface PlaybookUpdate {
   playbook_path: string;
@@ -112,7 +115,7 @@ export function PlaybookUpdatesDialog({ open, onClose }: PlaybookUpdatesDialogPr
       setUpdating(null);
     },
     onError: (error: Error) => {
-      console.error('Update failed:', error);
+      logger.error('Update failed:', error);
       setUpdating(null);
       alert(`Update failed: ${error.message}`);
     },

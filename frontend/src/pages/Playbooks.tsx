@@ -55,7 +55,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
 import { PlaybookCard } from '../components/PlaybookCard';
+
+const logger = createLogger('Playbooks');
 import { PlaybookExecutionDialog } from '../components/PlaybookExecutionDialog';
 import { PlaybookStepsDialog } from '../components/PlaybookStepsDialog';
 import { PlaybookLibraryDialog } from '../components/PlaybookLibraryDialog';
@@ -392,11 +395,11 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
       // Remove invalid configurations
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
-        console.log(`Removed stale configuration: ${key}`);
+        logger.debug(`Removed stale configuration: ${key}`);
       });
 
       if (keysToRemove.length > 0) {
-        console.log(`Cleaned up ${keysToRemove.length} stale playbook configurations`);
+        logger.debug(`Cleaned up ${keysToRemove.length} stale playbook configurations`);
       }
     }
   }, [playbooks]);
@@ -428,7 +431,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
 
     // If global credential is selected, execute directly with it
     if (selectedCredential && !savedConfigStr) {
-      console.log('Executing playbook with credential:', {
+      logger.debug('Executing playbook with credential:', {
         playbook_path: playbook.path,
         credential_name: selectedCredential.name,
         gateway_url: selectedCredential.gateway_url,
@@ -443,14 +446,14 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         credential_name: selectedCredential.name,
         debug_mode,
       }).then(response => {
-        console.log('Execution started successfully:', response);
+        logger.info('Execution started successfully:', response);
         // Navigate to execution detail page AFTER getting execution ID
         navigate(`/executions/${response.execution_id}`);
       }).catch(error => {
-        console.error('Failed to execute playbook:', error);
-        console.error('Error details:', error instanceof Error ? error.message : String(error));
+        logger.error('Failed to execute playbook:', error);
+        logger.error('Error details:', error instanceof Error ? error.message : String(error));
         if (error && typeof error === 'object' && 'data' in error) {
-          console.error('Error data:', (error as any).data);
+          logger.error('Error data:', (error as any).data);
         }
         alert(`Failed to start execution: ${error instanceof Error ? error.message : String(error)}\n\nCheck console for details.`);
       });
@@ -499,11 +502,11 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         // Navigate to execution detail page AFTER getting execution ID
         navigate(`/executions/${response.execution_id}`);
       }).catch(error => {
-        console.error('Failed to execute playbook:', error);
+        logger.error('Failed to execute playbook:', error);
         alert('Failed to start execution. Please check the console for details.');
       });
     } catch (error) {
-      console.error('Failed to parse saved config:', error);
+      logger.error('Failed to parse saved config:', error);
       alert('Failed to load saved configuration. Please try again.');
     }
   };
@@ -631,9 +634,9 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                   `(Full content shown in browser console)\n\n` +
                   `Continue with import?`
                 );
-                console.log('=== PLAYBOOK CODE REVIEW ===');
-                console.log(data.yaml_content);
-                console.log('=== END PLAYBOOK CODE ===');
+                logger.debug('=== PLAYBOOK CODE REVIEW ===');
+                logger.debug(data.yaml_content);
+                logger.debug('=== END PLAYBOOK CODE ===');
 
                 if (!reviewConfirm) return;
               }

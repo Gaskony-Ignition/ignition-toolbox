@@ -65,20 +65,20 @@ class MockWebSocket {
 }
 
 describe('useWebSocket', () => {
-  const originalWebSocket = global.WebSocket;
+  const originalWebSocket = globalThis.WebSocket;
 
   beforeEach(() => {
     vi.useFakeTimers();
     mockWebSocketInstances = [];
 
     // Replace global WebSocket with our mock class
-    global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
+    globalThis.WebSocket = MockWebSocket as unknown as typeof WebSocket;
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
-    global.WebSocket = originalWebSocket;
+    globalThis.WebSocket = originalWebSocket;
   });
 
   it('connects on mount', async () => {

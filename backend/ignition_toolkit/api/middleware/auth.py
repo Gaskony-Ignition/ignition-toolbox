@@ -49,7 +49,7 @@ def get_or_generate_api_key() -> str:
             api_key = api_key_file.read_text(encoding='utf-8').strip()
             if api_key:
                 return api_key
-        except Exception:
+        except OSError:
             pass  # Will generate new key below
 
     # Generate new secure API key

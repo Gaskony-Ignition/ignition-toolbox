@@ -24,9 +24,12 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
 import { AddCredentialDialog } from '../components/AddCredentialDialog';
 import { EditCredentialDialog } from '../components/EditCredentialDialog';
 import type { CredentialInfo, CredentialCreate } from '../types/api';
+
+const logger = createLogger('Credentials');
 
 export function Credentials() {
   const queryClient = useQueryClient();
@@ -99,7 +102,7 @@ export function Credentials() {
 
   const handleDeleteCredential = (name: string) => {
     if (!name) {
-      console.error('[Credentials] handleDeleteCredential called with empty name');
+      logger.error('handleDeleteCredential called with empty name');
       setSnackbarMessage('Error: Credential name is empty');
       setSnackbarOpen(true);
       return;

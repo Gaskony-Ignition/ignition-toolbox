@@ -182,8 +182,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           );
           reconnectDelayRef.current = nextDelay;
 
-          console.log(
-            `[WebSocket] Reconnecting in ${Math.round(nextDelay / 1000)}s (attempt ${reconnectAttemptsRef.current})...`
+          logger.info(
+            `Reconnecting in ${Math.round(nextDelay / 1000)}s (attempt ${reconnectAttemptsRef.current})...`
           );
 
           reconnectTimeoutRef.current = window.setTimeout(() => {

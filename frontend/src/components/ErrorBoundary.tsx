@@ -8,6 +8,9 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { ErrorFallback } from './ErrorFallback';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -39,8 +42,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error details for debugging
-    console.error('Uncaught error:', error);
-    console.error('Error info:', errorInfo);
+    logger.error('Uncaught error:', error);
+    logger.error('Error info:', errorInfo);
 
     // Store error info in state for display
     this.setState({

@@ -177,7 +177,7 @@ def clear_bytecode_cache() -> int:
             import shutil
             shutil.rmtree(pycache_dir)
             count += 1
-        except Exception:
+        except OSError:
             pass  # Ignore errors, cache clearing is best-effort
 
     return count
@@ -214,8 +214,8 @@ def check_database_locks() -> bool:
         return True
     except sqlite3.OperationalError:
         return False  # Database is locked
-    except Exception:
-        return True  # Other errors, assume OK
+    except sqlite3.Error:
+        return True  # Other SQLite errors, assume OK
 
 
 def run_preflight_checks(skip_checks: bool = False, auto_rebuild: bool = True) -> bool:
@@ -469,7 +469,7 @@ def status(port):
                 console.print(f"[green]✓ Health check passed[/green]")
                 console.print(f"  Version: {health_data.get('version', 'unknown')}")
                 console.print(f"  Status: {health_data.get('status', 'unknown')}")
-        except Exception:
+        except httpx.HTTPError:
             pass  # Health endpoint optional
 
         # Summary

@@ -19,6 +19,9 @@ import {
 import FolderIcon from '@mui/icons-material/Folder';
 import type { ParameterInfo, CredentialInfo } from '../types/api';
 import FolderBrowserDialog from './FolderBrowserDialog';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ParameterInput');
 
 // Check if running in Electron
 const isElectron = (): boolean => {
@@ -62,7 +65,7 @@ export function ParameterInput({
           handleChange(result[0]);
         }
       } catch (error) {
-        console.error('Failed to open folder dialog:', error);
+        logger.error('Failed to open folder dialog:', error);
         // Fall back to custom dialog
         setFolderDialogOpen(true);
       }

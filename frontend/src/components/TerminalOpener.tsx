@@ -27,6 +27,9 @@ import {
   Code as CodeIcon,
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('TerminalOpener');
 
 interface TerminalOpenerProps {
   open: boolean;
@@ -50,7 +53,7 @@ export function TerminalOpener({
         }
       })
       .catch(err => {
-        console.warn('Failed to fetch config, using default playbooks path:', err);
+        logger.warn('Failed to fetch config, using default playbooks path:', err);
         // Keep default './playbooks'
       });
   }, []);

@@ -17,6 +17,9 @@ import {
   Alert,
 } from '@mui/material';
 import type { PlaybookInfo } from '../types/api';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ScheduleDialog');
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -160,7 +163,7 @@ export default function ScheduleDialog({
 
       onClose();
     } catch (error) {
-      console.error('Failed to create schedule:', error);
+      logger.error('Failed to create schedule:', error);
       alert(`Failed to create schedule: ${error}`);
     }
   };

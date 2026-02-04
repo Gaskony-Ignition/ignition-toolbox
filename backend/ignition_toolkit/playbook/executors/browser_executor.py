@@ -97,7 +97,7 @@ class BrowserVerifyHandler(StepHandler):
             # Try to find the element
             await self.manager.wait_for_selector(selector, timeout=timeout)
             element_found = True
-        except Exception:
+        except TimeoutError:
             element_found = False
 
         # Check if result matches expectation

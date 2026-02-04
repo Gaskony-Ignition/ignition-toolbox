@@ -24,8 +24,11 @@ import {
   Error as ErrorIcon,
 } from '@mui/icons-material';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
 import type { HealthResponse } from '../types/api';
 import packageJson from '../../package.json';
+
+const logger = createLogger('About');
 
 interface UpdateInfo {
   current_version: string;
@@ -56,7 +59,7 @@ export function About() {
       const data = await api.health();
       setHealth(data);
     } catch (err) {
-      console.error('Failed to fetch health:', err);
+      logger.error('Failed to fetch health:', err);
     }
   };
 
@@ -82,7 +85,7 @@ export function About() {
       }
     } catch (err) {
       setError('Failed to check for updates. Please try again.');
-      console.error('Update check error:', err);
+      logger.error('Update check error:', err);
     } finally {
       setChecking(false);
     }
@@ -110,7 +113,7 @@ export function About() {
       }
     } catch (err) {
       setError('Failed to install update. Please try again.');
-      console.error('Update install error:', err);
+      logger.error('Update install error:', err);
     } finally {
       setInstalling(false);
     }
@@ -132,7 +135,7 @@ export function About() {
         }
       } catch (err) {
         // Server might be restarting
-        console.error('Status poll error:', err);
+        logger.error('Status poll error:', err);
       }
     }, 2000);
 

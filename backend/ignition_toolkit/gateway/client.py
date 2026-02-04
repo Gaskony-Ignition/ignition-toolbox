@@ -150,7 +150,7 @@ class GatewayClient:
         try:
             response = await self.client.get(GatewayEndpoints.STATUS_PING)
             return response.status_code == 200
-        except Exception:
+        except httpx.HTTPError:
             return False
 
     async def get_info(self) -> GatewayInfo:
@@ -453,7 +453,7 @@ class GatewayClient:
                     try:
                         await self.login(self.username, self.password)
                         return True
-                    except Exception:
+                    except (httpx.HTTPError, AuthenticationError):
                         # May still be initializing
                         pass
 

@@ -27,7 +27,7 @@ function createTestExecution(overrides: Partial<ExecutionStatusResponse> = {}): 
         error: null,
         started_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
-        output: null,
+        output: undefined,
       },
       {
         step_id: 'step2',
@@ -36,7 +36,7 @@ function createTestExecution(overrides: Partial<ExecutionStatusResponse> = {}): 
         error: null,
         started_at: new Date().toISOString(),
         completed_at: null,
-        output: null,
+        output: undefined,
       },
     ],
     domain: 'gateway',
@@ -228,7 +228,7 @@ describe('ExecutionCard', () => {
           error: 'Element not found',
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
-          output: null,
+          output: undefined,
         },
       ],
     });

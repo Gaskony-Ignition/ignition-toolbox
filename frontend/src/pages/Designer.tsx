@@ -43,6 +43,9 @@ import { api } from '../api/client';
 import { useStore } from '../store';
 import { Playbooks } from './Playbooks';
 import type { DockerStatus, CloudDesignerStatus } from '../types/api';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('Designer');
 
 export function Designer() {
   const queryClient = useQueryClient();
@@ -53,9 +56,9 @@ export function Designer() {
 
   // Debug logging for credential state
   useEffect(() => {
-    console.log('[Designer] Component mounted/updated');
-    console.log('[Designer] selectedCredential:', selectedCredential);
-    console.log('[Designer] gateway_url:', selectedCredential?.gateway_url);
+    logger.debug('[Designer] Component mounted/updated');
+    logger.debug('[Designer] selectedCredential:', selectedCredential);
+    logger.debug('[Designer] gateway_url:', selectedCredential?.gateway_url);
   }, [selectedCredential]);
 
   // Query Docker status
@@ -84,13 +87,13 @@ export function Designer() {
   // Start mutation - pass both gateway URL and credential name for auto-login
   const startMutation = useMutation({
     mutationFn: async ({ gatewayUrl, credentialName }: { gatewayUrl: string; credentialName?: string }) => {
-      console.log('[CloudDesigner] Calling API start with:', { gatewayUrl, credentialName });
+      logger.debug('[CloudDesigner] Calling API start with:', { gatewayUrl, credentialName });
       const result = await api.cloudDesigner.start(gatewayUrl, credentialName);
-      console.log('[CloudDesigner] API start result:', result);
+      logger.debug('[CloudDesigner] API start result:', result);
       return result;
     },
     onSuccess: (data) => {
-      console.log('[CloudDesigner] onSuccess:', data);
+      logger.debug('[CloudDesigner] onSuccess:', data);
       if (!data.success) {
         setStartError(data.error || 'Failed to start CloudDesigner');
       } else {
@@ -100,7 +103,7 @@ export function Designer() {
       queryClient.invalidateQueries({ queryKey: ['clouddesigner-status'] });
     },
     onError: (error: Error) => {
-      console.error('[CloudDesigner] onError:', error);
+      logger.error('[CloudDesigner] onError:', error);
       setStartError(error.message);
     },
   });
@@ -145,17 +148,17 @@ export function Designer() {
 
   // Handle start button click
   const handleStart = () => {
-    console.log('[CloudDesigner] handleStart called');
-    console.log('[CloudDesigner] selectedCredential:', selectedCredential);
+    logger.debug('[CloudDesigner] handleStart called');
+    logger.debug('[CloudDesigner] selectedCredential:', selectedCredential);
     if (selectedCredential?.gateway_url) {
-      console.log('[CloudDesigner] Starting with gateway:', selectedCredential.gateway_url);
+      logger.debug('[CloudDesigner] Starting with gateway:', selectedCredential.gateway_url);
       setStartError(null);
       startMutation.mutate({
         gatewayUrl: selectedCredential.gateway_url,
         credentialName: selectedCredential.name,
       });
     } else {
-      console.log('[CloudDesigner] No gateway URL - cannot start');
+      logger.debug('[CloudDesigner] No gateway URL - cannot start');
       setStartError('No gateway URL configured in selected credential');
     }
   };
@@ -170,7 +173,7 @@ export function Designer() {
       try {
         await window.electronAPI.openExternal(url);
       } catch (error) {
-        console.error('Failed to open URL:', error);
+        logger.error('Failed to open URL:', error);
         // Fallback: copy to clipboard
         navigator.clipboard.writeText(url).catch(() => {});
         setStartError(`Could not open browser. Please navigate to: ${url}`);
@@ -444,11 +447,12 @@ docker info`}
                   color="primary"
                   startIcon={isStarting ? <CircularProgress size={16} color="inherit" /> : <StartIcon />}
                   onClick={() => {
-                    console.log('=== BUTTON CLICKED ===');
-                    console.log('selectedCredential:', selectedCredential);
-                    console.log('gateway_url:', selectedCredential?.gateway_url);
-                    console.log('isStarting:', isStarting);
-                    console.log('Button disabled:', !selectedCredential?.gateway_url || isStarting);
+                    logger.debug('Start button clicked', {
+                      selectedCredential,
+                      gateway_url: selectedCredential?.gateway_url,
+                      isStarting,
+                      disabled: !selectedCredential?.gateway_url || isStarting,
+                    });
                     handleStart();
                   }}
                   disabled={!selectedCredential?.gateway_url || isStarting}

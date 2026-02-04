@@ -17,7 +17,16 @@ import type {
   CloudDesignerStartResponse,
   CloudDesignerStopResponse,
   CloudDesignerConfig,
+  DetailedHealthResponse,
+  DatabaseStats,
+  StorageStats,
+  CleanupResult,
+  LogEntry,
+  LogStats,
 } from '../types/api';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('API');
 
 // API Base URL - supports both web and Electron modes
 // In Electron: get from IPC (dynamic port)
@@ -33,9 +42,9 @@ export async function initializeBackendUrl(): Promise<void> {
   if (window.electronAPI?.getBackendUrl) {
     try {
       API_BASE_URL = await window.electronAPI.getBackendUrl();
-      console.log('Using Electron backend URL:', API_BASE_URL);
+      logger.info('Using Electron backend URL:', API_BASE_URL);
     } catch (error) {
-      console.error('Failed to get Electron backend URL:', error);
+      logger.error('Failed to get Electron backend URL:', error);
       // Fallback to default
       API_BASE_URL = 'http://127.0.0.1:5000';
     }
@@ -96,6 +105,30 @@ export const api = {
    * Health check
    */
   health: () => fetchJSON<HealthResponse>('/health'),
+
+  /**
+   * Health diagnostics
+   */
+  diagnostics: {
+    /** Get detailed health status with component breakdown */
+    getDetailedHealth: () =>
+      fetchJSON<DetailedHealthResponse>('/health/detailed'),
+
+    /** Get database statistics */
+    getDatabaseStats: () =>
+      fetchJSON<DatabaseStats>('/health/database'),
+
+    /** Get screenshot storage statistics */
+    getStorageStats: () =>
+      fetchJSON<StorageStats>('/health/storage'),
+
+    /** Cleanup old data (executions and screenshots) */
+    cleanup: (olderThanDays: number = 30, dryRun: boolean = true) =>
+      fetchJSON<CleanupResult>(
+        `/health/cleanup?older_than_days=${olderThanDays}&dry_run=${dryRun}`,
+        { method: 'POST' }
+      ),
+  },
 
   /**
    * Playbooks
@@ -678,13 +711,7 @@ export const api = {
       if (params?.execution_id) searchParams.set('execution_id', params.execution_id);
       const query = searchParams.toString();
       return fetchJSON<{
-        logs: Array<{
-          timestamp: string;
-          level: string;
-          logger: string;
-          message: string;
-          execution_id: string | null;
-        }>;
+        logs: LogEntry[];
         total: number;
         filtered: number;
       }>(`/api/logs${query ? `?${query}` : ''}`);
@@ -695,13 +722,7 @@ export const api = {
      */
     getForExecution: (executionId: string, limit?: number) =>
       fetchJSON<{
-        logs: Array<{
-          timestamp: string;
-          level: string;
-          logger: string;
-          message: string;
-          execution_id: string | null;
-        }>;
+        logs: LogEntry[];
         total: number;
         filtered: number;
       }>(`/api/logs/execution/${executionId}${limit ? `?limit=${limit}` : ''}`),
@@ -709,14 +730,7 @@ export const api = {
     /**
      * Get log statistics
      */
-    getStats: () =>
-      fetchJSON<{
-        total_captured: number;
-        max_entries: number;
-        level_counts: Record<string, number>;
-        oldest_entry: string | null;
-        newest_entry: string | null;
-      }>('/api/logs/stats'),
+    getStats: () => fetchJSON<LogStats>('/api/logs/stats'),
 
     /**
      * Clear all captured logs

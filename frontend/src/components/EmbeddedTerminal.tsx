@@ -4,6 +4,9 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('EmbeddedTerminal');
 
 interface EmbeddedTerminalProps {
   executionId: string;
@@ -130,7 +133,7 @@ export function EmbeddedTerminal({
         };
 
         ws.current.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          logger.error('WebSocket error:', error);
           terminal.current?.writeln('\x1b[1;31m✗ WebSocket connection error\x1b[0m');
           setError('WebSocket connection failed');
           onError('WebSocket error');
@@ -166,7 +169,7 @@ export function EmbeddedTerminal({
           }
         };
       } catch (err) {
-        console.error('Terminal initialization error:', err);
+        logger.error('Terminal initialization error:', err);
         setError('Failed to initialize terminal');
         onError(err instanceof Error ? err.message : 'Terminal init failed');
       }

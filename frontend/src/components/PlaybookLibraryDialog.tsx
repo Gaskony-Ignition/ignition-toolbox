@@ -40,6 +40,9 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('PlaybookLibraryDialog');
 
 interface AvailablePlaybook {
   playbook_path: string;
@@ -115,7 +118,7 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
       setInstalling(null);
     },
     onError: (error: Error) => {
-      console.error('Installation failed:', error);
+      logger.error('Installation failed:', error);
       setInstalling(null);
       alert(`Installation failed: ${error.message}`);
     },

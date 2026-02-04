@@ -26,6 +26,9 @@ import {
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('EmbeddedShellTerminal');
 
 interface EmbeddedShellTerminalProps {
   open: boolean;
@@ -56,7 +59,7 @@ export function EmbeddedShellTerminal({
         }
       })
       .catch(err => {
-        console.warn('Failed to fetch config, using default playbooks path:', err);
+        logger.warn('Failed to fetch config, using default playbooks path:', err);
         // Keep default './playbooks'
       });
   }, []);
@@ -99,26 +102,26 @@ export function EmbeddedShellTerminal({
   };
 
   useEffect(() => {
-    console.log('[EmbeddedShellTerminal] useEffect triggered', { open, hasTerminalRef: !!terminalRef.current });
+    logger.debug('useEffect triggered', { open, hasTerminalRef: !!terminalRef.current });
 
     if (!open) {
-      console.log('[EmbeddedShellTerminal] Dialog not open, skipping initialization');
+      logger.debug('Dialog not open, skipping initialization');
       return;
     }
 
     // Wait for terminal ref to be ready (it won't be on first render)
     if (!terminalRef.current) {
-      console.log('[EmbeddedShellTerminal] Terminal ref not ready yet, will retry...');
+      logger.debug('Terminal ref not ready yet, will retry...');
       // Use a small timeout to wait for the DOM to be ready
       const retryTimer = setTimeout(() => {
-        console.log('[EmbeddedShellTerminal] Retrying after ref should be ready');
+        logger.debug('Retrying after ref should be ready');
         // Force re-render by setting a dummy state
         setError(null);
       }, 100);
       return () => clearTimeout(retryTimer);
     }
 
-    console.log('[EmbeddedShellTerminal] Starting terminal initialization');
+    logger.debug('Starting terminal initialization');
 
     // Create terminal instance
     const term = new Terminal({
@@ -143,21 +146,21 @@ export function EmbeddedShellTerminal({
     term.open(terminalRef.current);
     fitAddon.fit();
 
-    console.log('[EmbeddedShellTerminal] Terminal opened and fitted');
+    logger.debug('Terminal opened and fitted');
 
     // Connect to WebSocket for shell
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/shell?path=${encodeURIComponent(playbooksPath)}`;
 
-    console.log('[EmbeddedShellTerminal] Creating WebSocket connection', { wsUrl });
+    logger.debug('Creating WebSocket connection', { wsUrl });
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    console.log('[EmbeddedShellTerminal] WebSocket object created, readyState:', ws.readyState);
+    logger.debug('WebSocket object created, readyState:', ws.readyState);
 
     ws.onopen = () => {
-      console.log('[EmbeddedShellTerminal] WebSocket opened successfully');
+      logger.debug('WebSocket opened successfully');
       setIsConnected(true);
       setError(null);
       term.writeln('\x1b[1;32m✓ Connected to shell\x1b[0m');
@@ -169,25 +172,25 @@ export function EmbeddedShellTerminal({
     };
 
     ws.onmessage = (event) => {
-      console.log('[EmbeddedShellTerminal] WebSocket message received:', event.data);
+      logger.debug('WebSocket message received:', event.data);
       try {
         const data = JSON.parse(event.data);
         if (data.output) {
           term.write(data.output);
         }
       } catch (error) {
-        console.error('[EmbeddedShellTerminal] Error parsing message:', error);
+        logger.error('Error parsing message:', error);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('[EmbeddedShellTerminal] WebSocket error:', error);
+      logger.error('WebSocket error:', error);
       setError('Failed to connect to terminal server');
       term.writeln('\x1b[1;31m✗ Connection error\x1b[0m');
     };
 
     ws.onclose = (event) => {
-      console.log('[EmbeddedShellTerminal] WebSocket closed', { code: event.code, reason: event.reason });
+      logger.debug('WebSocket closed', { code: event.code, reason: event.reason });
       setIsConnected(false);
       term.writeln('');
       term.writeln('\x1b[1;33m⚠ Connection closed\x1b[0m');
@@ -195,12 +198,12 @@ export function EmbeddedShellTerminal({
 
     // Send input from terminal to WebSocket
     const disposable = term.onData((data) => {
-      console.log('[EmbeddedShellTerminal] User input, WebSocket state:', ws.readyState);
+      logger.debug('User input, WebSocket state:', ws.readyState);
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ input: data }));
-        console.log('[EmbeddedShellTerminal] Sent input to server');
+        logger.debug('Sent input to server');
       } else {
-        console.warn('[EmbeddedShellTerminal] WebSocket not open, cannot send input');
+        logger.warn('WebSocket not open, cannot send input');
       }
     });
 
@@ -212,7 +215,7 @@ export function EmbeddedShellTerminal({
 
     // Cleanup
     return () => {
-      console.log('[EmbeddedShellTerminal] Cleanup function called');
+      logger.debug('Cleanup function called');
       disposable.dispose();
       window.removeEventListener('resize', handleResize);
       if (ws.readyState === WebSocket.OPEN) {
@@ -222,7 +225,7 @@ export function EmbeddedShellTerminal({
     };
   }, [open, playbooksPath]);
 
-  console.log('[EmbeddedShellTerminal] Render', { open, isConnected, error });
+  logger.debug('Render', { open, isConnected, error });
 
   return (
     <>
