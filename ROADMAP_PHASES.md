@@ -239,7 +239,9 @@
 ### 5.1 Performance Optimizations (~25h)
 
 - [ ] WebSocket message batching (>10 events)
-- [ ] Frontend code splitting (lazy load routes)
+- [x] Frontend code splitting (lazy load routes) ✅ DONE (v1.4.68)
+  - React.lazy() for Designer, APIExplorer, StackBuilder, ExecutionDetail
+  - Reduces initial bundle load, pages load on-demand
 - [ ] Screenshot compression (WebP format)
 - [ ] Database query optimization
 - [ ] Effort: 25h

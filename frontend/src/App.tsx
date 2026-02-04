@@ -1,24 +1,38 @@
 /**
  * Main App component with tab-based navigation
+ *
+ * Uses React.lazy for code splitting - heavier pages are loaded on-demand
+ * to improve initial bundle size and load performance.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box } from '@mui/material';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout, type DomainTab } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
-import { Designer } from './pages/Designer';
 import { Executions } from './pages/Executions';
-import { ExecutionDetail } from './pages/ExecutionDetail';
 import { Settings } from './pages/Settings';
-import { APIExplorer } from './pages/APIExplorer';
-import { StackBuilder } from './pages/StackBuilder';
 import { FloatingChatButton } from './components/chat/FloatingChatButton';
 import { WelcomeDialog } from './components/WelcomeDialog';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
+
+// Lazy-loaded pages for code splitting (reduces initial bundle size)
+const Designer = lazy(() => import('./pages/Designer').then(m => ({ default: m.Designer })));
+const ExecutionDetail = lazy(() => import('./pages/ExecutionDetail').then(m => ({ default: m.ExecutionDetail })));
+const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ default: m.APIExplorer })));
+const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
+
+// Loading fallback for lazy-loaded components
+function PageLoader() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+      <CircularProgress />
+    </Box>
+  );
+}
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -120,20 +134,33 @@ function AppContent() {
   });
 
   // Render content based on active tab
+  // Lazy-loaded components are wrapped in Suspense with a loading fallback
   const renderContent = () => {
     switch (activeTab) {
       case 'gateway':
         return <Playbooks domainFilter="gateway" />;
       case 'designer':
-        return <Designer />;
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <Designer />
+          </Suspense>
+        );
       case 'perspective':
         return <Playbooks domainFilter="perspective" />;
       case 'executions':
         return <Executions />;
       case 'api':
-        return <APIExplorer />;
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <APIExplorer />
+          </Suspense>
+        );
       case 'stackbuilder':
-        return <StackBuilder />;
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <StackBuilder />
+          </Suspense>
+        );
       case 'settings':
         return <Settings />;
       default:
@@ -203,7 +230,9 @@ function ExecutionDetailWrapper() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Layout activeTab={activeTab} onTabChange={handleTabChange}>
-        <ExecutionDetail />
+        <Suspense fallback={<PageLoader />}>
+          <ExecutionDetail />
+        </Suspense>
       </Layout>
     </ThemeProvider>
   );
