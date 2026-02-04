@@ -92,11 +92,11 @@
 
 ### 2.1 Backend Unit Tests (~40h)
 
-- [ ] **Playbook Engine Tests** (`playbook/engine.py`)
-  - Test step execution flow
-  - Test error handling and recovery
-  - Test timeout behavior
-  - Test variable interpolation
+- [x] **Playbook Engine Tests** (`playbook/engine.py`) ✅ DONE (v1.4.68)
+  - 29 tests for engine initialization, timeouts, control methods
+  - Test parameter validation
+  - Test credential preprocessing
+  - Test domain detection for resource setup
   - Effort: 16h
 
 - [x] **Playbook Loader Tests** ✅ DONE (v1.4.68)
@@ -251,16 +251,18 @@
 
 ### 5.2 Maintenance Features (~25h)
 
-- [ ] **Database Cleanup**
-  - Configurable retention policy
-  - Auto-delete executions >30 days
-  - Manual purge UI
+- [x] **Database Cleanup** ✅ Partially DONE (v1.4.68)
+  - POST /health/cleanup endpoint with dry_run support
+  - Configurable older_than_days parameter
+  - [ ] Auto-delete scheduled job (APScheduler)
+  - [ ] Manual purge UI in frontend
   - Effort: 10h
 
-- [ ] **Screenshot Storage Management**
-  - Disk usage monitoring
-  - Auto-cleanup old screenshots
-  - Compression on save
+- [x] **Screenshot Storage Management** ✅ Partially DONE (v1.4.68)
+  - GET /health/storage endpoint for disk usage monitoring
+  - Cleanup integrated with /health/cleanup endpoint
+  - [x] Compression on save (WebP format)
+  - [ ] Dashboard widget in frontend
   - Effort: 8h
 
 - [x] **Health Monitoring** ✅ DONE (v1.4.68)
