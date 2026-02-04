@@ -144,8 +144,9 @@
   - Connection lifecycle, callbacks, heartbeat, reconnect with backoff
 - [x] Test PlaybookCard component (14 tests) ✅ DONE (v1.4.69)
   - Rendering, buttons, menus, dialogs, callbacks
-- [ ] Test useExecution hook
-- [ ] Test more components (ExecutionStepper)
+- [x] Test ExecutionCard component (18 tests) ✅ DONE (v1.4.69)
+  - Progress display, control buttons, step results, edge cases
+- [ ] Test more hooks and components
 - [ ] Effort: 15h
 
 ---
