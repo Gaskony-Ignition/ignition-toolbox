@@ -1,5 +1,5 @@
 /**
- * Chat components for Clawdbot AI assistant
+ * Chat components for Toolbox Assistant
  */
 
 export { ChatPanel } from './ChatPanel';

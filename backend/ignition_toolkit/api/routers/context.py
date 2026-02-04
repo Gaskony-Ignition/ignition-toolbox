@@ -1,7 +1,7 @@
 """
 Context API Router
 
-Provides project context for AI assistants (Clawdbot).
+Provides project context for AI assistants (Toolbox Assistant).
 Returns comprehensive information about playbooks, executions, credentials,
 logs, and system status.
 """

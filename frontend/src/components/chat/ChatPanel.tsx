@@ -1,5 +1,5 @@
 /**
- * ChatPanel - Shared chat UI component for Clawdbot
+ * ChatPanel - Shared chat UI component for Toolbox Assistant
  *
  * Displays chat messages, input field, and handles user interactions.
  * Can be used in both the full Chat page and the floating drawer.
@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useClaudeCode, type ChatMessage } from '../../hooks/useClaudeCode';
 import ReactMarkdown from 'react-markdown';
+import { ActionBlock, parseActionBlocks, removeActionBlocks } from './ActionBlock';
 
 interface ChatPanelProps {
   /** Height of the panel (default: 100%) */
@@ -41,6 +42,14 @@ interface ChatPanelProps {
  */
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
+
+  // Parse action blocks from assistant messages
+  const actionBlocks = !isUser && !message.isStreaming
+    ? parseActionBlocks(message.content)
+    : [];
+  const displayContent = actionBlocks.length > 0
+    ? removeActionBlocks(message.content)
+    : message.content;
 
   return (
     <Box
@@ -70,7 +79,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <>
             <BotIcon sx={{ fontSize: 16, color: 'primary.main' }} />
             <Typography variant="caption" sx={{ color: 'primary.main' }}>
-              Clawdbot
+              Assistant
             </Typography>
           </>
         )}
@@ -119,7 +128,19 @@ function MessageBubble({ message }: { message: ChatMessage }) {
               '& li': { mb: 0.5 },
             }}
           >
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown>{displayContent}</ReactMarkdown>
+          </Box>
+        )}
+
+        {/* Render action blocks for assistant messages */}
+        {actionBlocks.length > 0 && (
+          <Box sx={{ mt: 1 }}>
+            {actionBlocks.map((action, index) => (
+              <ActionBlock
+                key={`${action.action}-${index}`}
+                action={action}
+              />
+            ))}
           </Box>
         )}
 
@@ -163,7 +184,7 @@ function NotAvailableMessage() {
         Claude Code Not Found
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Clawdbot requires Claude Code CLI to be installed on your system.
+        The Toolbox Assistant requires Claude Code CLI to be installed on your system.
       </Typography>
       <Alert severity="info" sx={{ maxWidth: 400, textAlign: 'left' }}>
         <Typography variant="body2">
@@ -215,11 +236,12 @@ function WelcomeMessage() {
     >
       <BotIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
       <Typography variant="h6" gutterBottom>
-        Hi, I'm Clawdbot!
+        Toolbox Assistant
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
-        I'm your AI assistant for Ignition Toolbox. I can help you understand
-        playbooks, debug failed executions, and troubleshoot automation issues.
+        I'm your AI assistant for Ignition Toolbox. I can see all your playbooks,
+        executions, and logs - and I can run playbooks, control executions,
+        and diagnose issues for you.
       </Typography>
       <Box sx={{ mt: 3, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
         <Typography variant="caption" color="text.secondary">
@@ -228,13 +250,16 @@ function WelcomeMessage() {
       </Box>
       <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          "Show me all gateway playbooks"
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          "Run the Gateway Login playbook"
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
           "Why did my last execution fail?"
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-          "How do I add a wait step to a playbook?"
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-          "What playbooks are available for gateway testing?"
+          "What's the system status?"
         </Typography>
       </Box>
     </Box>
@@ -374,7 +399,7 @@ export function ChatPanel({
           <TextField
             inputRef={inputRef}
             fullWidth
-            placeholder="Ask Clawdbot anything..."
+            placeholder="Ask me anything..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}

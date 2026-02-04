@@ -770,6 +770,45 @@ export const api = {
    * Get the base URL for API calls
    */
   getBaseUrl: () => API_BASE_URL,
+
+  /**
+   * Toolbox Assistant Actions - AI assistant operations
+   */
+  assistant: {
+    /**
+     * Get available capabilities
+     */
+    getCapabilities: () =>
+      fetchJSON<{
+        actions: Array<{
+          name: string;
+          description: string;
+          params: Array<{
+            name: string;
+            type: string;
+            required: boolean;
+            description: string;
+          }>;
+          requires_confirmation: boolean;
+        }>;
+        version: string;
+      }>('/api/assistant/capabilities'),
+
+    /**
+     * Execute an action
+     */
+    execute: (action: string, params: Record<string, unknown> = {}) =>
+      fetchJSON<{
+        success: boolean;
+        action: string;
+        result: unknown;
+        message?: string;
+        error?: string;
+      }>('/api/assistant/execute', {
+        method: 'POST',
+        body: JSON.stringify({ action, params }),
+      }),
+  },
 };
 
 export { APIError };

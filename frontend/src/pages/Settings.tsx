@@ -76,7 +76,7 @@ const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] 
   { id: 'diagnostics', label: 'Diagnostics & Logs', icon: <DiagnosticsIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
   { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
-  { id: 'chat', label: 'Clawdbot', icon: <ChatIcon /> },
+  { id: 'chat', label: 'Assistant', icon: <ChatIcon /> },
   { id: 'about', label: 'About', icon: <AboutIcon /> },
 ];
 
@@ -680,7 +680,7 @@ export function Settings() {
   const renderChatContent = () => (
     <Box sx={{ width: '100%', height: 'calc(100vh - 200px)' }}>
       <Typography variant="h6" sx={{ mb: 3 }}>
-        Clawdbot AI Assistant
+        Toolbox Assistant
       </Typography>
       <Paper
         elevation={0}

@@ -75,7 +75,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   installUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:install'),
   getUpdateStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:getStatus'),
 
-  // Chat (Clawdbot)
+  // Chat (Toolbox Assistant)
   chat: {
     checkAvailability: (): Promise<boolean> => ipcRenderer.invoke('chat:checkAvailability'),
     execute: (prompt: string): Promise<{ success: boolean; output: string; error?: string }> =>

@@ -173,7 +173,7 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
     return getUpdateStatus();
   });
 
-  // Chat handlers (Clawdbot)
+  // Chat handlers (Toolbox Assistant)
   ipcMain.handle('chat:checkAvailability', async () => {
     const executor = getClaudeExecutor();
     return executor.checkAvailability();

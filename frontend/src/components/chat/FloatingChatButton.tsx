@@ -1,7 +1,7 @@
 /**
  * FloatingChatButton - Floating chat panel that doesn't block page interaction
  *
- * Provides quick access to Clawdbot from any page in the application.
+ * Provides quick access to the Toolbox Assistant from any page in the application.
  * The chat panel floats above the content and can be minimized/resized.
  */
 
@@ -156,7 +156,7 @@ export function FloatingChatButton({ hidden = false }: FloatingChatButtonProps) 
     if (!isAvailable) {
       return 'Install Claude Code for AI features';
     }
-    return 'Chat with Clawdbot';
+    return 'Chat with Assistant';
   };
 
   const size = PANEL_SIZES[panelSize];
@@ -237,7 +237,7 @@ export function FloatingChatButton({ hidden = false }: FloatingChatButtonProps) 
               <DragIcon sx={{ fontSize: 18, opacity: 0.7 }} />
               <BotIcon sx={{ fontSize: 20 }} />
               <Typography variant="subtitle2" fontWeight="medium">
-                Clawdbot
+                Assistant
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.25 }}>

@@ -64,7 +64,7 @@ interface ElectronAPI {
     openWindow: () => Promise<boolean>;
   };
 
-  // Chat (Clawdbot)
+  // Chat (Toolbox Assistant)
   chat: {
     checkAvailability: () => Promise<boolean>;
     execute: (prompt: string) => Promise<{ success: boolean; output: string; error?: string }>;
