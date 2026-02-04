@@ -258,10 +258,11 @@
   - Compression on save
   - Effort: 8h
 
-- [ ] **Health Monitoring**
-  - `/api/health/database` - DB size, execution count
-  - `/api/health/storage` - Screenshot disk usage
-  - Dashboard widget for system health
+- [x] **Health Monitoring** ✅ DONE (v1.4.68)
+  - `/api/health/database` - DB size, execution count, status breakdown
+  - `/api/health/storage` - Screenshot disk usage, file counts
+  - `/api/health/cleanup` - Cleanup old data with dry_run support
+  - 10 tests for health endpoints
   - Effort: 7h
 
 ---
