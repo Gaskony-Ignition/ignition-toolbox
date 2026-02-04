@@ -116,12 +116,12 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         # Exclude unnecessary modules to reduce size
+        # NOTE: PIL/Pillow is REQUIRED for visual testing (screenshot comparison)
         'tkinter',
         'matplotlib',
         'numpy',
         'pandas',
         'scipy',
-        'PIL',
         'cv2',
         'torch',
         'tensorflow',
