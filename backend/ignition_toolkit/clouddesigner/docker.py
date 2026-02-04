@@ -28,6 +28,10 @@ CREATION_FLAGS = (
 # This stores the command that successfully found Docker (e.g., ["wsl", "-d", "Ubuntu", "docker"])
 _wsl_docker_command: list[str] | None = None
 
+# Cache to avoid repeated Docker detection on every status poll
+_docker_detection_cache: dict[str, str | None] = {}
+_docker_detection_done: bool = False
+
 
 def is_wsl() -> bool:
     """
@@ -114,12 +118,12 @@ def check_wsl_docker() -> tuple[bool, str | None]:
                 timeout=30,  # Longer timeout for WSL startup
                 creationflags=CREATION_FLAGS,
             )
-            logger.debug(f"WSL Docker result: returncode={result.returncode}, stdout={result.stdout[:100] if result.stdout else ''}, stderr={result.stderr[:100] if result.stderr else ''}")
+            logger.debug(f"WSL Docker result: returncode={result.returncode}")
             if result.returncode == 0:
                 version = result.stdout.strip()
                 # Extract distro name for logging if using -d flag
                 distro = test_cmd[test_cmd.index("-d") + 1] if "-d" in test_cmd else "default"
-                logger.debug(f"Docker found via WSL ({distro}): {version}")
+                logger.info(f"[CloudDesigner] Docker found via WSL ({distro}): {version}")
                 # Cache the working command prefix for future use
                 _wsl_docker_command = docker_prefix
                 logger.debug(f"Cached WSL Docker command: {_wsl_docker_command}")
@@ -158,7 +162,7 @@ def check_wsl_docker_running() -> bool:
     if _wsl_docker_command:
         try:
             cmd = _wsl_docker_command + ["info"]
-            logger.debug(f"Checking WSL Docker daemon with cached command: {' '.join(cmd)}")
+            logger.debug(f"Checking WSL Docker daemon with cached command")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -172,7 +176,7 @@ def check_wsl_docker_running() -> bool:
                 logger.debug(f"WSL Docker daemon running via cached command")
                 return True
             else:
-                logger.debug(f"WSL Docker daemon not running: {result.stderr[:100] if result.stderr else 'no error'}")
+                logger.debug(f"WSL Docker daemon not running")
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
             logger.debug(f"WSL Docker daemon check failed: {e}")
         except Exception as e:
@@ -228,6 +232,12 @@ def find_docker_executable() -> str | None:
     Returns:
         Path to docker executable, or None if not found
     """
+    global _docker_detection_done, _docker_detection_cache
+
+    # Return cached result if we've already done detection
+    if _docker_detection_done and "docker_path" in _docker_detection_cache:
+        return _docker_detection_cache["docker_path"]
+
     current_platform = platform.system()
     logger.debug(f"Finding Docker executable - Platform: {current_platform}")
 
@@ -235,6 +245,8 @@ def find_docker_executable() -> str | None:
     docker_path = shutil.which("docker")
     if docker_path:
         logger.debug(f"Docker found in PATH: {docker_path}")
+        _docker_detection_cache["docker_path"] = docker_path
+        _docker_detection_done = True
         return docker_path
 
     logger.debug("Docker not found in PATH, checking platform-specific locations")
@@ -250,6 +262,8 @@ def find_docker_executable() -> str | None:
         for path in linux_paths:
             if path.exists():
                 logger.debug(f"Found Docker at: {path}")
+                _docker_detection_cache["docker_path"] = str(path)
+                _docker_detection_done = True
                 return str(path)
 
         # If running in WSL, also check Windows Docker Desktop paths via /mnt/c
@@ -262,6 +276,8 @@ def find_docker_executable() -> str | None:
             for path in wsl_windows_paths:
                 if path.exists():
                     logger.debug(f"Found Docker (WSL Windows) at: {path}")
+                    _docker_detection_cache["docker_path"] = str(path)
+                    _docker_detection_done = True
                     return str(path)
 
     # On Windows, check common Docker Desktop installation paths
@@ -290,6 +306,8 @@ def find_docker_executable() -> str | None:
             logger.debug(f"Checking path: {path} - exists: {path.exists()}")
             if path.exists():
                 logger.debug(f"Found Docker at: {path}")
+                _docker_detection_cache["docker_path"] = str(path)
+                _docker_detection_done = True
                 return str(path)
 
         # Check if Docker is available via WSL
@@ -297,13 +315,17 @@ def find_docker_executable() -> str | None:
         try:
             wsl_available, wsl_version = check_wsl_docker()
             if wsl_available:
-                logger.debug(f"Using Docker via WSL: {wsl_version}")
+                logger.info(f"[CloudDesigner] Using Docker via WSL: {wsl_version}")
+                _docker_detection_cache["docker_path"] = "wsl docker"
+                _docker_detection_done = True
                 return "wsl docker"  # Special marker for WSL Docker
             logger.debug("Docker not found via WSL either")
         except Exception as e:
             logger.exception(f"Error checking WSL Docker: {e}")
 
     logger.debug("Docker executable not found anywhere")
+    _docker_detection_cache["docker_path"] = None
+    _docker_detection_done = True
     return None
 
 
@@ -322,7 +344,6 @@ def get_docker_command() -> list[str]:
         # Handle WSL Docker special case - use cached command if available
         if docker_path == "wsl docker":
             if _wsl_docker_command:
-                logger.debug(f"Using cached WSL Docker command: {_wsl_docker_command}")
                 return _wsl_docker_command.copy()
             # Fallback if cache not set (shouldn't happen)
             return ["wsl", "docker"]

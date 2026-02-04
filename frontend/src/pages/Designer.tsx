@@ -291,7 +291,7 @@ Path: ${dockerStatus.docker_path || 'Not found'}`}
 
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="subtitle2">Recent Backend Logs</Typography>
+                      <Typography variant="subtitle2">Docker Detection Logs</Typography>
                       <Stack direction="row" spacing={1}>
                         <Tooltip title="Refresh logs">
                           <IconButton size="small" onClick={() => refetchLogs()}>
@@ -312,16 +312,25 @@ Path: ${dockerStatus.docker_path || 'Not found'}`}
                       color: 'grey.300',
                       p: 1,
                       borderRadius: 1,
-                      maxHeight: 300,
+                      maxHeight: 400,
                       overflow: 'auto'
                     }}>
-                      {logsData?.logs?.slice(0, 100).map((log: { timestamp: string; level: string; message: string }, i: number) => {
-                        const isRelevant = log.message.toLowerCase().includes('docker') ||
-                          log.message.toLowerCase().includes('wsl') ||
-                          log.message.toLowerCase().includes('clouddesigner') ||
-                          log.message.toLowerCase().includes('compose');
-                        return (
-                          <Box key={i} sx={{ mb: 0.5, opacity: isRelevant ? 1 : 0.5 }}>
+                      {(() => {
+                        // Filter to Docker-related logs for troubleshooting
+                        const relevantLogs = logsData?.logs?.filter((log: { message: string }) => {
+                          const msg = log.message.toLowerCase();
+                          return msg.includes('docker') ||
+                            msg.includes('wsl') ||
+                            msg.includes('clouddesigner') ||
+                            msg.includes('compose');
+                        }) || [];
+
+                        if (relevantLogs.length === 0) {
+                          return <Typography variant="body2" color="text.secondary">No Docker-related logs found. Click Re-check Docker above.</Typography>;
+                        }
+
+                        return relevantLogs.slice(0, 200).map((log: { timestamp: string; level: string; message: string }, i: number) => (
+                          <Box key={i} sx={{ mb: 0.5 }}>
                             <Typography component="span" sx={{ color: 'grey.500', fontSize: 'inherit' }}>
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </Typography>
@@ -331,8 +340,8 @@ Path: ${dockerStatus.docker_path || 'Not found'}`}
                             </Typography>
                             {' '}{log.message}
                           </Box>
-                        );
-                      }) || <Typography variant="body2" color="text.secondary">No logs found. Click refresh to re-check.</Typography>}
+                        ));
+                      })()}
                     </Box>
                   </Box>
 
@@ -525,7 +534,7 @@ Container: ${containerStatus?.status || 'not_created'}`}
 
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="subtitle2">Recent CloudDesigner Logs</Typography>
+                      <Typography variant="subtitle2">CloudDesigner Logs (filtered)</Typography>
                       <Tooltip title="Refresh logs">
                         <IconButton size="small" onClick={() => refetchLogs()}>
                           <RefreshIcon fontSize="small" />
@@ -539,16 +548,29 @@ Container: ${containerStatus?.status || 'not_created'}`}
                       color: 'grey.300',
                       p: 1,
                       borderRadius: 1,
-                      maxHeight: 300,
+                      maxHeight: 400,
                       overflow: 'auto'
                     }}>
-                      {logsData?.logs?.slice(0, 100).map((log: { timestamp: string; level: string; message: string }, i: number) => {
-                        const isRelevant = log.message.toLowerCase().includes('docker') ||
-                          log.message.toLowerCase().includes('wsl') ||
-                          log.message.toLowerCase().includes('clouddesigner') ||
-                          log.message.toLowerCase().includes('compose');
-                        return (
-                          <Box key={i} sx={{ mb: 0.5, opacity: isRelevant ? 1 : 0.5 }}>
+                      {(() => {
+                        // Filter to only CloudDesigner-related logs
+                        const relevantLogs = logsData?.logs?.filter((log: { message: string }) => {
+                          const msg = log.message.toLowerCase();
+                          return msg.includes('clouddesigner') ||
+                            msg.includes('compose') ||
+                            msg.includes('[clouddesigner') ||
+                            msg.includes('step 1/4') ||
+                            msg.includes('step 2/4') ||
+                            msg.includes('step 3/4') ||
+                            msg.includes('step 4/4') ||
+                            msg.includes('build') && (msg.includes('docker') || msg.includes('container'));
+                        }) || [];
+
+                        if (relevantLogs.length === 0) {
+                          return <Typography variant="body2" color="text.secondary">No CloudDesigner logs found. Click Start to begin.</Typography>;
+                        }
+
+                        return relevantLogs.slice(0, 200).map((log: { timestamp: string; level: string; message: string }, i: number) => (
+                          <Box key={i} sx={{ mb: 0.5 }}>
                             <Typography component="span" sx={{ color: 'grey.500', fontSize: 'inherit' }}>
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </Typography>
@@ -558,8 +580,8 @@ Container: ${containerStatus?.status || 'not_created'}`}
                             </Typography>
                             {' '}{log.message}
                           </Box>
-                        );
-                      }) || <Typography variant="body2" color="text.secondary">No logs found. Click refresh to update.</Typography>}
+                        ));
+                      })()}
                     </Box>
                   </Box>
                 </Stack>
