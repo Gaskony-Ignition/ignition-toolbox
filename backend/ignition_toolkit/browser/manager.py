@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 SCREENSHOT_FPS = int(os.getenv("SCREENSHOT_FPS", "2"))  # 2 frames per second
 SCREENSHOT_QUALITY = int(os.getenv("SCREENSHOT_QUALITY", "80"))  # JPEG quality 0-100
 SCREENSHOT_ENABLED = os.getenv("SCREENSHOT_STREAMING", "true").lower() == "true"
+# Screenshot format for saved files: "webp" (smaller, better compression) or "png" (lossless, universal)
+SCREENSHOT_FORMAT = os.getenv("SCREENSHOT_FORMAT", "webp").lower()
+SCREENSHOT_WEBP_QUALITY = int(os.getenv("SCREENSHOT_WEBP_QUALITY", "85"))  # WebP quality 0-100
 
 
 class BrowserManager:
@@ -240,21 +243,46 @@ class BrowserManager:
         logger.info(f"Waiting for selector: {selector}")
         await page.wait_for_selector(selector, timeout=timeout)
 
-    async def screenshot(self, name: str, full_page: bool = False) -> Path:
+    async def screenshot(self, name: str, full_page: bool = False, format: str | None = None) -> Path:
         """
         Take screenshot
 
         Args:
             name: Screenshot name (without extension)
             full_page: Capture full scrollable page
+            format: Override default format ("webp" or "png")
 
         Returns:
             Path to screenshot file
         """
         page = await self.get_page()
-        screenshot_path = self.screenshots_dir / f"{name}.png"
-        logger.info(f"Taking screenshot: {screenshot_path}")
-        await page.screenshot(path=str(screenshot_path), full_page=full_page)
+
+        # Determine format (use override or default from config)
+        use_format = format.lower() if format else SCREENSHOT_FORMAT
+
+        if use_format == "webp":
+            screenshot_path = self.screenshots_dir / f"{name}.webp"
+            logger.info(f"Taking WebP screenshot: {screenshot_path}")
+            # Playwright supports type="jpeg" for lossy, but we can save as webp via Pillow
+            # Actually, let's use JPEG with good quality, then convert to WebP for best compression
+            # Simpler approach: Take PNG first, then convert to WebP using Pillow
+            import io
+            try:
+                from PIL import Image
+                screenshot_bytes = await page.screenshot(full_page=full_page, type="png")
+                img = Image.open(io.BytesIO(screenshot_bytes))
+                img.save(str(screenshot_path), "WEBP", quality=SCREENSHOT_WEBP_QUALITY)
+            except ImportError:
+                # Pillow not available, fall back to PNG
+                logger.warning("Pillow not installed, falling back to PNG format")
+                screenshot_path = self.screenshots_dir / f"{name}.png"
+                await page.screenshot(path=str(screenshot_path), full_page=full_page)
+        else:
+            # Default to PNG (lossless, universal compatibility)
+            screenshot_path = self.screenshots_dir / f"{name}.png"
+            logger.info(f"Taking PNG screenshot: {screenshot_path}")
+            await page.screenshot(path=str(screenshot_path), full_page=full_page)
+
         return screenshot_path
 
     async def get_text(self, selector: str) -> str:

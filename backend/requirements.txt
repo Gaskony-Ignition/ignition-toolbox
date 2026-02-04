@@ -54,6 +54,8 @@ mdurl==0.1.2
     # via markdown-it-py
 packaging>=21.0
     # via ignition-toolkit (pyproject.toml)
+pillow>=10.0.0
+    # via ignition-toolkit (pyproject.toml) - for WebP screenshot compression
 playwright==1.55.0
     # via ignition-toolkit (pyproject.toml)
 pycparser==2.23

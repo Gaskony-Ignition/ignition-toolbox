@@ -42,6 +42,7 @@ dependencies = [
     "rich>=13.9.0",
     "apscheduler>=3.10.4",
     "psutil>=6.1.0",
+    "pillow>=10.0.0",  # WebP screenshot compression
 ]
 
 [project.optional-dependencies]

@@ -242,7 +242,10 @@
 - [x] Frontend code splitting (lazy load routes) ✅ DONE (v1.4.68)
   - React.lazy() for Designer, APIExplorer, StackBuilder, ExecutionDetail
   - Reduces initial bundle load, pages load on-demand
-- [ ] Screenshot compression (WebP format)
+- [x] Screenshot compression (WebP format) ✅ DONE (v1.4.68)
+  - Added SCREENSHOT_FORMAT config (webp/png)
+  - WebP provides ~2-3x smaller file sizes
+  - Added pillow dependency
 - [ ] Database query optimization
 - [ ] Effort: 25h
 
