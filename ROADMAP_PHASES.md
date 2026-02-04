@@ -146,6 +146,8 @@
   - Rendering, buttons, menus, dialogs, callbacks
 - [x] Test ExecutionCard component (18 tests) ✅ DONE (v1.4.69)
   - Progress display, control buttons, step results, edge cases
+- [x] Test CredentialCard component (12 tests) ✅ DONE (v1.4.69)
+  - Rendering, delete confirmation, optional fields
 - [ ] Test more hooks and components
 - [ ] Effort: 15h
 
