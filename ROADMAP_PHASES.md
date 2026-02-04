@@ -167,7 +167,9 @@
 
 ### 3.2 UX Improvements (~20h)
 
-- [ ] Add first-time user welcome modal
+- [x] Add first-time user welcome modal ✅ DONE (v1.4.68)
+  - Quick start guide for new users
+  - Dismissible with localStorage persistence
 - [ ] Add inline help tooltips to complex fields
 - [ ] Improve error messages with recovery hints
 - [ ] Add step-by-step execution timeline view

@@ -16,6 +16,7 @@ import { Settings } from './pages/Settings';
 import { APIExplorer } from './pages/APIExplorer';
 import { StackBuilder } from './pages/StackBuilder';
 import { FloatingChatButton } from './components/chat/FloatingChatButton';
+import { WelcomeDialog } from './components/WelcomeDialog';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
 
@@ -148,6 +149,8 @@ function AppContent() {
       </Layout>
       {/* Floating chat button */}
       <FloatingChatButton />
+      {/* Welcome dialog for first-time users */}
+      <WelcomeDialog />
     </ThemeProvider>
   );
 }
