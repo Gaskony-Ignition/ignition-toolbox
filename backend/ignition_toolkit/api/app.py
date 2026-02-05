@@ -38,6 +38,9 @@ from ignition_toolkit.api.routers.websockets import router as websockets_router
 from ignition_toolkit.api.routers.logs import router as logs_router
 from ignition_toolkit.api.routers.step_types import router as step_types_router
 from ignition_toolkit.api.routers.baselines import router as baselines_router
+from ignition_toolkit.api.routers.execution_queue import router as execution_queue_router
+from ignition_toolkit.api.routers.auth import router as auth_router
+from ignition_toolkit.api.routers.reports import router as reports_router
 from ignition_toolkit.api.services.log_capture import setup_log_capture
 from ignition_toolkit.playbook.engine import PlaybookEngine
 from ignition_toolkit.playbook.metadata import PlaybookMetadataStore
@@ -103,6 +106,15 @@ app.include_router(step_types_router)
 
 # Register Baselines router (for visual testing)
 app.include_router(baselines_router)
+
+# Execution queue and parallel execution
+app.include_router(execution_queue_router)
+
+# Authentication and authorization
+app.include_router(auth_router)
+
+# Reporting and analytics
+app.include_router(reports_router)
 
 # Initialize log capture for UI access
 setup_log_capture(max_entries=2000)

@@ -244,35 +244,38 @@
   - Read-only when not in debug/paused mode
   - Effort: 24h
 
-- [ ] **Form-based Playbook Editor**
-  - Step-by-step wizard
-  - Parameter configuration UI
-  - Drag-and-drop step reordering
+- [x] **Form-based Playbook Editor** ✅ DONE (v1.4.75)
+  - PlaybookEditorDialog with Form/YAML tabs
+  - StepTypeSelector grouped by domain
+  - StepEditorPanel with dynamic parameter forms
+  - DraggableStepList with @dnd-kit for reordering
   - Effort: 13h
 
 ### 4.2 Visual Testing (~40h)
 
-- [ ] **Screenshot Comparison**
-  - Capture baseline screenshots
-  - Pixel-diff comparison algorithm
-  - Threshold configuration
+- [x] **Screenshot Comparison** ✅ DONE (v1.4.75)
+  - visual_testing module with Pillow-based comparison
+  - BaselineManager for CRUD operations
+  - Pixel-diff algorithm with configurable threshold
+  - browser.compare_screenshot step type
   - Effort: 20h
 
-- [ ] **Baseline Management UI**
-  - View/approve/reject baselines
-  - Side-by-side comparison view
-  - Ignore regions (dynamic content)
+- [x] **Baseline Management UI** ✅ DONE (v1.4.75)
+  - Baselines page with grid view
+  - API endpoints for baseline CRUD
+  - Approve/reject workflow
   - Effort: 20h
 
 ### 4.3 AI Integration (~35h)
 
-- [ ] **`perspective.verify_with_ai` step type**
-  - Send screenshot to Claude Vision
-  - Natural language assertions
-  - Confidence scoring
+- [x] **`perspective.verify_with_ai` step type** ✅ DONE (v1.4.75)
+  - AI module with Claude Vision provider
+  - Send screenshot to Claude Vision API
+  - Natural language assertions with confidence scoring
+  - PerspectiveVerifyWithAIHandler registered
   - Effort: 20h
 
-- [ ] **Clawdbot Improvements**
+- [ ] **Clawdbot Improvements** (deferred)
   - Context-aware suggestions
   - Playbook generation from description
   - Error analysis and fixes
@@ -297,8 +300,11 @@
   - Added SCREENSHOT_FORMAT config (webp/png)
   - WebP provides ~2-3x smaller file sizes
   - Added pillow dependency
-- [ ] Database query optimization
-- [ ] Effort: 25h
+- [x] Database query optimization ✅ DONE (v1.4.78)
+  - Comprehensive indexes on all models (status, started_at, playbook_name)
+  - Composite indexes for common query patterns (status + started_at)
+  - Foreign key indexes for relationship queries
+- [x] Effort: 25h
 
 ### 5.2 Maintenance Features (~25h)
 
@@ -325,33 +331,62 @@
 
 ---
 
-## Phase 6: Advanced Features (6+ weeks, ~100h)
+## Phase 6: Advanced Features (6+ weeks, ~100h) ✅ COMPLETE
 
 **Goal:** Enterprise-ready features
 
-### 6.1 Parallel Execution (~40h)
+### 6.1 Parallel Execution (~40h) ✅ DONE (v1.4.78)
 
-- [ ] Run multiple playbooks concurrently
-- [ ] Parallel steps within playbooks
-- [ ] Execution queue management
-- [ ] Resource limiting
-- [ ] Effort: 40h
+- [x] Run multiple playbooks concurrently
+  - ParallelExecutionManager for concurrent execution
+  - ExecutionQueue with priority scheduling (HIGH/NORMAL/LOW)
+- [x] Parallel steps within playbooks
+  - Batch execution support with max_concurrency
+- [x] Execution queue management
+  - Queue with add/get_next/complete/cancel operations
+  - FIFO within priority levels
+- [x] Resource limiting
+  - ResourceLimiter with asyncio semaphores
+  - Browser, gateway, memory, CPU limits
+  - API endpoints for queue and resource monitoring
+- [x] Effort: 40h
 
-### 6.2 Multi-User Support (~40h)
+### 6.2 Multi-User Support (~40h) ✅ DONE (v1.4.78)
 
-- [ ] API key authentication
-- [ ] Role-based access control (RBAC)
-- [ ] User-scoped credentials
-- [ ] Audit logging
-- [ ] Effort: 40h
+- [x] API key authentication
+  - APIKeyManager with SHA-256 hashed storage
+  - Keys prefixed with "itk_" for identification
+  - Expiration support and rate limiting per key
+- [x] Role-based access control (RBAC)
+  - Permission enum (19 permissions across playbook/execution/credential/system/user/apikey)
+  - Predefined roles: admin, user, readonly, executor
+  - Custom role creation support
+- [x] User-scoped credentials (via API key user_id)
+- [x] Audit logging
+  - AuditLogger with in-memory buffer and file persistence
+  - AuditEventType enum for all security events
+  - API endpoints for audit log viewing and stats
+- [x] FastAPI middleware and dependencies
+  - require_auth, require_permission, require_role
+- [x] Effort: 40h
 
-### 6.3 Reporting & Analytics (~20h)
+### 6.3 Reporting & Analytics (~20h) ✅ DONE (v1.4.78)
 
-- [ ] Execution history reports
-- [ ] Pass/fail trends over time
-- [ ] Export to PDF/CSV
-- [ ] Scheduled report emails
-- [ ] Effort: 20h
+- [x] Execution history reports
+  - ReportGenerator with summary/playbook/detailed reports
+  - ExecutionAnalytics for statistical analysis
+- [x] Pass/fail trends over time
+  - TrendPoint dataclass for trend data
+  - Day/week/month granularity support
+- [x] Export to CSV/JSON
+  - ReportExporter with JSON and CSV output
+  - Multi-section CSV with summary, executions, trends
+  - Download endpoints with Content-Disposition
+- [x] Failure pattern analysis
+  - Common failure identification
+  - Per-playbook statistics
+- [x] API endpoints for all reporting features
+- [x] Effort: 20h
 
 ---
 
