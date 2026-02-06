@@ -51,6 +51,9 @@ class StartRequest(BaseModel):
     credential_name: str | None = Field(
         None, description="Optional credential name for auto-login"
     )
+    force_rebuild: bool = Field(
+        False, description="Force a full image rebuild even if cached"
+    )
 
 
 class StartResponse(BaseModel):
@@ -84,6 +87,36 @@ class ConfigResponse(BaseModel):
     compose_dir_exists: bool
     container_name: str
     default_port: int
+
+
+class ImageInfo(BaseModel):
+    """Status of a single Docker image"""
+
+    exists: bool
+    source: str  # "pull" or "build"
+
+
+class ImageStatusResponse(BaseModel):
+    """Status of all required Docker images"""
+
+    images: dict[str, ImageInfo]
+    all_ready: bool
+
+
+class PrepareRequest(BaseModel):
+    """Request to prepare (pull/build) images"""
+
+    force_rebuild: bool = Field(
+        False, description="Force rebuild of designer-desktop image"
+    )
+
+
+class PrepareResponse(BaseModel):
+    """Response from prepare operation"""
+
+    success: bool
+    output: str | None = None
+    error: str | None = None
 
 
 # ============================================================================
@@ -174,6 +207,7 @@ async def start_clouddesigner(request: StartRequest):
             manager.start,
             gateway_url=request.gateway_url,
             credential_name=request.credential_name,
+            force_rebuild=request.force_rebuild,
         )
 
         return StartResponse(
@@ -232,6 +266,90 @@ async def cleanup_clouddesigner():
         )
     except Exception as e:
         logger.exception("Error cleaning up CloudDesigner")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/images", response_model=ImageStatusResponse)
+async def get_image_status():
+    """
+    Check which required Docker images are available locally.
+
+    Returns:
+        ImageStatusResponse with per-image status and overall readiness
+    """
+    try:
+        manager = get_clouddesigner_manager()
+        status = await asyncio.to_thread(manager.get_image_status)
+
+        return ImageStatusResponse(
+            images={
+                name: ImageInfo(**info)
+                for name, info in status["images"].items()
+            },
+            all_ready=status["all_ready"],
+        )
+    except Exception as e:
+        logger.exception("Error checking image status")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/prepare", response_model=PrepareResponse)
+async def prepare_images(request: PrepareRequest):
+    """
+    Pull base images and build the designer-desktop image.
+
+    This is the long-running step that downloads/builds Docker images.
+    Call /images first to check if this is needed.
+
+    Returns:
+        PrepareResponse with success status and output
+    """
+    try:
+        manager = get_clouddesigner_manager()
+
+        # Check Docker first
+        docker_status = await asyncio.to_thread(manager.get_docker_status)
+        if not docker_status.installed:
+            return PrepareResponse(
+                success=False,
+                error="Docker is not installed. Please install Docker Desktop.",
+            )
+        if not docker_status.running:
+            return PrepareResponse(
+                success=False,
+                error="Docker is not running. Please start Docker Desktop.",
+            )
+
+        # Step 1: Pull base images
+        logger.info("[CloudDesigner API] Pulling base images...")
+        pull_result = await asyncio.to_thread(manager.pull_images)
+        if not pull_result["success"]:
+            return PrepareResponse(
+                success=False,
+                error=pull_result.get("error"),
+                output=pull_result.get("output"),
+            )
+
+        # Step 2: Build designer-desktop image
+        logger.info("[CloudDesigner API] Building designer-desktop image...")
+        build_result = await asyncio.to_thread(
+            manager.build_desktop_image,
+            force=request.force_rebuild,
+        )
+
+        output_parts = []
+        if pull_result.get("output"):
+            output_parts.append(pull_result["output"])
+        if build_result.get("output"):
+            output_parts.append(build_result["output"])
+
+        return PrepareResponse(
+            success=build_result["success"],
+            output="\n".join(output_parts) if output_parts else None,
+            error=build_result.get("error"),
+        )
+    except Exception as e:
+        logger.exception("Error preparing CloudDesigner images")
         raise HTTPException(status_code=500, detail=str(e))
 
 

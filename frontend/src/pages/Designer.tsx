@@ -37,6 +37,8 @@ import {
   ExpandMore as ExpandMoreIcon,
   Refresh as RefreshIcon,
   DeleteForever as CleanupIcon,
+  Download as DownloadIcon,
+  Build as BuildIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
@@ -86,9 +88,9 @@ export function Designer() {
 
   // Start mutation - pass both gateway URL and credential name for auto-login
   const startMutation = useMutation({
-    mutationFn: async ({ gatewayUrl, credentialName }: { gatewayUrl: string; credentialName?: string }) => {
-      logger.debug('[CloudDesigner] Calling API start with:', { gatewayUrl, credentialName });
-      const result = await api.cloudDesigner.start(gatewayUrl, credentialName);
+    mutationFn: async ({ gatewayUrl, credentialName, forceRebuild }: { gatewayUrl: string; credentialName?: string; forceRebuild?: boolean }) => {
+      logger.debug('[CloudDesigner] Calling API start with:', { gatewayUrl, credentialName, forceRebuild });
+      const result = await api.cloudDesigner.start(gatewayUrl, credentialName, forceRebuild);
       logger.debug('[CloudDesigner] API start result:', result);
       return result;
     },
@@ -108,12 +110,49 @@ export function Designer() {
     },
   });
 
-  // Query recent logs for debugging - also poll while starting (must be after startMutation)
+  // Query image status - check which Docker images are available
+  const {
+    data: imageStatus,
+    isLoading: imageStatusLoading,
+    refetch: refetchImageStatus,
+  } = useQuery<{
+    images: Record<string, { exists: boolean; source: string }>;
+    all_ready: boolean;
+  }>({
+    queryKey: ['clouddesigner-images'],
+    queryFn: api.cloudDesigner.getImageStatus,
+    refetchInterval: false, // Only refresh on demand
+    enabled: dockerStatus?.running === true,
+  });
+
+  // Prepare mutation - pull base images and build designer-desktop
+  const prepareMutation = useMutation({
+    mutationFn: async (forceRebuild: boolean = false) => {
+      logger.debug('[CloudDesigner] Preparing images, forceRebuild:', forceRebuild);
+      return api.cloudDesigner.prepare(forceRebuild);
+    },
+    onSuccess: (data) => {
+      if (!data.success) {
+        setStartError(data.error || 'Failed to prepare images');
+      } else {
+        setStartError(null);
+      }
+      // Refresh image status after prepare
+      queryClient.invalidateQueries({ queryKey: ['clouddesigner-images'] });
+    },
+    onError: (error: Error) => {
+      setStartError(error.message);
+      // Refresh image status even on error (partial progress may have been made)
+      queryClient.invalidateQueries({ queryKey: ['clouddesigner-images'] });
+    },
+  });
+
+  // Query recent logs for debugging - also poll while starting or preparing (must be after mutations)
   const { data: logsData, refetch: refetchLogs } = useQuery({
     queryKey: ['docker-detection-logs'],
     queryFn: () => api.logs.get({ limit: 500 }),
-    enabled: showDebug || startMutation.isPending,
-    refetchInterval: startMutation.isPending ? 1500 : false, // Poll every 1.5s while starting
+    enabled: showDebug || startMutation.isPending || prepareMutation.isPending,
+    refetchInterval: (startMutation.isPending || prepareMutation.isPending) ? 1500 : false,
   });
 
   // Stop mutation
@@ -138,8 +177,9 @@ export function Designer() {
       } else {
         setStartError(data.error || 'Cleanup failed');
       }
-      // Refresh status
+      // Refresh status and image status
       queryClient.invalidateQueries({ queryKey: ['clouddesigner-status'] });
+      queryClient.invalidateQueries({ queryKey: ['clouddesigner-images'] });
     },
     onError: (error: Error) => {
       setStartError(error.message);
@@ -147,8 +187,8 @@ export function Designer() {
   });
 
   // Handle start button click
-  const handleStart = () => {
-    logger.debug('[CloudDesigner] handleStart called');
+  const handleStart = (forceRebuild: boolean = false) => {
+    logger.debug('[CloudDesigner] handleStart called', { forceRebuild });
     logger.debug('[CloudDesigner] selectedCredential:', selectedCredential);
     if (selectedCredential?.gateway_url) {
       logger.debug('[CloudDesigner] Starting with gateway:', selectedCredential.gateway_url);
@@ -156,6 +196,7 @@ export function Designer() {
       startMutation.mutate({
         gatewayUrl: selectedCredential.gateway_url,
         credentialName: selectedCredential.name,
+        forceRebuild,
       });
     } else {
       logger.debug('[CloudDesigner] No gateway URL - cannot start');
@@ -189,13 +230,15 @@ export function Designer() {
   const isStarting = startMutation.isPending;
   const isStopping = stopMutation.isPending;
   const isCleaning = cleanupMutation.isPending;
+  const isPreparing = prepareMutation.isPending;
+  const imagesReady = imageStatus?.all_ready === true;
 
-  // Auto-expand debug panel when starting to show progress
+  // Auto-expand debug panel when starting or preparing to show progress
   useEffect(() => {
-    if (isStarting) {
+    if (isStarting || isPreparing) {
       setShowDebug(true);
     }
-  }, [isStarting]);
+  }, [isStarting, isPreparing]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -378,7 +421,7 @@ docker info`}
           </Alert>
         )}
 
-        {/* Docker running - show controls */}
+        {/* Docker running - show multi-stage controls */}
         {dockerStatus?.running && (
           <Box>
             {/* Start error */}
@@ -388,93 +431,178 @@ docker info`}
               </Alert>
             )}
 
-            {/* No credential selected */}
-            {!selectedCredential && !isRunning && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <strong>No credential selected.</strong> Select a credential from the header dropdown to start the Designer container.
-              </Alert>
-            )}
-
-            {/* Credential selected but no gateway URL */}
-            {selectedCredential && !selectedCredential.gateway_url && !isRunning && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <strong>Credential "{selectedCredential.name}" has no gateway URL.</strong> Edit the credential in Settings to add a gateway URL.
-              </Alert>
-            )}
-
-            {/* Starting progress indicator */}
-            {isStarting && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                  Starting CloudDesigner...
+            {/* ===== STAGE 1: Image Readiness ===== */}
+            {!isRunning && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Step 1: Docker Images
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  This may take several minutes on first run while Docker images are built.
-                  The process includes: cleanup → build → start containers.
-                </Typography>
-              </Alert>
+
+                {imageStatusLoading && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <CircularProgress size={16} />
+                    <Typography variant="body2" color="text.secondary">
+                      Checking image status...
+                    </Typography>
+                  </Box>
+                )}
+
+                {imageStatus && (
+                  <Box sx={{ mb: 2 }}>
+                    {/* Per-image status chips */}
+                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1.5 }}>
+                      {Object.entries(imageStatus.images).map(([name, info]) => (
+                        <Chip
+                          key={name}
+                          icon={info.exists ? <RunningIcon /> : <ErrorIcon />}
+                          label={`${name.split('/').pop()?.split(':')[0] || name} ${info.exists ? '(ready)' : info.source === 'build' ? '(needs build)' : '(needs download)'}`}
+                          color={info.exists ? 'success' : 'default'}
+                          variant={info.exists ? 'filled' : 'outlined'}
+                          size="small"
+                        />
+                      ))}
+                      <Tooltip title="Re-check image status">
+                        <IconButton size="small" onClick={() => refetchImageStatus()}>
+                          <RefreshIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+
+                    {/* Summary and action */}
+                    {imagesReady ? (
+                      <Alert severity="success" sx={{ py: 0.5 }}>
+                        All Docker images are ready. You can start the Designer.
+                      </Alert>
+                    ) : (
+                      <Box>
+                        <Alert severity="info" sx={{ py: 0.5, mb: 1.5 }}>
+                          Some images need to be downloaded or built before starting.
+                        </Alert>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={isPreparing ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
+                            onClick={() => prepareMutation.mutate(false)}
+                            disabled={isPreparing}
+                          >
+                            {isPreparing ? 'Preparing Images...' : 'Download & Build Images'}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            startIcon={isPreparing ? <CircularProgress size={14} /> : <BuildIcon />}
+                            onClick={() => prepareMutation.mutate(true)}
+                            disabled={isPreparing}
+                            size="small"
+                          >
+                            Force Rebuild
+                          </Button>
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* Preparing progress */}
+                    {isPreparing && (
+                      <Alert severity="info" sx={{ mt: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          Downloading and building Docker images...
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          This may take a few minutes on the first run. Check the logs below for progress.
+                        </Typography>
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+              </Box>
             )}
 
-            {/* Control buttons */}
-            <Stack direction="row" spacing={2} alignItems="center">
-              {isRunning ? (
-                <>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<OpenIcon />}
-                    onClick={handleOpenDesigner}
-                    size="large"
-                  >
-                    Open Designer
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={isStopping ? <CircularProgress size={16} /> : <StopIcon />}
-                    onClick={() => stopMutation.mutate()}
-                    disabled={isStopping}
-                    size="large"
-                  >
-                    {isStopping ? 'Stopping...' : 'Stop Container'}
-                  </Button>
-                  <Typography variant="body2" color="text.secondary">
-                    Or open directly:{' '}
-                    <a
-                      href="http://localhost:8080/connect"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'inherit' }}
-                    >
-                      http://localhost:8080/connect
-                    </a>
-                  </Typography>
-                </>
-              ) : (
+            {/* ===== STAGE 2: Start / Running Controls ===== */}
+            {!isRunning && imagesReady && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Step 2: Launch Designer
+                </Typography>
+
+                {/* No credential selected */}
+                {!selectedCredential && (
+                  <Alert severity="warning" sx={{ mb: 1.5 }}>
+                    <strong>No credential selected.</strong> Select a credential from the header dropdown to start the Designer container.
+                  </Alert>
+                )}
+
+                {/* Credential selected but no gateway URL */}
+                {selectedCredential && !selectedCredential.gateway_url && (
+                  <Alert severity="warning" sx={{ mb: 1.5 }}>
+                    <strong>Credential &quot;{selectedCredential.name}&quot; has no gateway URL.</strong> Edit the credential in Settings to add a gateway URL.
+                  </Alert>
+                )}
+
+                {/* Starting progress indicator */}
+                {isStarting && (
+                  <Alert severity="info" sx={{ mb: 1.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Starting CloudDesigner containers...
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Launching 4 containers (nginx, guacd, guacamole, designer-desktop). Check logs below for progress.
+                    </Typography>
+                  </Alert>
+                )}
+
                 <Button
                   variant="contained"
                   color="primary"
                   startIcon={isStarting ? <CircularProgress size={16} color="inherit" /> : <StartIcon />}
-                  onClick={() => {
-                    logger.debug('Start button clicked', {
-                      selectedCredential,
-                      gateway_url: selectedCredential?.gateway_url,
-                      isStarting,
-                      disabled: !selectedCredential?.gateway_url || isStarting,
-                    });
-                    handleStart();
-                  }}
-                  disabled={!selectedCredential?.gateway_url || isStarting}
+                  onClick={() => handleStart(false)}
+                  disabled={!selectedCredential?.gateway_url || isStarting || isPreparing}
                   size="large"
                 >
                   {isStarting ? 'Starting Container...' : 'Start Designer Container'}
                 </Button>
-              )}
-            </Stack>
+              </Box>
+            )}
+
+            {/* ===== Running State Controls ===== */}
+            {isRunning && (
+              <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<OpenIcon />}
+                  onClick={handleOpenDesigner}
+                  size="large"
+                >
+                  Open Designer
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={isStopping ? <CircularProgress size={16} /> : <StopIcon />}
+                  onClick={() => stopMutation.mutate()}
+                  disabled={isStopping}
+                  size="large"
+                >
+                  {isStopping ? 'Stopping...' : 'Stop Container'}
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  Or open directly:{' '}
+                  <a
+                    href="http://localhost:8080/connect"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'inherit' }}
+                  >
+                    http://localhost:8080/connect
+                  </a>
+                </Typography>
+              </Stack>
+            )}
 
             {/* Docker version info */}
             {dockerStatus.version && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                 {dockerStatus.version}
                 {dockerStatus.docker_path && ` (${dockerStatus.docker_path})`}
               </Typography>
@@ -510,26 +638,29 @@ docker info`}
 Running: ${dockerStatus.running}
 Version: ${dockerStatus.version || 'Not detected'}
 Path: ${dockerStatus.docker_path || 'Not found'}
-Container: ${containerStatus?.status || 'not_created'}`}
+Container: ${containerStatus?.status || 'not_created'}
+Images Ready: ${imagesReady ? 'Yes' : 'No'}`}
                     </Typography>
                   </Box>
 
-                  {/* Cleanup Button */}
+                  {/* Maintenance Actions */}
                   <Box>
-                    <Typography variant="subtitle2" gutterBottom>Container Cleanup</Typography>
+                    <Typography variant="subtitle2" gutterBottom>Maintenance</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      If containers are in a bad state or causing conflicts, use this to forcefully clean up everything.
+                      Clean up removes all CloudDesigner containers, volumes, networks, and cached images.
                     </Typography>
-                    <Button
-                      variant="outlined"
-                      color="warning"
-                      size="small"
-                      startIcon={isCleaning ? <CircularProgress size={14} /> : <CleanupIcon />}
-                      onClick={() => setShowCleanupConfirm(true)}
-                      disabled={isCleaning || isStarting}
-                    >
-                      {isCleaning ? 'Cleaning up...' : 'Clean Up Containers'}
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        size="small"
+                        startIcon={isCleaning ? <CircularProgress size={14} /> : <CleanupIcon />}
+                        onClick={() => setShowCleanupConfirm(true)}
+                        disabled={isCleaning || isStarting || isPreparing}
+                      >
+                        {isCleaning ? 'Cleaning up...' : 'Clean Up Everything'}
+                      </Button>
+                    </Stack>
                   </Box>
 
                   <Box>
@@ -558,15 +689,14 @@ Container: ${containerStatus?.status || 'not_created'}`}
                           return msg.includes('clouddesigner') ||
                             msg.includes('compose') ||
                             msg.includes('[clouddesigner') ||
-                            msg.includes('step 1/4') ||
-                            msg.includes('step 2/4') ||
-                            msg.includes('step 3/4') ||
-                            msg.includes('step 4/4') ||
-                            msg.includes('build') && (msg.includes('docker') || msg.includes('container'));
+                            msg.includes('pulling') ||
+                            msg.includes('building') ||
+                            msg.includes('step ') ||
+                            (msg.includes('build') && (msg.includes('docker') || msg.includes('container') || msg.includes('image')));
                         }) || [];
 
                         if (relevantLogs.length === 0) {
-                          return <Typography variant="body2" color="text.secondary">No CloudDesigner logs found. Click Start to begin.</Typography>;
+                          return <Typography variant="body2" color="text.secondary">No CloudDesigner logs found yet.</Typography>;
                         }
 
                         return relevantLogs.slice(0, 200).map((log: { timestamp: string; level: string; message: string }, i: number) => (

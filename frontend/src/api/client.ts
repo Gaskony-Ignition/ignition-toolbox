@@ -709,12 +709,13 @@ export const api = {
     getStatus: () =>
       fetchJSON<CloudDesignerStatus>('/api/clouddesigner/status'),
 
-    start: (gatewayUrl: string, credentialName?: string) =>
+    start: (gatewayUrl: string, credentialName?: string, forceRebuild?: boolean) =>
       fetchJSON<CloudDesignerStartResponse>('/api/clouddesigner/start', {
         method: 'POST',
         body: JSON.stringify({
           gateway_url: gatewayUrl,
           credential_name: credentialName,
+          force_rebuild: forceRebuild || false,
         }),
       }),
 
@@ -726,6 +727,18 @@ export const api = {
     cleanup: () =>
       fetchJSON<CloudDesignerStopResponse>('/api/clouddesigner/cleanup', {
         method: 'POST',
+      }),
+
+    getImageStatus: () =>
+      fetchJSON<{
+        images: Record<string, { exists: boolean; source: string }>;
+        all_ready: boolean;
+      }>('/api/clouddesigner/images'),
+
+    prepare: (forceRebuild?: boolean) =>
+      fetchJSON<{ success: boolean; output?: string; error?: string }>('/api/clouddesigner/prepare', {
+        method: 'POST',
+        body: JSON.stringify({ force_rebuild: forceRebuild || false }),
       }),
 
     getConfig: () =>

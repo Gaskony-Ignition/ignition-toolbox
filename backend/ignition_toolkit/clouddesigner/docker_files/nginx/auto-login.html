@@ -76,8 +76,8 @@
                 localStorage.setItem('GUAC_AUTH_TOKEN', token);
 
                 // Auto-connect to the first connection (Ignition Designer)
-                // URL format: /#/client/{encoded-connection-id}?token=...
-                const encodedConnId = btoa('c/' + connId);
+                // Guacamole client URL format: /#/client/{base64(id + NUL + 'c' + NUL + dataSource)}
+                const encodedConnId = btoa(connId + '\0' + 'c' + '\0' + 'default');
                 window.location.href = '/#/client/' + encodedConnId + '?token=' + token;
 
             } catch (e) {
