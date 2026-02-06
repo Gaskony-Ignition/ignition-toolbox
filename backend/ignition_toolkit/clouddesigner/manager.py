@@ -344,7 +344,7 @@ class CloudDesignerManager:
             # Step 3: Build designer-desktop image
             logger.info("[CloudDesigner] ----------------------------------------")
             logger.info("[CloudDesigner] STEP 3/4: Building designer-desktop image...")
-            logger.info("[CloudDesigner] This may take 5-10 minutes on first run!")
+            logger.info("[CloudDesigner] This may take 10-15 minutes on first run!")
             logger.info("[CloudDesigner] ----------------------------------------")
 
             # Use Popen to stream build output for better visibility
@@ -395,7 +395,7 @@ class CloudDesignerManager:
             reader_thread.start()
 
             # Process output with timeout handling
-            build_timeout = 600  # 10 minutes
+            build_timeout = 1800  # 30 minutes (first build can be slow)
             start_time = time.time()
             last_progress_log = start_time
             last_output_time = start_time  # Track when we last received output
@@ -408,10 +408,10 @@ class CloudDesignerManager:
                     elapsed = time.time() - start_time
                     if elapsed > build_timeout:
                         build_process.kill()
-                        logger.error("[CloudDesigner] Build timed out after 10 minutes")
+                        logger.error("[CloudDesigner] Build timed out after 30 minutes")
                         return {
                             "success": False,
-                            "error": "Docker build timed out after 10 minutes. Try running 'docker system prune' to free up space.",
+                            "error": "Docker build timed out after 30 minutes. Try running 'docker system prune' to free up space.",
                             "output": "\n".join(build_output_lines[-50:]),
                         }
 
@@ -461,8 +461,16 @@ class CloudDesignerManager:
                             if line:
                                 build_output_lines.append(line)
                                 lines_received += 1
-                                # Check for build completion indicators
-                                if any(indicator in line.lower() for indicator in ['exporting manifest', 'exporting to image', 'done']):
+                                # Check for build completion indicators (must be specific to avoid false positives)
+                                # Docker buildx completion shows "exporting to image" and "naming to docker.io"
+                                # Legacy docker build shows "Successfully built" and "Successfully tagged"
+                                line_lower = line.lower()
+                                if any(indicator in line_lower for indicator in [
+                                    'exporting to image',
+                                    'naming to docker.io',
+                                    'successfully built',
+                                    'successfully tagged',
+                                ]):
                                     saw_build_completion = True
                                 # Log significant build steps
                                 if any(keyword in line.lower() for keyword in ['step', 'run ', 'copy ', 'downloading', 'extracting', 'installing', 'error', 'warning', '#']):
