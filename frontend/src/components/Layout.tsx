@@ -27,7 +27,6 @@ import {
   Api as ApiIcon,
   Layers as StackIcon,
   PlaylistPlay as ExecutionsIcon,
-  CompareArrows as BaselinesIcon,
 } from '@mui/icons-material';
 import { useStore } from '../store';
 import { api } from '../api/client';
@@ -41,14 +40,13 @@ const isElectron = (): boolean => {
 };
 
 // Domain tabs for playbook filtering
-export type DomainTab = 'gateway' | 'designer' | 'perspective' | 'executions' | 'baselines' | 'api' | 'stackbuilder' | 'settings';
+export type DomainTab = 'gateway' | 'designer' | 'perspective' | 'executions' | 'api' | 'stackbuilder' | 'settings';
 
 const domainTabs: { id: DomainTab; label: string; icon: React.ReactNode; iconOnly?: boolean }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon fontSize="small" /> },
   { id: 'designer', label: 'Designer', icon: <DesignerIcon fontSize="small" /> },
   { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon fontSize="small" /> },
   { id: 'executions', label: 'Executions', icon: <ExecutionsIcon fontSize="small" /> },
-  { id: 'baselines', label: 'Baselines', icon: <BaselinesIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" /> },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },

@@ -37,7 +37,6 @@ from ignition_toolkit.api.routers.updates import router as updates_router
 from ignition_toolkit.api.routers.websockets import router as websockets_router
 from ignition_toolkit.api.routers.logs import router as logs_router
 from ignition_toolkit.api.routers.step_types import router as step_types_router
-from ignition_toolkit.api.routers.baselines import router as baselines_router
 from ignition_toolkit.api.routers.execution_queue import router as execution_queue_router
 from ignition_toolkit.api.routers.auth import router as auth_router
 from ignition_toolkit.api.routers.reports import router as reports_router
@@ -105,9 +104,6 @@ app.include_router(websockets_router)
 app.include_router(logs_router)
 
 # Note: Step Types router registered earlier (before playbooks) to avoid path conflict
-
-# Register Baselines router (for visual testing)
-app.include_router(baselines_router)
 
 # Execution queue and parallel execution
 app.include_router(execution_queue_router)

@@ -13,7 +13,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout, type DomainTab } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
 import { Executions } from './pages/Executions';
-import { Baselines } from './pages/Baselines';
 import { Settings } from './pages/Settings';
 import { FloatingChatButton } from './components/chat/FloatingChatButton';
 import { WelcomeDialog } from './components/WelcomeDialog';
@@ -150,8 +149,6 @@ function AppContent() {
         return <Playbooks domainFilter="perspective" />;
       case 'executions':
         return <Executions />;
-      case 'baselines':
-        return <Baselines />;
       case 'api':
         return (
           <Suspense fallback={<PageLoader />}>

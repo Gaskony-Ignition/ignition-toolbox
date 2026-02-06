@@ -176,7 +176,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/pages/` | 11 pages: Playbooks, Executions, ExecutionDetail, Credentials, AICredentials, Designer, StackBuilder, Baselines, APIExplorer, Settings, About |
+| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, AICredentials, Designer, StackBuilder, APIExplorer, Settings, About |
 | `src/components/` | Reusable UI components |
 | `src/hooks/` | WebSocket hook, playbook order hook |
 | `src/store/` | Zustand global state |

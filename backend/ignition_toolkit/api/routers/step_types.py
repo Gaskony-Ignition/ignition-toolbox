@@ -277,21 +277,6 @@ STEP_TYPE_METADATA: list[StepTypeInfo] = [
                          description="Maximum time to wait in milliseconds"),
         ]
     ),
-    StepTypeInfo(
-        type="browser.compare_screenshot",
-        domain="browser",
-        description="Compare current screenshot against a saved baseline for visual regression testing",
-        parameters=[
-            StepParameter(name="baseline_name", type="string", required=True,
-                         description="Name of the baseline to compare against"),
-            StepParameter(name="threshold", type="float", required=False, default=99.9,
-                         description="Minimum similarity percentage to pass (0-100)"),
-            StepParameter(name="selector", type="selector", required=False,
-                         description="CSS selector to screenshot specific element (optional)"),
-            StepParameter(name="fail_on_diff", type="boolean", required=False, default=True,
-                         description="Whether to fail the step if comparison doesn't pass"),
-        ]
-    ),
 
     # Designer Operations
     StepTypeInfo(

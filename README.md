@@ -80,7 +80,6 @@ graph TB
 | **AI Credentials** | Manage API keys for Claude AI-assisted playbook creation |
 | **Designer** | CloudDesigner: launch Ignition Designers in Docker containers |
 | **Stack Builder** | Generate Docker Compose deployments for IIoT/SCADA infrastructure |
-| **Baselines** | Visual baseline management for screenshot comparison testing |
 | **API Explorer** | Interactive REST API browser for the backend |
 | **Settings** | Application configuration and preferences |
 | **About** | Version info, system status, and links |
@@ -198,7 +197,7 @@ ignition-toolbox/
 │
 ├── frontend/                      # React 19 + TypeScript + MUI v7
 │   ├── src/
-│   │   ├── pages/                 # 11 pages (see Features table)
+│   │   ├── pages/                 # 10 pages (see Features table)
 │   │   ├── components/            # Reusable UI components
 │   │   ├── hooks/                 # WebSocket, playbook order hooks
 │   │   ├── store/                 # Zustand global state

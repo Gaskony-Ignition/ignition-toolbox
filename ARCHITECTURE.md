@@ -188,7 +188,7 @@ The main process spawns the Python backend as a child process and communicates w
 
 ```
 frontend/src/
-├── pages/                    # Top-level pages (11 pages)
+├── pages/                    # Top-level pages (10 pages)
 │   ├── Playbooks.tsx         # Playbook library management
 │   ├── Executions.tsx        # Live execution monitoring
 │   ├── ExecutionDetail.tsx   # Step-by-step results + screenshots
@@ -196,7 +196,6 @@ frontend/src/
 │   ├── AICredentials.tsx     # AI API key management
 │   ├── Designer.tsx          # CloudDesigner (Docker-based)
 │   ├── StackBuilder.tsx      # Docker Compose generator
-│   ├── Baselines.tsx         # Visual baseline management
 │   ├── APIExplorer.tsx       # Interactive API browser
 │   ├── Settings.tsx          # Application settings
 │   └── About.tsx             # Version info + system status
