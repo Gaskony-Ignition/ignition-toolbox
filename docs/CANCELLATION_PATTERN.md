@@ -353,5 +353,5 @@ disallow-asyncio-sleep-in-handlers = true
 ---
 
 **Last Updated:** 2026-02-06
-**Version:** 1.5.3
+**Version:** 1.5.4
 **Status:** Mandatory Pattern - DO NOT VIOLATE

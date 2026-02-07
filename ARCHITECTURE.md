@@ -2,7 +2,7 @@
 
 **Project:** Ignition Toolbox
 **Last Updated:** 2026-02-06
-**Version:** 1.5.3
+**Version:** 1.5.4
 
 This document provides comprehensive architecture documentation including system design, component interactions, data flow, and key architectural decisions (ADRs).
 

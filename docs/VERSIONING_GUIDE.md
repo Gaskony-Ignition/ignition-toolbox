@@ -6,8 +6,8 @@ Ignition Toolbox uses a **single version number** tracked in two places:
 
 | File | Example |
 |------|---------|
-| `package.json` | `"version": "1.5.3"` |
-| `frontend/package.json` | `"version": "1.5.3"` |
+| `package.json` | `"version": "1.5.4"` |
+| `frontend/package.json` | `"version": "1.5.4"` |
 
 These two files must always match. This version is what users see in the app, in GitHub Releases, and in auto-update notifications.
 
@@ -57,5 +57,5 @@ You can also trigger builds manually from the GitHub Actions UI (workflow_dispat
 
 ---
 
-**Current Version**: 1.5.3
+**Current Version**: 1.5.4
 **Last Updated**: 2026-02-06

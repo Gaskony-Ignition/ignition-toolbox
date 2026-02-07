@@ -159,8 +159,8 @@ python run_backend.py
 # 1. Update version in package.json and frontend/package.json
 # 2. Commit changes
 # 3. Create and push a version tag:
-git tag v1.5.3
-git push origin v1.5.3
+git tag v1.5.4
+git push origin v1.5.4
 ```
 
 GitHub Actions (`build-windows.yml`) automatically builds the Windows installer with PyInstaller + electron-builder, publishes to GitHub Releases, and triggers auto-update notifications for existing users.

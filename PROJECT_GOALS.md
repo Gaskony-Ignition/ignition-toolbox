@@ -1,6 +1,6 @@
 # Ignition Toolbox - Project Goals
 
-**Version:** 1.5.3
+**Version:** 1.5.4
 **Last Updated:** 2026-02-06
 **Status:** Production Ready (All Phases Complete)
 
@@ -751,6 +751,6 @@ To prevent future confusion, this is the single source of truth for project goal
 
 **Last Updated:** 2026-02-06
 **Maintainer:** Nigel G
-**Status:** Production Ready (v1.5.3)
+**Status:** Production Ready (v1.5.4)
 
 **Next Steps:** See [ROADMAP_PHASES.md](/ROADMAP_PHASES.md) for development history.

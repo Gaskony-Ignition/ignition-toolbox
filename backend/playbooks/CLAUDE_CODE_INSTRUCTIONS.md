@@ -9,7 +9,7 @@ You are in the playbooks directory, which contains YAML-based playbooks for test
 ## Project Context
 
 - **Project**: Ignition Toolbox - Visual acceptance testing platform for Ignition SCADA
-- **Version**: 1.5.3 (Production Ready)
+- **Version**: 1.5.4 (Production Ready)
 - **Primary Language**: Python 3.10+ backend, React 19 + TypeScript frontend
 - **Playbook Format**: YAML files defining automated test sequences
 
