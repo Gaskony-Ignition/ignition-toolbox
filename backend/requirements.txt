@@ -65,7 +65,7 @@ pydantic==2.12.5
     #   fastapi
     #   ignition-toolkit (pyproject.toml)
     #   pydantic-settings
-pydantic-core==2.41.4
+pydantic-core==2.41.5
     # via pydantic
 pydantic-settings==2.11.0
     # via ignition-toolkit (pyproject.toml)
