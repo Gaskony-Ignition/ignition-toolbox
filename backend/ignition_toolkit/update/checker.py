@@ -13,7 +13,7 @@ from packaging.version import parse as parse_version
 logger = logging.getLogger(__name__)
 
 # GitHub repository information
-GITHUB_REPO = "nigelgwork/ignition-playground"
+GITHUB_REPO = "nigelgwork/ignition-toolbox"
 RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 TIMEOUT_SECONDS = 10.0
 
@@ -40,9 +40,9 @@ async def check_for_updates() -> Optional[dict]:
         {
             "current_version": "4.0.9",
             "latest_version": "4.1.0",
-            "release_url": "https://github.com/nigelgwork/ignition-playground/releases/tag/v4.1.0",
+            "release_url": "https://github.com/nigelgwork/ignition-toolbox/releases/tag/v4.1.0",
             "release_notes": "Markdown changelog...",
-            "download_url": "https://github.com/nigelgwork/ignition-playground/archive/refs/tags/v4.1.0.tar.gz",
+            "download_url": "https://github.com/nigelgwork/ignition-toolbox/archive/refs/tags/v4.1.0.tar.gz",
             "published_at": "2025-11-02T10:00:00Z",
             "assets": [...],  # List of release assets
         }

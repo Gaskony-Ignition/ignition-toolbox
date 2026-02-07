@@ -23,7 +23,7 @@ from ignition_toolkit.core.paths import get_user_data_dir
 logger = logging.getLogger(__name__)
 
 # GitHub repository settings
-DEFAULT_REPO = "nigelgwork/ignition-playground"
+DEFAULT_REPO = "nigelgwork/ignition-toolbox"
 # Use GitHub API for more reliable access (raw.githubusercontent can have cache delays)
 DEFAULT_INDEX_URL = f"https://api.github.com/repos/{DEFAULT_REPO}/contents/playbooks-index.json"
 

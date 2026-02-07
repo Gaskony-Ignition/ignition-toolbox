@@ -159,7 +159,7 @@ Audit logging was implemented in Phase 6 (v1.5.0) as part of Multi-User Support.
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `WEBSOCKET_API_KEY` | WebSocket authentication | `dev-key-...` (insecure) |
+| `WEBSOCKET_API_KEY` | WebSocket authentication | Auto-generated secure key |
 | `ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:*` |
 | `DEBUG` | Enable debug logging | `false` |
 

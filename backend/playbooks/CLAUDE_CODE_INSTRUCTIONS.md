@@ -9,7 +9,7 @@ You are in the playbooks directory, which contains YAML-based playbooks for test
 ## Project Context
 
 - **Project**: Ignition Toolbox - Visual acceptance testing platform for Ignition SCADA
-- **Version**: 1.5.0 (Production Ready)
+- **Version**: 1.5.3 (Production Ready)
 - **Primary Language**: Python 3.10+ backend, React 19 + TypeScript frontend
 - **Playbook Format**: YAML files defining automated test sequences
 
@@ -185,10 +185,10 @@ After editing a playbook:
 
 ## File Locations
 
-- **Playbooks**: `/git/ignition-playground/playbooks/`
-- **Documentation**: `/git/ignition-playground/docs/`
-- **Project Goals**: `/git/ignition-playground/PROJECT_GOALS.md`
-- **Syntax Reference**: `/git/ignition-playground/docs/playbook_syntax.md`
+- **Playbooks**: `/git/ignition-toolbox/playbooks/`
+- **Documentation**: `/git/ignition-toolbox/docs/`
+- **Project Goals**: `/git/ignition-toolbox/PROJECT_GOALS.md`
+- **Syntax Reference**: `/git/ignition-toolbox/docs/playbook_syntax.md`
 
 ## Important Notes
 
@@ -199,9 +199,9 @@ After editing a playbook:
 
 ## Getting Help
 
-- Read `/git/ignition-playground/docs/playbook_syntax.md` for complete syntax
-- Read `/git/ignition-playground/PROJECT_GOALS.md` for design decisions
-- Read `/git/ignition-playground/.claude/CLAUDE.md` for development patterns
+- Read `/git/ignition-toolbox/docs/playbook_syntax.md` for complete syntax
+- Read `/git/ignition-toolbox/PROJECT_GOALS.md` for design decisions
+- Read `/git/ignition-toolbox/.claude/CLAUDE.md` for development patterns
 
 ---
 

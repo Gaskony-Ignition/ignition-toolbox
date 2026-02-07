@@ -39,12 +39,12 @@ def get_package_root() -> Path:
     calculated dynamically from this file's location.
 
     Returns:
-        Path: Absolute path to package root (e.g., /git/ignition-playground)
+        Path: Absolute path to package root (e.g., /git/ignition-toolbox)
 
     Example:
         >>> root = get_package_root()
         >>> print(root)
-        /git/ignition-playground
+        /git/ignition-toolbox
     """
     # This file is at: ignition_toolkit/core/paths.py
     # Package root is 2 levels up
@@ -61,7 +61,7 @@ def get_package_dir() -> Path:
     Example:
         >>> pkg = get_package_dir()
         >>> print(pkg)
-        /git/ignition-playground/ignition_toolkit
+        /git/ignition-toolbox/ignition_toolkit
     """
     # This file is at: ignition_toolkit/core/paths.py
     # Package dir is 2 levels up
@@ -81,7 +81,7 @@ def get_playbooks_dir() -> Path:
     Example:
         >>> playbooks = get_playbooks_dir()
         >>> print(playbooks)
-        /git/ignition-playground/playbooks
+        /git/ignition-toolbox/playbooks
     """
     return get_package_root() / "playbooks"
 
@@ -99,7 +99,7 @@ def get_builtin_playbooks_dir() -> Path:
     Example:
         >>> builtin = get_builtin_playbooks_dir()
         >>> print(builtin)
-        /git/ignition-playground/playbooks
+        /git/ignition-toolbox/playbooks
     """
     # Built-in playbooks are at project root /playbooks directory
     return get_package_root() / "playbooks"
@@ -138,7 +138,7 @@ def get_all_playbook_dirs() -> list[Path]:
     Example:
         >>> dirs = get_all_playbook_dirs()
         >>> print(dirs)
-        [Path('/root/.ignition-toolkit/playbooks'), Path('/git/ignition-playground/playbooks')]
+        [Path('/root/.ignition-toolkit/playbooks'), Path('/git/ignition-toolbox/playbooks')]
     """
     return [
         get_user_playbooks_dir(),  # User playbooks have priority
@@ -159,7 +159,7 @@ def get_playbook_path(playbook_name: str) -> Path:
     Example:
         >>> path = get_playbook_path("gateway_login.yaml")
         >>> print(path)
-        /git/ignition-playground/playbooks/gateway_login.yaml
+        /git/ignition-toolbox/playbooks/gateway_login.yaml
     """
     if not playbook_name.endswith((".yaml", ".yml")):
         playbook_name = f"{playbook_name}.yaml"
@@ -183,7 +183,7 @@ def get_data_dir() -> Path:
     Example:
         >>> data = get_data_dir()
         >>> print(data)
-        /git/ignition-playground/data
+        /git/ignition-toolbox/data
     """
     # When running as frozen executable, use environment variable from Electron
     # This avoids writing to protected directories like C:\Program Files
@@ -214,7 +214,7 @@ def get_screenshots_dir() -> Path:
     Example:
         >>> screenshots = get_screenshots_dir()
         >>> print(screenshots)
-        /git/ignition-playground/data/screenshots
+        /git/ignition-toolbox/data/screenshots
     """
     screenshots_dir = get_data_dir() / "screenshots"
     screenshots_dir.mkdir(exist_ok=True)
@@ -231,7 +231,7 @@ def get_playwright_browsers_dir() -> Path:
     Example:
         >>> browsers = get_playwright_browsers_dir()
         >>> print(browsers)
-        /git/ignition-playground/data/.playwright-browsers
+        /git/ignition-toolbox/data/.playwright-browsers
     """
     browsers_dir = get_data_dir() / ".playwright-browsers"
     browsers_dir.mkdir(exist_ok=True)
@@ -251,7 +251,7 @@ def get_frontend_dir() -> Path:
     Example:
         >>> frontend = get_frontend_dir()
         >>> print(frontend)
-        /git/ignition-playground/frontend
+        /git/ignition-toolbox/frontend
     """
     return get_package_root() / "frontend"
 
@@ -266,7 +266,7 @@ def get_frontend_dist_dir() -> Path:
     Example:
         >>> dist = get_frontend_dist_dir()
         >>> print(dist)
-        /git/ignition-playground/frontend/dist
+        /git/ignition-toolbox/frontend/dist
     """
     return get_frontend_dir() / "dist"
 
@@ -360,7 +360,7 @@ def get_env_file() -> Path:
     Example:
         >>> env = get_env_file()
         >>> print(env)
-        /git/ignition-playground/.env
+        /git/ignition-toolbox/.env
     """
     return get_package_root() / ".env"
 
@@ -438,7 +438,7 @@ def get_relative_path(absolute_path: Path) -> Path | None:
         Path: Relative path from package root, or None if not under package root
 
     Example:
-        >>> abs_path = Path("/git/ignition-playground/playbooks/test.yaml")
+        >>> abs_path = Path("/git/ignition-toolbox/playbooks/test.yaml")
         >>> rel = get_relative_path(abs_path)
         >>> print(rel)
         playbooks/test.yaml
