@@ -102,10 +102,17 @@ class UtilityPythonHandler(StepHandler):
         """Initialize handler with optional parameter resolver for variable access"""
         self.parameter_resolver = parameter_resolver
 
+    # Dangerous patterns that should not appear in sandboxed scripts
+    DANGEROUS_MODULES = ['os', 'subprocess', 'sys', 'shutil', 'socket', 'ctypes']
+    DANGEROUS_BUILTINS = ['__import__', 'eval', 'exec', 'compile', 'open', 'globals', 'locals']
+
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         script = params.get("script")
         if not script:
             raise StepExecutionError("utility", "Python script is required")
+
+        # SECURITY: Validate script before execution
+        self._validate_script(script)
 
         # SECURITY: Execute in sandboxed environment (in thread pool to avoid blocking event loop)
         def _run_sandboxed_script():
@@ -169,3 +176,21 @@ class UtilityPythonHandler(StepHandler):
         # Run in thread pool to avoid blocking event loop (v3.45.7 bug fix)
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _run_sandboxed_script)
+
+    def _validate_script(self, script: str) -> None:
+        """Validate script does not contain dangerous imports or patterns."""
+        code_lower = script.lower()
+
+        for module in self.DANGEROUS_MODULES:
+            if f'import {module}' in code_lower or f'from {module}' in code_lower:
+                raise StepExecutionError(
+                    "utility.python",
+                    f"Blocked import of '{module}' — not allowed in sandboxed scripts"
+                )
+
+        for builtin in self.DANGEROUS_BUILTINS:
+            if builtin in script:
+                raise StepExecutionError(
+                    "utility.python",
+                    f"Blocked use of '{builtin}' — not allowed in sandboxed scripts"
+                )

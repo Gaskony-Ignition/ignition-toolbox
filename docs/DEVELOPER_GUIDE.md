@@ -4,8 +4,8 @@ Guide for setting up, running, and contributing to Ignition Toolbox.
 
 ## Prerequisites
 
-- **Node.js 20+** (Electron + frontend build)
-- **Python 3.10+** (backend)
+- **Node.js 22+** (Electron + frontend build)
+- **Python 3.13+** (backend)
 - **npm** (package management)
 - **Docker** (optional, for CloudDesigner and Stack Builder features)
 

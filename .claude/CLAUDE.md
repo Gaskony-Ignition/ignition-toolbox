@@ -80,8 +80,8 @@ ignition-toolbox/
 ## Development Workflow
 
 ### Prerequisites
-- Node.js 20+
-- Python 3.10+
+- Node.js 22+
+- Python 3.13+
 - npm
 
 ### Setup

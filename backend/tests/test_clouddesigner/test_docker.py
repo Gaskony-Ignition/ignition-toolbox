@@ -230,7 +230,8 @@ class TestGetDockerFilesPath:
         with patch.object(sys, "frozen", True, create=True):
             with patch.object(sys, "_MEIPASS", "/tmp/test_bundle", create=True):
                 result = get_docker_files_path()
-                assert str(result) == "/tmp/test_bundle/clouddesigner/docker_files"
+                expected = Path("/tmp/test_bundle") / "clouddesigner" / "docker_files"
+                assert result == expected
 
 
 class TestFindDockerExecutable:
@@ -244,6 +245,7 @@ class TestFindDockerExecutable:
             result = find_docker_executable()
             assert result == "/usr/bin/docker"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Docker detection paths differ on Windows")
     def test_returns_none_when_not_found(self):
         """Test returns None when docker not found anywhere"""
         from ignition_toolkit.clouddesigner.docker import find_docker_executable

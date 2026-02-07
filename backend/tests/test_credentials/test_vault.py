@@ -4,6 +4,8 @@ Tests for credential vault functionality
 Tests encryption, storage, and retrieval of credentials.
 """
 
+import sys
+
 import pytest
 from pathlib import Path
 from datetime import datetime, UTC
@@ -164,6 +166,7 @@ class TestCredentialVaultEncryption:
 
         assert vault.encryption_key_path.exists()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix file permissions not available on Windows")
     def test_credentials_file_has_restricted_permissions(self, tmp_path):
         """Test that credentials file has restricted permissions"""
         vault = CredentialVault(vault_path=tmp_path)

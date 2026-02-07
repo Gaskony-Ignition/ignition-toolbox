@@ -135,13 +135,22 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
     WebSocket endpoint for embedded Claude Code terminal.
     Spawns a Claude Code process with PTY and proxies stdin/stdout.
 
-    ⚠️  SECURITY WARNING ⚠️
-    This endpoint spawns an interactive bash shell for Claude Code debugging.
-    While scoped to the playbook directory, it still provides shell access.
-    Use only in development or with trusted playbooks.
+    Requires API key authentication (same as /ws/executions and /ws/shell).
 
     Note: This feature requires Unix PTY support and is not available on Windows.
     """
+    import hmac
+
+    # Authenticate: check for API key in query params
+    api_key = websocket.query_params.get("api_key")
+    from ignition_toolkit.core.config import get_settings
+    expected_key = get_settings().websocket_api_key
+
+    if not api_key or not hmac.compare_digest(api_key, expected_key):
+        logger.warning(f"Unauthorized claude-code WebSocket connection attempt from {websocket.client}")
+        await websocket.close(code=1008, reason="Unauthorized")
+        return
+
     logger.info(f"[TERMINAL DEBUG] WebSocket connection request for execution: {execution_id}")
     await websocket.accept()
     logger.info(f"[TERMINAL DEBUG] WebSocket accepted for execution: {execution_id}")
