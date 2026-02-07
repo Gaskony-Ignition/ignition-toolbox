@@ -2,7 +2,7 @@
  * Type definitions for Electron API exposed via preload script
  */
 
-interface UpdateStatus {
+export interface UpdateStatus {
   checking: boolean;
   available: boolean;
   downloading: boolean;

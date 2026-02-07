@@ -1,6 +1,6 @@
 import { autoUpdater } from 'electron-updater';
 import { BrowserWindow } from 'electron';
-import { getSetting, setSetting } from './settings';
+import { getSetting, getGithubToken, setGithubToken as saveGithubToken } from './settings';
 import log from 'electron-log';
 
 // Configure logging for auto-updater
@@ -41,15 +41,15 @@ export function initAutoUpdater(window: BrowserWindow): void {
   autoUpdater.autoDownload = false; // Manual download
   autoUpdater.autoInstallOnAppQuit = false; // Don't auto-install on quit - let user decide
 
-  // Set up GitHub private repo token if available
-  const githubToken = getSetting('githubToken');
+  // Set up GitHub private repo token if available (decrypted via safeStorage)
+  const githubToken = getGithubToken();
   if (githubToken) {
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'nigelgwork',
       repo: 'ignition-toolbox',
       private: true,
-      token: githubToken as string,
+      token: githubToken,
     });
   }
 
@@ -176,10 +176,10 @@ export function quitAndInstall(): void {
 }
 
 /**
- * Set GitHub token for private repo updates
+ * Set GitHub token for private repo updates (encrypted via safeStorage)
  */
 export function setGitHubToken(token: string | null): void {
-  setSetting('githubToken', token);
+  saveGithubToken(token);
 
   if (token) {
     autoUpdater.setFeedURL({

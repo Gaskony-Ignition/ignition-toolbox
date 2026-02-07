@@ -4,7 +4,7 @@
 # ============================================================================
 
 # Stage 1: Build React frontend
-FROM node:20-slim AS frontend-builder
+FROM node:22-slim AS frontend-builder
 
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
@@ -15,7 +15,7 @@ RUN npm run build
 
 
 # Stage 2: Runtime - Python backend + built frontend + Playwright
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 # Prevent Python from writing .pyc files and enable unbuffered output
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -69,16 +69,21 @@ RUN pip install --no-cache-dir -r /app/backend/requirements.txt \
 # Install Playwright Chromium browser
 RUN playwright install chromium
 
+# Create non-root user for runtime security
+RUN groupadd --gid 1000 toolbox \
+    && useradd --uid 1000 --gid toolbox --shell /bin/bash --create-home toolbox
+
 # Copy backend source
 COPY backend/ /app/backend/
 
 # Copy built frontend into the path expected by app.py:
 # Path(__file__).parent.parent.parent / "frontend" / "dist"
-# From backend/ignition_toolkit/api/app.py → backend/frontend/dist
+# From backend/ignition_toolkit/api/app.py -> backend/frontend/dist
 COPY --from=frontend-builder /build/frontend/dist /app/backend/frontend/dist
 
 # Create data directory for SQLite, credentials, screenshots
-RUN mkdir -p /data
+# and set ownership to non-root user
+RUN mkdir -p /data && chown -R toolbox:toolbox /data /app
 
 # Environment configuration
 ENV IGNITION_TOOLKIT_HOST=0.0.0.0 \
@@ -92,5 +97,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
 
 WORKDIR /app/backend
+
+# Run as non-root user
+# Note: Docker socket access requires the toolbox user to be in the docker group
+# or the socket to have appropriate permissions. When using docker-compose.yml,
+# ensure the docker socket is readable: "- /var/run/docker.sock:/var/run/docker.sock:ro"
+USER toolbox
 
 CMD ["python", "run_backend.py"]

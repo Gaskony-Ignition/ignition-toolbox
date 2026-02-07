@@ -1,4 +1,5 @@
 import Store from 'electron-store';
+import { safeStorage } from 'electron';
 
 // Define settings schema
 interface SettingsSchema {
@@ -24,8 +25,10 @@ interface SettingsSchema {
   checkForUpdatesOnStartup: boolean;
   skippedVersion: string | null;
 
-  // GitHub token for private repo updates
+  // GitHub token for private repo updates (encrypted via safeStorage)
   githubToken: string | null;
+  // Flag indicating the token has been encrypted with safeStorage
+  githubTokenEncrypted: boolean;
 }
 
 const defaults: SettingsSchema = {
@@ -44,6 +47,7 @@ const defaults: SettingsSchema = {
   checkForUpdatesOnStartup: true,
   skippedVersion: null,
   githubToken: null,
+  githubTokenEncrypted: false,
 };
 
 // Create store instance
@@ -69,6 +73,59 @@ export function getAllSettings(): SettingsSchema {
 
 export function resetSettings(): void {
   store.clear();
+}
+
+/**
+ * Get the GitHub token, decrypting it if stored encrypted.
+ * Handles migration from plaintext to encrypted storage.
+ */
+export function getGithubToken(): string | null {
+  const token = store.get('githubToken');
+  if (!token) return null;
+
+  const isEncrypted = store.get('githubTokenEncrypted');
+
+  if (isEncrypted) {
+    // Decrypt the stored token
+    try {
+      const buffer = Buffer.from(token, 'base64');
+      return safeStorage.decryptString(buffer);
+    } catch (error) {
+      console.error('Failed to decrypt GitHub token:', error);
+      return null;
+    }
+  }
+
+  // Legacy plaintext token — migrate to encrypted storage
+  if (safeStorage.isEncryptionAvailable()) {
+    setGithubToken(token);
+    console.log('Migrated GitHub token to encrypted storage');
+  }
+
+  return token;
+}
+
+/**
+ * Store the GitHub token encrypted via OS keychain (safeStorage).
+ * Falls back to plaintext if encryption is not available.
+ */
+export function setGithubToken(token: string | null): void {
+  if (!token) {
+    store.set('githubToken', null);
+    store.set('githubTokenEncrypted', false);
+    return;
+  }
+
+  if (safeStorage.isEncryptionAvailable()) {
+    const encrypted = safeStorage.encryptString(token);
+    store.set('githubToken', encrypted.toString('base64'));
+    store.set('githubTokenEncrypted', true);
+  } else {
+    // Fallback: store plaintext (e.g. Linux without Secret Service)
+    console.warn('safeStorage not available — storing GitHub token unencrypted');
+    store.set('githubToken', token);
+    store.set('githubTokenEncrypted', false);
+  }
 }
 
 export { store, SettingsSchema };

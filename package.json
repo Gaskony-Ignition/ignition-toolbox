@@ -18,7 +18,10 @@
     "build:backend:win": "cd backend && .venv\\Scripts\\pyinstaller.exe backend.spec --clean --noconfirm",
     "dist": "npm run build && npm run build:backend && electron-builder",
     "dist:win": "npm run build && npm run build:backend:win && electron-builder --win --x64",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "setup": "npm install && cd frontend && npm install && cd ../backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "setup:win": "npm install && cd frontend && npm install && cd ../backend && python -m venv .venv && .venv\\Scripts\\pip install -r requirements.txt",
+    "version:sync": "node scripts/sync-version.js"
   },
   "dependencies": {
     "electron-log": "^5.2.0",

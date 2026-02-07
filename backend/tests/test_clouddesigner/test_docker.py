@@ -237,6 +237,12 @@ class TestGetDockerFilesPath:
 class TestFindDockerExecutable:
     """Tests for find_docker_executable function"""
 
+    def setup_method(self):
+        """Reset the docker detection cache between tests."""
+        import ignition_toolkit.clouddesigner.docker as docker_mod
+        docker_mod._docker_detection_done = False
+        docker_mod._docker_detection_cache = {}
+
     def test_returns_path_from_shutil_which(self):
         """Test that docker in PATH is found"""
         from ignition_toolkit.clouddesigner.docker import find_docker_executable

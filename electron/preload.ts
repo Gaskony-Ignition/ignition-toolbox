@@ -1,19 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-
-// Update status interface
-interface UpdateStatus {
-  checking: boolean;
-  available: boolean;
-  downloading: boolean;
-  downloaded: boolean;
-  progress?: number;
-  error?: string;
-  updateInfo?: {
-    version: string;
-    releaseDate: string;
-    releaseNotes?: string;
-  };
-}
+import type { UpdateStatus } from './services/auto-updater';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object

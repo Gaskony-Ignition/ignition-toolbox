@@ -54,22 +54,9 @@ import { useStore } from '../store';
 import type { HealthResponse } from '../types/api';
 import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
+import type { UpdateStatus } from '../types/electron';
 
 type SettingsTab = 'credentials' | 'executions' | 'diagnostics' | 'updates' | 'appearance' | 'chat' | 'about';
-
-interface UpdateStatus {
-  checking: boolean;
-  available: boolean;
-  downloading: boolean;
-  downloaded: boolean;
-  progress?: number;
-  error?: string;
-  updateInfo?: {
-    version: string;
-    releaseDate: string;
-    releaseNotes?: string;
-  };
-}
 
 const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'credentials', label: 'Gateway Credentials', icon: <CredentialsIcon /> },

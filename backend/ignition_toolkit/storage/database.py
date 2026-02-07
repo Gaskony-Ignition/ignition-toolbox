@@ -7,7 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -30,7 +30,9 @@ class Database:
     """
     Database connection manager
 
-    Handles SQLite connection, session management, and table creation.
+    Handles SQLite connection, session management, and schema migrations.
+    Uses Alembic for schema migrations when available, with a fallback
+    to create_all() for environments where Alembic isn't installed.
     """
 
     def __init__(self, database_path: Path | None = None):
@@ -64,15 +66,68 @@ class Database:
             bind=self.engine,
         )
 
-        # Create tables
-        self.create_tables()
+        # Apply schema (migrations or fallback)
+        self._apply_schema()
 
         logger.info(f"Database initialized: {self.database_path}")
 
-    def create_tables(self) -> None:
-        """Create all database tables"""
+    def _apply_schema(self) -> None:
+        """
+        Apply database schema using Alembic migrations.
+
+        For existing databases without an alembic_version table,
+        stamps them at the baseline revision so future migrations
+        are applied correctly.
+
+        Falls back to create_all() if Alembic is not installed.
+        """
+        try:
+            from alembic import command
+            from alembic.config import Config
+
+            alembic_ini = Path(__file__).resolve().parents[2] / "alembic.ini"
+            if not alembic_ini.exists():
+                logger.warning(f"alembic.ini not found at {alembic_ini}, falling back to create_all()")
+                self._create_tables_fallback()
+                return
+
+            alembic_cfg = Config(str(alembic_ini))
+            # Override the script_location to be relative to alembic.ini
+            alembic_cfg.set_main_option(
+                "script_location", str(alembic_ini.parent / "alembic")
+            )
+            # Set the database URL so Alembic uses our database
+            alembic_cfg.set_main_option(
+                "sqlalchemy.url", f"sqlite:///{self.database_path}"
+            )
+
+            # Check if this is an existing database without alembic_version
+            inspector = inspect(self.engine)
+            existing_tables = set(inspector.get_table_names())
+
+            if existing_tables and "alembic_version" not in existing_tables:
+                # Existing database — stamp at baseline so future migrations apply
+                logger.info("Existing database detected, stamping at Alembic baseline (001)")
+                # First ensure all tables exist (in case some were added after last create_all)
+                Base.metadata.create_all(bind=self.engine)
+                command.stamp(alembic_cfg, "001")
+            else:
+                # New database or already tracked — run pending migrations
+                command.upgrade(alembic_cfg, "head")
+
+            logger.info("Database schema up to date (Alembic)")
+
+        except ImportError:
+            logger.warning("Alembic not installed, falling back to create_all()")
+            self._create_tables_fallback()
+        except Exception as e:
+            logger.error(f"Alembic migration failed: {e}, falling back to create_all()")
+            self._create_tables_fallback()
+
+    def _create_tables_fallback(self) -> None:
+        """Fallback: create tables using SQLAlchemy create_all()"""
         Base.metadata.create_all(bind=self.engine)
-        logger.info("Database tables created/verified")
+        logger.info("Database tables created/verified (create_all fallback)")
 
     def verify_schema(self) -> bool:
         """
