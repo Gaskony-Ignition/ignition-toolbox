@@ -13,11 +13,15 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 
 from ignition_toolkit.api.routers.models import ParameterInfo, PlaybookInfo, StepInfo
+import shutil
+
 from ignition_toolkit.core.paths import (
     get_playbooks_dir,
     get_all_playbook_dirs,
     get_builtin_playbooks_dir,
     get_user_playbooks_dir,
+    get_data_dir,
+    is_frozen,
 )
 from ignition_toolkit.playbook.loader import PlaybookLoader
 from datetime import datetime
@@ -27,6 +31,41 @@ logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter()
+
+
+def _ensure_writable_playbook(playbook_path: Path) -> Path:
+    """
+    Ensure a playbook is in a writable location.
+
+    If the playbook is in the read-only built-in directory (e.g., Program Files),
+    copy it to the user playbooks directory first.
+
+    Returns the writable path (may be the same or the new user copy).
+    """
+    if not is_frozen():
+        return playbook_path
+
+    builtin_dir = get_builtin_playbooks_dir().resolve()
+    try:
+        rel = playbook_path.resolve().relative_to(builtin_dir)
+    except ValueError:
+        # Already in user dir or elsewhere — assume writable
+        return playbook_path
+
+    # Copy to user playbooks dir, preserving subdirectory structure
+    user_path = get_user_playbooks_dir() / rel
+    user_path.parent.mkdir(parents=True, exist_ok=True)
+    if not user_path.exists():
+        shutil.copy2(playbook_path, user_path)
+        logger.info(f"Copied built-in playbook to user dir: {user_path}")
+    return user_path
+
+
+def _get_backup_dir() -> Path:
+    """Get a writable directory for playbook backups."""
+    backup_dir = get_data_dir() / "playbook_backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    return backup_dir
 
 
 # ============================================================================
@@ -366,9 +405,10 @@ async def update_playbook(request: PlaybookUpdateRequest):
     try:
         playbook_path = validate_playbook_path(request.playbook_path)
 
-        backup_path = playbook_path.with_suffix(
-            f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
-        )
+        # Save backup to writable directory
+        backup_dir = _get_backup_dir()
+        backup_name = f"{playbook_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
+        backup_path = backup_dir / backup_name
         backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
         logger.info(f"Created backup: {backup_path}")
 
@@ -377,8 +417,10 @@ async def update_playbook(request: PlaybookUpdateRequest):
         except yaml.YAMLError as e:
             raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
 
-        playbook_path.write_text(request.yaml_content, encoding='utf-8')
-        logger.info(f"Updated playbook: {playbook_path}")
+        # Ensure we write to a writable location
+        writable_path = _ensure_writable_playbook(playbook_path)
+        writable_path.write_text(request.yaml_content, encoding='utf-8')
+        logger.info(f"Updated playbook: {writable_path}")
 
         metadata_store.increment_revision(request.playbook_path)
         meta = metadata_store.get_metadata(request.playbook_path)
@@ -416,18 +458,21 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
         if request.description is not None:
             playbook_data["description"] = request.description
 
-        backup_path = playbook_path.with_suffix(
-            f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
-        )
+        # Save backup to writable directory
+        backup_dir = _get_backup_dir()
+        backup_name = f"{playbook_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
+        backup_path = backup_dir / backup_name
         backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
 
-        with open(playbook_path, "w", encoding='utf-8') as f:
+        # Ensure we write to a writable location
+        writable_path = _ensure_writable_playbook(playbook_path)
+        with open(writable_path, "w", encoding='utf-8') as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         metadata_store.increment_revision(request.playbook_path)
         meta = metadata_store.get_metadata(request.playbook_path)
 
-        logger.info(f"Updated playbook metadata: {playbook_path}")
+        logger.info(f"Updated playbook metadata: {writable_path}")
 
         return {
             "status": "success",
@@ -566,10 +611,12 @@ async def edit_step(request: StepEditRequest):
         if not step_found:
             raise HTTPException(status_code=404, detail=f"Step not found: {request.step_id}")
 
-        with open(playbook_path, "w", encoding='utf-8') as f:
+        # Ensure we write to a writable location
+        writable_path = _ensure_writable_playbook(playbook_path)
+        with open(writable_path, "w", encoding='utf-8') as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
-        logger.info(f"Updated step '{request.step_id}' in {playbook_path}")
+        logger.info(f"Updated step '{request.step_id}' in {writable_path}")
         return {"message": "Step updated", "step_id": request.step_id}
 
     except Exception as e:

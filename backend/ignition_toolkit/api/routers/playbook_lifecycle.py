@@ -16,7 +16,7 @@ import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ignition_toolkit.core.paths import get_playbooks_dir, get_all_playbook_dirs
+from ignition_toolkit.core.paths import get_playbooks_dir, get_all_playbook_dirs, get_user_playbooks_dir
 from ignition_toolkit.playbook.loader import PlaybookLoader
 
 logger = logging.getLogger(__name__)
@@ -197,7 +197,6 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
         if not source_path.is_file():
             raise HTTPException(status_code=400, detail=f"Source is not a file: {playbook_path}")
 
-        source_parent = source_path.parent
         source_stem = source_path.stem  # filename without extension
         source_suffix = source_path.suffix  # .yaml or .yml
 
@@ -212,12 +211,17 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
             base_stem = re.sub(r'(_copy)+(_\d+)?$', '', source_stem)
             new_stem = f"{base_stem}_copy"
 
-        new_path = source_parent / f"{new_stem}{source_suffix}"
+        # Always write duplicates to the writable user directory
+        # Preserve the domain subdirectory from the source path
+        source_relative = _get_relative_to_any_playbook_dir(source_path)
+        target_parent = get_user_playbooks_dir() / Path(source_relative).parent
+        target_parent.mkdir(parents=True, exist_ok=True)
+
+        new_path = target_parent / f"{new_stem}{source_suffix}"
         counter = 1
         while new_path.exists():
-            # Use base_stem if we generated it, otherwise use new_stem
             stem_for_counter = new_stem.rstrip('0123456789_') if new_name else re.sub(r'(_copy)+(_\d+)?$', '', source_stem) + "_copy"
-            new_path = source_parent / f"{stem_for_counter}_{counter}{source_suffix}"
+            new_path = target_parent / f"{stem_for_counter}_{counter}{source_suffix}"
             counter += 1
 
         shutil.copy2(source_path, new_path)
@@ -320,7 +324,8 @@ async def import_playbook(request: PlaybookImportRequest):
         except yaml.YAMLError as e:
             raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
 
-        playbooks_dir = get_playbooks_dir()
+        # Always write new/imported playbooks to the writable user directory
+        playbooks_dir = get_user_playbooks_dir()
         target_dir = playbooks_dir / request.domain
         target_dir.mkdir(parents=True, exist_ok=True)
 
