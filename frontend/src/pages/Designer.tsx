@@ -513,9 +513,21 @@ docker info`}
 
                     {/* Summary and action */}
                     {imagesReady ? (
-                      <Alert severity="success" sx={{ py: 0.5 }}>
-                        All Docker images are ready. You can start the Designer.
-                      </Alert>
+                      <Box>
+                        <Alert severity="success" sx={{ py: 0.5, mb: 1 }}>
+                          All Docker images are ready. You can start the Designer.
+                        </Alert>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={isPreparing ? <CircularProgress size={14} /> : <BuildIcon />}
+                          onClick={() => prepareMutation.mutate(true)}
+                          disabled={isPreparing}
+                          size="small"
+                        >
+                          {isPreparing ? 'Rebuilding...' : 'Force Rebuild Image'}
+                        </Button>
+                      </Box>
                     ) : (
                       <Box>
                         <Alert severity="info" sx={{ py: 0.5, mb: 1.5 }}>
