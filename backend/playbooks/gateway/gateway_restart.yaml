@@ -150,7 +150,7 @@ steps:
         import time
         import httpx
 
-        gateway_url = """{{ parameter.gateway_url }}"""
+        gateway_url = r"""{{ parameter.gateway_url }}"""
         max_attempts = 20
         wait_seconds = 3
 
@@ -188,7 +188,7 @@ steps:
         import time
         import httpx
 
-        gateway_url = """{{ parameter.gateway_url }}"""
+        gateway_url = r"""{{ parameter.gateway_url }}"""
         max_attempts = 30
         wait_seconds = 5
 

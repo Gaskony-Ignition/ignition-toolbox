@@ -31,8 +31,8 @@ steps:
   type: utility.python
   parameters:
     script: "import zipfile\nimport xml.etree.ElementTree as ET\nfrom pathlib import\
-      \ Path\n\nfolder_path = \"\"\"{{ parameter.module_folder }}\"\"\"\nprefer_unsigned_str\
-      \ = \"\"\"{{ parameter.prefer_unsigned }}\"\"\"\nprefer_unsigned = prefer_unsigned_str.lower()\
+      \ Path\n\nfolder_path = r\"\"\"{{ parameter.module_folder }}\"\"\"\nprefer_unsigned_str\
+      \ = r\"\"\"{{ parameter.prefer_unsigned }}\"\"\"\nprefer_unsigned = prefer_unsigned_str.lower()\
       \ in ('true', '1', 'yes')\nfolder = Path(folder_path)\n\nif not folder.exists():\n\
       \    print(f\"ERROR: Folder not found: {folder_path}\")\n    raise Exception(\"\
       Step failed\")\n\nmodl_files = list(folder.glob('*.modl'))\n\nif not modl_files:\n\

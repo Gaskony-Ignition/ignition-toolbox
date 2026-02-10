@@ -53,7 +53,7 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
         4
     """
     # SECURITY: Check for dangerous imports before execution
-    dangerous_modules = ['os', 'subprocess', 'sys', 'pathlib', 'shutil', 'socket']
+    dangerous_modules = ['os', 'subprocess', 'sys', 'shutil', 'socket']
     dangerous_builtins = ['__import__', 'eval', 'exec', 'compile', 'open']
 
     code_lower = code.lower()

@@ -64,7 +64,7 @@ steps:
     type: utility.python
     parameters:
       script: |
-        module_name = """{{ parameter.module_name }}"""
+        module_name = r"""{{ parameter.module_name }}"""
         first_word = module_name.split(' ')[0]
         set_variable('module_name_first_word', first_word)
 
@@ -153,7 +153,7 @@ steps:
     type: utility.python
     parameters:
       script: |
-        module_name = """{{ parameter.module_name }}"""
+        module_name = r"""{{ parameter.module_name }}"""
 
         print("=" * 80)
         print("MODULE UNINSTALLATION SUMMARY")
