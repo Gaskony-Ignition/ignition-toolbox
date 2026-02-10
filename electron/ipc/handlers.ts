@@ -10,8 +10,7 @@ import {
   quitAndInstall,
   getUpdateStatus,
 } from '../services/auto-updater';
-import { getClaudeExecutor } from '../services/claude-executor';
-import { getContextBuilder } from '../services/context-builder';
+
 import { openExternalUrl } from '../utils/platform';
 
 export function registerIpcHandlers(pythonBackend: PythonBackend): void {
@@ -169,60 +168,6 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
 
   ipcMain.handle('updates:getStatus', () => {
     return getUpdateStatus();
-  });
-
-  // Chat handlers (Toolbox Assistant)
-  ipcMain.handle('chat:checkAvailability', async () => {
-    const executor = getClaudeExecutor();
-    return executor.checkAvailability();
-  });
-
-  ipcMain.handle('chat:execute', async (event, prompt: string) => {
-    const executor = getClaudeExecutor();
-    const backendPort = pythonBackend.getPort();
-
-    // Build system prompt with context
-    let systemPrompt: string | undefined;
-    if (backendPort) {
-      try {
-        const contextBuilder = getContextBuilder(backendPort);
-        systemPrompt = await contextBuilder.buildSystemPrompt();
-      } catch (error) {
-        console.error('[Chat] Failed to build context:', error);
-      }
-    }
-
-    // Stream callback to send chunks to renderer
-    const onStream = (chunk: string) => {
-      const window = BrowserWindow.fromWebContents(event.sender);
-      if (window) {
-        event.sender.send('chat:stream', chunk);
-      }
-    };
-
-    const result = await executor.executeQuery(prompt, systemPrompt, onStream);
-    return result;
-  });
-
-  ipcMain.handle('chat:cancel', () => {
-    const executor = getClaudeExecutor();
-    executor.cancelExecution();
-    return { success: true };
-  });
-
-  ipcMain.handle('chat:getContext', async () => {
-    const backendPort = pythonBackend.getPort();
-    if (!backendPort) {
-      return null;
-    }
-
-    try {
-      const contextBuilder = getContextBuilder(backendPort);
-      return contextBuilder.getDisplayContext();
-    } catch (error) {
-      console.error('[Chat] Failed to get context:', error);
-      return null;
-    }
   });
 
   console.log('IPC handlers registered');

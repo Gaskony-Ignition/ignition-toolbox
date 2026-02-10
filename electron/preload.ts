@@ -15,7 +15,6 @@ const validEventChannels = [
   'update:progress',
   'update:downloaded',
   'update:error',
-  'chat:stream',
 ] as const;
 
 type ValidEventChannel = typeof validEventChannels[number];
@@ -61,19 +60,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:download'),
   installUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:install'),
   getUpdateStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:getStatus'),
-
-  // Chat (Toolbox Assistant)
-  chat: {
-    checkAvailability: (): Promise<boolean> => ipcRenderer.invoke('chat:checkAvailability'),
-    execute: (prompt: string): Promise<{ success: boolean; output: string; error?: string }> =>
-      ipcRenderer.invoke('chat:execute', prompt),
-    cancel: (): Promise<{ success: boolean }> => ipcRenderer.invoke('chat:cancel'),
-    getContext: (): Promise<{
-      playbookCount: number;
-      recentExecutions: { name: string; status: string }[];
-      cloudDesignerStatus: string;
-    } | null> => ipcRenderer.invoke('chat:getContext'),
-  },
 
   // Event listeners (for backend status updates)
   on: (channel: ValidEventChannel, callback: (data: unknown) => void): (() => void) => {
@@ -130,16 +116,6 @@ declare global {
       downloadUpdate: () => Promise<{ success: boolean }>;
       installUpdate: () => Promise<{ success: boolean }>;
       getUpdateStatus: () => Promise<UpdateStatus>;
-      chat: {
-        checkAvailability: () => Promise<boolean>;
-        execute: (prompt: string) => Promise<{ success: boolean; output: string; error?: string }>;
-        cancel: () => Promise<{ success: boolean }>;
-        getContext: () => Promise<{
-          playbookCount: number;
-          recentExecutions: { name: string; status: string }[];
-          cloudDesignerStatus: string;
-        } | null>;
-      };
       on: (channel: ValidEventChannel, callback: (data: unknown) => void) => () => void;
       off: (channel: ValidEventChannel, callback: (data: unknown) => void) => void;
     };

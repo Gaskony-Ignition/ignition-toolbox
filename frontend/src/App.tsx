@@ -14,7 +14,7 @@ import { Layout, type DomainTab } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
 import { Executions } from './pages/Executions';
 import { Settings } from './pages/Settings';
-import { FloatingChatButton } from './components/chat/FloatingChatButton';
+
 import { WelcomeDialog } from './components/WelcomeDialog';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
@@ -180,8 +180,6 @@ function AppContent() {
       <Layout activeTab={activeTab} onTabChange={setActiveTab}>
         {renderContent()}
       </Layout>
-      {/* Floating chat button */}
-      <FloatingChatButton />
       {/* Welcome dialog for first-time users */}
       <WelcomeDialog />
     </ThemeProvider>

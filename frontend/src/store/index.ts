@@ -11,13 +11,6 @@ const getInitialTheme = (): 'dark' | 'light' => {
   return (stored === 'light' || stored === 'dark') ? stored : 'dark';
 };
 
-// Initialize density from localStorage or default to 'comfortable'
-export type Density = 'compact' | 'comfortable' | 'spacious';
-const getInitialDensity = (): Density => {
-  const stored = localStorage.getItem('density');
-  return (stored === 'compact' || stored === 'comfortable' || stored === 'spacious') ? stored : 'comfortable';
-};
-
 // Initialize playbook grid columns from localStorage or default to 5
 export type PlaybookGridColumns = 3 | 4 | 5 | 6;
 const getInitialPlaybookGridColumns = (): PlaybookGridColumns => {
@@ -61,10 +54,6 @@ interface AppState {
   // Theme mode
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
-
-  // Display density
-  density: Density;
-  setDensity: (density: Density) => void;
 
   // Playbook grid columns
   playbookGridColumns: PlaybookGridColumns;
@@ -118,12 +107,6 @@ export const useStore = create<AppState>((set) => ({
   setTheme: (theme) => {
     localStorage.setItem('theme', theme);
     set({ theme });
-  },
-
-  density: getInitialDensity(),
-  setDensity: (density) => {
-    localStorage.setItem('density', density);
-    set({ density });
   },
 
   playbookGridColumns: getInitialPlaybookGridColumns(),

@@ -123,6 +123,12 @@ def _normalize_gateway_url(url: str) -> str:
     return url
 
 
+def _is_http(gateway_url: str) -> bool:
+    """Check if the gateway URL uses plain HTTP (not HTTPS)"""
+    normalized = _normalize_gateway_url(gateway_url)
+    return normalized.startswith("http://")
+
+
 async def _make_gateway_request(
     gateway_url: str,
     path: str,
@@ -131,18 +137,23 @@ async def _make_gateway_request(
     headers: dict[str, str] | None = None,
     query_params: dict[str, str] | None = None,
     body: Any | None = None,
+    retry_without_key_on_http: bool = True,
 ) -> dict:
     """
     Make a request to the Ignition Gateway API
 
+    When URL is HTTP and API key auth fails (401/403), automatically retries
+    without the API key header since API key auth requires HTTPS on Ignition 8.3.
+
     Args:
         gateway_url: Base gateway URL
-        path: API path (e.g., /data/status/sys-info)
+        path: API path (e.g., /data/api/v1/gateway-info)
         method: HTTP method
         api_key: API key for authentication
         headers: Additional headers
         query_params: Query parameters
         body: Request body
+        retry_without_key_on_http: If True and URL is HTTP, retry without API key on 401/403
 
     Returns:
         Response data dict with status, headers, and body
@@ -164,6 +175,27 @@ async def _make_gateway_request(
                 params=query_params,
                 json=body if body and method.upper() in ("POST", "PUT", "PATCH") else None,
             )
+
+            # If HTTP + API key auth failed, retry without the API key
+            if (
+                retry_without_key_on_http
+                and api_key
+                and _is_http(gateway_url)
+                and response.status_code in (401, 403)
+            ):
+                logger.info(
+                    f"API key auth failed over HTTP (status {response.status_code}), "
+                    f"retrying without API key: {path}"
+                )
+                retry_headers = req_headers.copy()
+                retry_headers.pop("X-Ignition-API-Token", None)
+                response = await client.request(
+                    method=method.upper(),
+                    url=url,
+                    headers=retry_headers,
+                    params=query_params,
+                    json=body if body and method.upper() in ("POST", "PUT", "PATCH") else None,
+                )
 
             # Try to parse JSON response
             try:
@@ -311,30 +343,65 @@ async def get_gateway_info(request: GatewayRequest):
 
     Uses Ignition 8.3 REST API endpoints to gather system info.
     Falls back to legacy /system/gwinfo for basic info.
+
+    When URL is HTTP, uses legacy /system/gwinfo as primary source
+    since API key authentication requires HTTPS.
     """
     api_key = _get_api_key(request.api_key_name, request.api_key)
+    is_http = _is_http(request.gateway_url)
 
     info: dict[str, Any] = {}
 
-    # Get gateway info (Ignition 8.3 API)
-    try:
-        gw_info = await _make_gateway_request(
-            gateway_url=request.gateway_url,
-            path="/data/api/v1/gateway-info",
-            api_key=api_key,
-        )
-        if gw_info["status_code"] == 200:
-            body = gw_info["body"]
-            info["system"] = body
-    except Exception as e:
-        logger.warning(f"Could not get gateway-info: {e}")
+    # For HTTP connections, use legacy endpoint as primary (no auth required)
+    if is_http:
+        logger.info("HTTP connection detected, using legacy /system/gwinfo as primary")
+        try:
+            legacy = await _make_gateway_request(
+                gateway_url=request.gateway_url,
+                path="/system/gwinfo",
+                retry_without_key_on_http=False,
+            )
+            if legacy["status_code"] == 200:
+                text = legacy["body"] if isinstance(legacy["body"], str) else ""
+                parsed = {}
+                for pair in text.split(";"):
+                    if "=" in pair:
+                        k, v = pair.split("=", 1)
+                        parsed[k] = v
+                info["system"] = {
+                    "version": parsed.get("Version", "Unknown"),
+                    "edition": parsed.get("PlatformEdition", ""),
+                    "state": parsed.get("ContextStatus", ""),
+                    "platformName": parsed.get("PlatformName", ""),
+                }
+                info["http_info"] = (
+                    "Connected over HTTP. API key authentication requires HTTPS. "
+                    "Using session-based fallback for gateway info."
+                )
+        except Exception as e:
+            logger.warning(f"Could not get legacy gwinfo over HTTP: {e}")
 
-    # Fallback to legacy /system/gwinfo (no auth required)
+    # Get gateway info (Ignition 8.3 API) - primary for HTTPS, secondary for HTTP
+    if not info.get("system"):
+        try:
+            gw_info = await _make_gateway_request(
+                gateway_url=request.gateway_url,
+                path="/data/api/v1/gateway-info",
+                api_key=api_key,
+            )
+            if gw_info["status_code"] == 200:
+                body = gw_info["body"]
+                info["system"] = body
+        except Exception as e:
+            logger.warning(f"Could not get gateway-info: {e}")
+
+    # Fallback to legacy /system/gwinfo (no auth required) for HTTPS that failed
     if not info.get("system"):
         try:
             legacy = await _make_gateway_request(
                 gateway_url=request.gateway_url,
                 path="/system/gwinfo",
+                retry_without_key_on_http=False,
             )
             if legacy["status_code"] == 200:
                 text = legacy["body"] if isinstance(legacy["body"], str) else ""
@@ -543,15 +610,19 @@ async def test_gateway_connection(request: GatewayRequest):
     """
     Test connection to a gateway
 
-    Verifies the gateway is reachable and API key is valid
+    Verifies the gateway is reachable and API key is valid.
+    For HTTP connections, falls back to legacy /system/gwinfo when
+    API key auth fails (since API keys require HTTPS on Ignition 8.3).
     """
     api_key = _get_api_key(request.api_key_name, request.api_key)
+    is_http = _is_http(request.gateway_url)
 
     try:
         response = await _make_gateway_request(
             gateway_url=request.gateway_url,
             path="/data/api/v1/gateway-info",
             api_key=api_key,
+            retry_without_key_on_http=False,  # We handle fallback manually here
         )
 
         if response["status_code"] == 200:
@@ -562,18 +633,52 @@ async def test_gateway_connection(request: GatewayRequest):
                 "message": "Connection successful",
                 "gateway_version": version,
             }
+        elif response["status_code"] in (401, 403) and is_http:
+            # HTTP connection with auth failure - try legacy fallback
+            try:
+                legacy = await _make_gateway_request(
+                    gateway_url=request.gateway_url,
+                    path="/system/gwinfo",
+                    retry_without_key_on_http=False,
+                )
+                if legacy["status_code"] == 200:
+                    text = legacy["body"] if isinstance(legacy["body"], str) else ""
+                    parsed = {}
+                    for pair in text.split(";"):
+                        if "=" in pair:
+                            k, v = pair.split("=", 1)
+                            parsed[k] = v
+                    version = parsed.get("Version", "Unknown")
+                    return {
+                        "success": True,
+                        "message": (
+                            "Gateway reachable. API key authentication requires "
+                            "HTTPS - using session fallback."
+                        ),
+                        "gateway_version": version,
+                        "is_http": True,
+                    }
+            except Exception:
+                pass
+            # Legacy fallback also failed
+            return {
+                "success": False,
+                "message": (
+                    "API key authentication failed over HTTP. "
+                    "API keys require HTTPS on Ignition 8.3. "
+                    "Switch to HTTPS or use session-based access."
+                ),
+                "is_http": True,
+            }
         elif response["status_code"] == 401:
             return {
                 "success": False,
-                "message": "Authentication failed - invalid or missing API key. "
-                "Ensure 'Require secure connections for API Keys' is disabled "
-                "if connecting over HTTP.",
+                "message": "API key invalid or expired.",
             }
         elif response["status_code"] == 403:
             return {
                 "success": False,
-                "message": "Access denied - API key may require HTTPS. "
-                "Check 'Require secure connections for API Keys' in Gateway settings.",
+                "message": "Access denied - API key may lack required permissions.",
             }
         else:
             return {

@@ -127,8 +127,8 @@ export function WelcomeDialog() {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Need help? Check the documentation or use the chat assistant in the
-            bottom-right corner.
+            Need help? Check the documentation or visit Settings for diagnostics and
+            system health information.
           </Typography>
         </Box>
       </DialogContent>

@@ -1,5 +1,5 @@
 /**
- * PlaybookCard - Display playbook information with action button
+ * PlaybookCard - Compact playbook card with expandable details
  */
 
 import { useState, useEffect } from 'react';
@@ -27,6 +27,7 @@ import {
   Switch,
   FormControlLabel,
   TextField,
+  Collapse,
 } from '@mui/material';
 import {
   Settings as ConfigureIcon,
@@ -47,9 +48,10 @@ import {
   Delete as DeleteIcon,
   Schedule as ScheduleIcon,
   ContentCopy as DuplicateIcon,
-  CheckCircle as ConfiguredIcon,
+  CheckCircle as CheckCircleIcon,
   RadioButtonUnchecked as NotConfiguredIcon,
   Code as CodeIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import type { PlaybookInfo } from '../types/api';
 import { useStore } from '../store';
@@ -77,8 +79,6 @@ function getSavedConfigPreview(playbookPath: string): SavedConfig | null {
   return stored ? JSON.parse(stored) : null;
 }
 
-// Verification status is now based on playbook.verified property
-
 export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook }: PlaybookCardProps) {
   const queryClient = useQueryClient();
   const [savedConfig, setSavedConfig] = useState<SavedConfig | null>(getSavedConfigPreview(playbook.path));
@@ -100,39 +100,31 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
   const [editedDescription, setEditedDescription] = useState(playbook.description);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [duplicateName, setDuplicateName] = useState('');
+  const [expanded, setExpanded] = useState(false);
   const selectedCredential = useStore((state) => state.selectedCredential);
 
   const isDisabled = !playbook.enabled;
 
   // Check if required parameters are configured
   const areParamsConfigured = (): boolean => {
-    // If there are no parameters, consider it configured
     if (!playbook.parameters || playbook.parameters.length === 0) {
       return true;
     }
 
-    // Check if a global credential is selected (covers gateway_url, username, password)
     const hasGlobalCredential = !!selectedCredential;
-
-    // Parameters that are covered by the global credential selection
     const credentialCoveredParams = ['gateway_url', 'username', 'password', 'user', 'pass', 'credential_name'];
 
-    // Get required parameters that need user input (exclude credential-related ones)
     const requiredUserParams = playbook.parameters.filter(
       p => p.required &&
            p.default === null &&
            !credentialCoveredParams.some(cp => p.name.toLowerCase().includes(cp.toLowerCase()))
     );
 
-    // If we have a global credential, the credential params are covered
-    // Now check if other required params are configured
     if (hasGlobalCredential) {
-      // No other required params? We're good!
       if (requiredUserParams.length === 0) {
         return true;
       }
 
-      // Check saved config for remaining required params
       if (savedConfig) {
         const configuredParams = Object.keys(savedConfig.parameters);
         const allRequiredConfigured = requiredUserParams.every(
@@ -144,9 +136,6 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
       }
     }
 
-    // No global credential - need to check if everything is in saved config
-    // But since credentials are stripped from saved config, without global credential
-    // we can't be fully configured
     return false;
   };
 
@@ -308,10 +297,14 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
     if (onExecute) {
       onExecute(playbook);
     } else {
-      // Fallback to configure if no execute handler
       onConfigure(playbook);
     }
   };
+
+  // Format version: show revision only if non-zero
+  const versionText = playbook.revision > 0
+    ? `v${playbook.version}.r${playbook.revision}`
+    : `v${playbook.version}`;
 
   return (
     <Card
@@ -328,7 +321,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
         backgroundColor: 'background.paper',
         transition: 'all 0.3s ease-in-out',
         '&:hover': {
-          transform: 'translateY(-6px)',
+          transform: 'translateY(-4px)',
           boxShadow: (theme) => theme.shadows[12],
           borderColor: isDisabled ? 'warning.main' : 'primary.main',
           borderWidth: isDisabled ? '2px' : '3px',
@@ -337,140 +330,69 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
         cursor: 'grab',
       }}
     >
-      <CardContent sx={{ flexGrow: 1, pb: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Typography variant="h6" gutterBottom sx={{ flexGrow: 1 }}>
+      <CardContent sx={{ flexGrow: 1, pb: 0, pt: 2 }}>
+        {/* Header: Name + Verified icon + Menu */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontSize: '1rem', lineHeight: 1.3 }}>
             {playbook.name}
           </Typography>
 
-          {/* Menu Button */}
-          {onExport && (
-            <IconButton
-              size="small"
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
-              sx={{ ml: 1 }}
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1, flexShrink: 0 }}>
+            {/* Verified/Unverified icon */}
+            {playbook.verified ? (
+              <Tooltip title="Verified">
+                <CheckCircleIcon color="success" sx={{ fontSize: 18 }} />
+              </Tooltip>
+            ) : (
+              <Tooltip title="Unverified - use with caution">
+                <WarningIcon color="warning" sx={{ fontSize: 18 }} />
+              </Tooltip>
+            )}
 
-          {/* Verification Status Icon */}
-          {!playbook.verified && (
-            <Tooltip title="Unverified - use with caution">
-              <WarningIcon color="warning" fontSize="small" />
-            </Tooltip>
-          )}
+            {/* Menu Button */}
+            {onExport && (
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                sx={{ p: 0.25 }}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
         </Box>
 
+        {/* Version */}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          {versionText}
+        </Typography>
+
+        {/* Description - 2 lines max */}
         <Typography
           variant="body2"
           color="text.secondary"
           sx={{
-            mb: 2,
+            mb: 1,
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            lineHeight: 1.5,
+            lineHeight: 1.4,
+            minHeight: '2.8em',
           }}
         >
           {playbook.description}
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-          <Chip
-            label={`v${playbook.version}.r${playbook.revision}`}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-          <Chip
-            label={`${playbook.step_count} steps`}
-            size="small"
-            variant="outlined"
-          />
-          {playbook.parameter_count > 0 && (
-            <Tooltip title={paramsConfigured ? 'Parameters configured' : 'Parameters need configuration'}>
-              <Chip
-                icon={paramsConfigured ? <ConfiguredIcon /> : <NotConfiguredIcon />}
-                label="params"
-                size="small"
-                color={paramsConfigured ? 'success' : 'default'}
-                variant="outlined"
-              />
-            </Tooltip>
-          )}
-          {playbook.verified && (
-            <Chip
-              icon={<VerifiedIcon />}
-              label="Verified"
-              size="small"
-              color="success"
-              variant="outlined"
-            />
-          )}
-          {!playbook.enabled && (
-            <Chip
-              label="Disabled"
-              size="small"
-              color="warning"
-              variant="outlined"
-            />
-          )}
-        </Box>
-
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        {/* Domain/Category path */}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
           {playbook.path.split('/').slice(-2).join('/')}
         </Typography>
-
-        {/* Mode Toggles - Debug and Schedule */}
-        <Box sx={{ mt: 1, mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-          {/* Debug Mode Toggle - Left */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DebugIcon fontSize="small" color={debugMode ? 'primary' : 'disabled'} />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={debugMode}
-                  onChange={handleDebugModeToggle}
-                  size="small"
-                  color="primary"
-                />
-              }
-              label={
-                <Typography variant="caption" color={debugMode ? 'primary' : 'text.secondary'} fontWeight={debugMode ? 'bold' : 'normal'}>
-                  Debug
-                </Typography>
-              }
-            />
-          </Box>
-
-          {/* Schedule Mode Toggle - Right */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ScheduleIcon fontSize="small" color={scheduleMode ? 'secondary' : 'disabled'} />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={scheduleMode}
-                  onChange={handleScheduleModeToggle}
-                  size="small"
-                  color="secondary"
-                />
-              }
-              label={
-                <Typography variant="caption" color={scheduleMode ? 'secondary' : 'text.secondary'} fontWeight={scheduleMode ? 'bold' : 'normal'}>
-                  Schedule
-                </Typography>
-              }
-            />
-          </Box>
-        </Box>
-
       </CardContent>
 
-      <CardActions sx={{ pt: 0, gap: 1, flexWrap: 'wrap' }}>
-        {/* Configure Button */}
+      {/* Action Buttons */}
+      <CardActions sx={{ pt: 0, pb: 1, gap: 1, flexWrap: 'wrap' }}>
         <Tooltip title="Configure parameters for this playbook">
           <span style={{ flex: 1, minWidth: scheduleMode ? '100px' : 'auto' }}>
             <Button
@@ -487,7 +409,6 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           </span>
         </Tooltip>
 
-        {/* Schedule Button - Only visible when Schedule Mode is enabled */}
         {scheduleMode && (
           <Tooltip title="Set up a schedule for this playbook">
             <span style={{ flex: 1, minWidth: '100px' }}>
@@ -507,7 +428,6 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           </Tooltip>
         )}
 
-        {/* Execute Button */}
         <Tooltip title={
           isDisabled ? 'Enable this playbook first' :
           !selectedCredential ? 'Select a global credential first (in header dropdown)' :
@@ -529,6 +449,103 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           </span>
         </Tooltip>
       </CardActions>
+
+      {/* Expandable Details Toggle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          py: 0.25,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
+          Details
+        </Typography>
+        <ExpandMoreIcon
+          fontSize="small"
+          sx={{
+            color: 'text.secondary',
+            fontSize: 16,
+            transition: 'transform 0.2s',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        />
+      </Box>
+
+      {/* Expandable Details Content */}
+      <Collapse in={expanded}>
+        <Box sx={{ px: 2, pb: 1.5, pt: 0.5 }}>
+          {/* Steps & Params chips */}
+          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+            <Chip
+              label={`${playbook.step_count} steps`}
+              size="small"
+              variant="outlined"
+            />
+            {playbook.parameter_count > 0 && (
+              <Tooltip title={paramsConfigured ? 'Parameters configured' : 'Parameters need configuration'}>
+                <Chip
+                  icon={paramsConfigured ? <CheckCircleIcon /> : <NotConfiguredIcon />}
+                  label="params"
+                  size="small"
+                  color={paramsConfigured ? 'success' : 'default'}
+                  variant="outlined"
+                />
+              </Tooltip>
+            )}
+          </Box>
+
+          {/* Debug Mode Toggle */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DebugIcon fontSize="small" color={debugMode ? 'primary' : 'disabled'} sx={{ fontSize: 16 }} />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={debugMode}
+                    onChange={handleDebugModeToggle}
+                    size="small"
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="caption" color={debugMode ? 'primary' : 'text.secondary'}>
+                    Debug
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Box>
+
+            {/* Schedule Mode Toggle */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <ScheduleIcon fontSize="small" color={scheduleMode ? 'secondary' : 'disabled'} sx={{ fontSize: 16 }} />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={scheduleMode}
+                    onChange={handleScheduleModeToggle}
+                    size="small"
+                    color="secondary"
+                  />
+                }
+                label={
+                  <Typography variant="caption" color={scheduleMode ? 'secondary' : 'text.secondary'}>
+                    Schedule
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      </Collapse>
 
       {/* Menu for all options */}
       <Menu
@@ -571,7 +588,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           Edit Name/Description
         </MenuItem>
 
-        {/* Edit Steps & YAML (Form-based editor) */}
+        {/* Edit Steps & YAML */}
         {onEditPlaybook && (
           <MenuItem
             onClick={() => {
@@ -801,7 +818,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
                   <ListItemText
                     primary={
                       <Typography variant="caption" color="text.secondary">
-                        • {playbook.step_count} step(s)
+                        {playbook.step_count} step(s)
                       </Typography>
                     }
                   />
@@ -819,7 +836,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
                     <ListItemText
                       primary={
                         <Typography variant="caption" color="text.secondary">
-                          • Gateway URL
+                          Gateway URL
                         </Typography>
                       }
                     />
@@ -828,7 +845,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
                     <ListItemText
                       primary={
                         <Typography variant="caption" color="text.secondary">
-                          • Gateway Credentials
+                          Gateway Credentials
                         </Typography>
                       }
                     />

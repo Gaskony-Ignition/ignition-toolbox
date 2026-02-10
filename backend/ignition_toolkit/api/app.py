@@ -6,7 +6,6 @@ Provides REST endpoints for playbook management and execution control.
 
 import logging
 import os
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -90,7 +89,7 @@ app.include_router(stackbuilder_router)
 # Register CloudDesigner router
 app.include_router(clouddesigner_router)
 
-# Register Context router (for AI assistant)
+# Register Context router (used by MCP server)
 app.include_router(context_router)
 
 # Register WebSocket router
@@ -141,9 +140,6 @@ active_engines: dict[str, PlaybookEngine] = {}
 active_tasks: dict[str, "asyncio.Task"] = {}  # Track asyncio Tasks for proper cancellation
 engine_completion_times: dict[str, datetime] = {}  # Track when engines completed for TTL cleanup
 websocket_connections: list[WebSocket] = []
-claude_code_processes: dict[str, subprocess.Popen] = (
-    {}
-)  # Track Claude Code PTY processes by execution_id
 
 # Configuration
 EXECUTION_TTL_MINUTES = 30  # Keep completed executions for 30 minutes

@@ -45,6 +45,7 @@ dependencies = [
     "apscheduler>=3.10.4",
     "psutil>=6.1.0",
     "pillow>=10.0.0",  # WebP screenshot compression
+    "mcp>=1.0.0",  # MCP server for Claude Code integration
 ]
 
 [project.optional-dependencies]

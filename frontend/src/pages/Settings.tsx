@@ -27,7 +27,6 @@ import {
 } from '@mui/material';
 import {
   Key as CredentialsIcon,
-  History as ExecutionsIcon,
   Info as AboutIcon,
   Settings as SettingsIcon,
   Download as DownloadIcon,
@@ -38,17 +37,13 @@ import {
   Palette as AppearanceIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
-  ViewCompact as CompactIcon,
-  ViewComfy as ComfortableIcon,
-  ViewModule as SpaciousIcon,
   GridView as GridIcon,
-  SmartToy as ChatIcon,
-  BugReport as DiagnosticsIcon,
+  MonitorHeart as DiagnosticsIcon,
+  Storage as DataIcon,
+  Terminal as LogsIcon,
 } from '@mui/icons-material';
 import { Credentials } from './Credentials';
-import { Executions } from './Executions';
-import { ChatPanel } from '../components/chat/ChatPanel';
-import { DiagnosticsPanel } from '../components/DiagnosticsPanel';
+import { DiagnosticsSection, DataManagementSection, LogsSection } from '../components/DiagnosticsPanel';
 import { api } from '../api/client';
 import { useStore } from '../store';
 import type { HealthResponse } from '../types/api';
@@ -56,15 +51,15 @@ import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
 import type { UpdateStatus } from '../types/electron';
 
-type SettingsTab = 'credentials' | 'executions' | 'diagnostics' | 'updates' | 'appearance' | 'chat' | 'about';
+type SettingsTab = 'credentials' | 'diagnostics' | 'data' | 'logs' | 'updates' | 'appearance' | 'about';
 
 const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'credentials', label: 'Gateway Credentials', icon: <CredentialsIcon /> },
-  { id: 'executions', label: 'Execution History', icon: <ExecutionsIcon /> },
-  { id: 'diagnostics', label: 'Diagnostics & Logs', icon: <DiagnosticsIcon /> },
+  { id: 'diagnostics', label: 'Diagnostics', icon: <DiagnosticsIcon /> },
+  { id: 'data', label: 'Data Management', icon: <DataIcon /> },
+  { id: 'logs', label: 'Logs', icon: <LogsIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
   { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
-  { id: 'chat', label: 'Assistant', icon: <ChatIcon /> },
   { id: 'about', label: 'About', icon: <AboutIcon /> },
 ];
 
@@ -80,8 +75,6 @@ export function Settings() {
   });
   const theme = useStore((state) => state.theme);
   const setTheme = useStore((state) => state.setTheme);
-  const density = useStore((state) => state.density);
-  const setDensity = useStore((state) => state.setDensity);
   const playbookGridColumns = useStore((state) => state.playbookGridColumns);
   const setPlaybookGridColumns = useStore((state) => state.setPlaybookGridColumns);
 
@@ -529,82 +522,6 @@ export function Settings() {
           </Box>
         </Paper>
 
-        {/* Density Section */}
-        <Paper
-          sx={{
-            p: 3,
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Display Density
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-
-          <FormControl component="fieldset">
-            <RadioGroup
-              value={density}
-              onChange={(e) => setDensity(e.target.value as 'compact' | 'comfortable' | 'spacious')}
-            >
-              <FormControlLabel
-                value="compact"
-                control={<Radio size="small" />}
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <CompactIcon sx={{ color: density === 'compact' ? 'primary.main' : 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" fontWeight={density === 'compact' ? 'medium' : 'normal'}>
-                        Compact
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Less spacing, more content visible
-                      </Typography>
-                    </Box>
-                  </Box>
-                }
-                sx={{ mb: 1.5 }}
-              />
-              <FormControlLabel
-                value="comfortable"
-                control={<Radio size="small" />}
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <ComfortableIcon sx={{ color: density === 'comfortable' ? 'primary.main' : 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" fontWeight={density === 'comfortable' ? 'medium' : 'normal'}>
-                        Comfortable
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Balanced spacing (default)
-                      </Typography>
-                    </Box>
-                  </Box>
-                }
-                sx={{ mb: 1.5 }}
-              />
-              <FormControlLabel
-                value="spacious"
-                control={<Radio size="small" />}
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <SpaciousIcon sx={{ color: density === 'spacious' ? 'primary.main' : 'text.secondary' }} />
-                    <Box>
-                      <Typography variant="body2" fontWeight={density === 'spacious' ? 'medium' : 'normal'}>
-                        Spacious
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        More breathing room between elements
-                      </Typography>
-                    </Box>
-                  </Box>
-                }
-              />
-            </RadioGroup>
-          </FormControl>
-        </Paper>
-
         {/* Playbook Grid Columns Section */}
         <Paper
           sx={{
@@ -657,26 +574,6 @@ export function Settings() {
           </FormControl>
         </Paper>
       </Stack>
-    </Box>
-  );
-
-  const renderChatContent = () => (
-    <Box sx={{ width: '100%', height: 'calc(100vh - 200px)' }}>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Toolbox Assistant
-      </Typography>
-      <Paper
-        elevation={0}
-        sx={{
-          height: 'calc(100% - 60px)',
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}
-      >
-        <ChatPanel height="100%" showClearButton />
-      </Paper>
     </Box>
   );
 
@@ -756,11 +653,11 @@ export function Settings() {
           }}
         >
           {activeTab === 'credentials' && <Credentials />}
-          {activeTab === 'executions' && <Executions />}
-          {activeTab === 'diagnostics' && <DiagnosticsPanel />}
+          {activeTab === 'diagnostics' && <DiagnosticsSection />}
+          {activeTab === 'data' && <DataManagementSection />}
+          {activeTab === 'logs' && <LogsSection />}
           {activeTab === 'updates' && renderUpdatesContent()}
           {activeTab === 'appearance' && renderAppearanceContent()}
-          {activeTab === 'chat' && renderChatContent()}
           {activeTab === 'about' && renderAboutContent()}
         </Box>
       </Box>

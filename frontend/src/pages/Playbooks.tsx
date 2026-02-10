@@ -59,7 +59,6 @@ import { PlaybookUpdatesDialog } from '../components/PlaybookUpdatesDialog';
 import { PlaybookEditorDialog } from '../components/PlaybookEditorDialog';
 import { CreatePlaybookDialog } from '../components/CreatePlaybookDialog';
 import { useStore } from '../store';
-import { useDensity } from '../hooks/useDensity';
 import { useCategoryOrder, useCategoryExpanded, useGroupExpanded } from '../hooks/usePlaybookOrder';
 import type { PlaybookInfo } from '../types/api';
 
@@ -190,7 +189,8 @@ interface PlaybooksProps {
 export function Playbooks({ domainFilter }: PlaybooksProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { gap, gridSpacing } = useDensity();
+  const gap = 2;
+  const gridSpacing = 2;
   const playbookGridColumns = useStore((state) => state.playbookGridColumns);
 
   // Snackbar notification state

@@ -36,7 +36,6 @@ describe('useStore', () => {
       isWSConnected: false,
       wsConnectionStatus: 'connecting',
       theme: 'dark',
-      density: 'comfortable',
       playbookGridColumns: 5,
       globalCredential: null,
       selectedCredential: null,
@@ -129,25 +128,6 @@ describe('useStore', () => {
       const newState = useStore.getState();
       expect(newState.theme).toBe('light');
       expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light');
-    });
-  });
-
-  describe('density', () => {
-    it('defaults to comfortable density', () => {
-      const state = useStore.getState();
-      expect(state.density).toBe('comfortable');
-    });
-
-    it('updates density and saves to localStorage', () => {
-      const store = useStore.getState();
-
-      act(() => {
-        store.setDensity('compact');
-      });
-
-      const newState = useStore.getState();
-      expect(newState.density).toBe('compact');
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('density', 'compact');
     });
   });
 

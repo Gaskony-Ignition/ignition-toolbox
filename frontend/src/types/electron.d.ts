@@ -65,17 +65,6 @@ interface ElectronAPI {
     openWindow: () => Promise<boolean>;
   };
 
-  // Chat (Toolbox Assistant)
-  chat: {
-    checkAvailability: () => Promise<boolean>;
-    execute: (prompt: string) => Promise<{ success: boolean; output: string; error?: string }>;
-    cancel: () => Promise<{ success: boolean }>;
-    getContext: () => Promise<{
-      playbookCount: number;
-      recentExecutions: { name: string; status: string }[];
-      cloudDesignerStatus: string;
-    } | null>;
-  };
 }
 
 declare global {

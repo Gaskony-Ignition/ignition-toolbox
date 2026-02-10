@@ -2,7 +2,7 @@
  * API Explorer page for interacting with Ignition Gateway REST API
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -31,6 +31,10 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
+  InputAdornment,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,9 +51,12 @@ import {
   SettingsInputComponent as ResourcesIcon,
   Visibility as PerspectiveIcon,
   BugReport as DiagnosticsIcon,
+  Search as SearchIcon,
+  MenuBook as DocsIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type ApiKeyInfo } from '../api/client';
+import { ignitionApiDocs, type ApiEndpointDoc, type ApiCategoryDoc } from '../data/ignitionApiDocs';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -141,6 +148,236 @@ function APIKeyDialog({ open, onClose, onSave, isLoading }: APIKeyDialogProps) {
   );
 }
 
+/** Helper to determine HTTP method color */
+function getMethodColor(method: string): string {
+  switch (method.toUpperCase()) {
+    case 'GET': return '#4caf50';
+    case 'POST': return '#2196f3';
+    case 'PUT': return '#ff9800';
+    case 'DELETE': return '#f44336';
+    case 'PATCH': return '#9c27b0';
+    default: return '#757575';
+  }
+}
+
+/** Documentation tab content with search and OpenAPI support */
+function DocumentationTab({
+  selectedKeyInfo,
+  selectedKey,
+}: {
+  selectedKeyInfo: ApiKeyInfo | undefined;
+  selectedKey: string;
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Try to fetch OpenAPI spec if a gateway is selected
+  const { data: openApiSpec, isLoading: openApiLoading } = useQuery({
+    queryKey: ['openapi-spec', selectedKey],
+    queryFn: () =>
+      api.apiExplorer.fetchOpenAPI({
+        gateway_url: selectedKeyInfo?.gateway_url || '',
+        api_key_name: selectedKey,
+      }),
+    enabled: !!selectedKey && !!selectedKeyInfo,
+    retry: false,
+  });
+
+  // Parse OpenAPI spec into categories if available
+  const openApiCategories = useMemo(() => {
+    if (!openApiSpec?.paths) return null;
+
+    const tagMap = new Map<string, ApiEndpointDoc[]>();
+
+    for (const [path, methods] of Object.entries(openApiSpec.paths)) {
+      if (typeof methods !== 'object' || methods === null) continue;
+      for (const [method, details] of Object.entries(methods as Record<string, unknown>)) {
+        if (!['get', 'post', 'put', 'delete', 'patch'].includes(method)) continue;
+        const detail = details as {
+          tags?: string[];
+          summary?: string;
+          description?: string;
+          parameters?: Array<{
+            name: string;
+            in: string;
+            description?: string;
+            required?: boolean;
+            schema?: { type?: string };
+          }>;
+        };
+        const tags = detail.tags || ['Other'];
+        const endpoint: ApiEndpointDoc = {
+          method: method.toUpperCase(),
+          path,
+          description: detail.summary || detail.description || '',
+          parameters: detail.parameters?.map((p) => ({
+            name: p.name,
+            type: p.schema?.type || p.in,
+            description: p.description || '',
+            required: p.required,
+          })),
+        };
+        for (const tag of tags) {
+          if (!tagMap.has(tag)) tagMap.set(tag, []);
+          tagMap.get(tag)!.push(endpoint);
+        }
+      }
+    }
+
+    const categories: ApiCategoryDoc[] = [];
+    for (const [name, endpoints] of tagMap.entries()) {
+      categories.push({
+        name,
+        description: `Endpoints tagged "${name}" from gateway OpenAPI specification.`,
+        endpoints,
+      });
+    }
+    return categories.sort((a, b) => a.name.localeCompare(b.name));
+  }, [openApiSpec]);
+
+  // Use OpenAPI categories if available, otherwise static docs
+  const docsSource = openApiCategories || ignitionApiDocs;
+  const isFromOpenApi = !!openApiCategories;
+
+  // Filter categories and endpoints by search query
+  const filteredDocs = useMemo(() => {
+    if (!searchQuery.trim()) return docsSource;
+
+    const query = searchQuery.toLowerCase();
+    return docsSource
+      .map((category) => ({
+        ...category,
+        endpoints: category.endpoints.filter(
+          (ep) =>
+            ep.path.toLowerCase().includes(query) ||
+            ep.description.toLowerCase().includes(query) ||
+            ep.method.toLowerCase().includes(query)
+        ),
+      }))
+      .filter((category) => category.endpoints.length > 0);
+  }, [docsSource, searchQuery]);
+
+  return (
+    <Box sx={{ p: 2 }}>
+      {/* Source indicator */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+        <DocsIcon color="action" />
+        <Typography variant="subtitle2" color="text.secondary">
+          {isFromOpenApi
+            ? 'Documentation loaded from gateway OpenAPI specification'
+            : 'Curated Ignition 8.3 API documentation'}
+        </Typography>
+        {openApiLoading && selectedKey && (
+          <CircularProgress size={16} sx={{ ml: 1 }} />
+        )}
+      </Box>
+
+      {/* Search bar */}
+      <TextField
+        size="small"
+        fullWidth
+        placeholder="Search endpoints by path, description, or method..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        sx={{ mb: 2 }}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
+
+      {/* Categories */}
+      {filteredDocs.length === 0 ? (
+        <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+          No endpoints match your search.
+        </Typography>
+      ) : (
+        filteredDocs.map((category) => (
+          <Accordion key={category.name} defaultExpanded={filteredDocs.length <= 3 || !!searchQuery}>
+            <AccordionSummary expandIcon={<ExpandIcon />}>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {category.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {category.description} ({category.endpoints.length} endpoint{category.endpoints.length !== 1 ? 's' : ''})
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              {category.endpoints.map((endpoint, idx) => (
+                <Box
+                  key={`${endpoint.method}-${endpoint.path}-${idx}`}
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    borderTop: idx > 0 ? 1 : 0,
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Chip
+                      label={endpoint.method}
+                      size="small"
+                      sx={{
+                        fontWeight: 'bold',
+                        fontFamily: 'monospace',
+                        bgcolor: getMethodColor(endpoint.method),
+                        color: '#fff',
+                        minWidth: 60,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      fontFamily="monospace"
+                      sx={{ wordBreak: 'break-all' }}
+                    >
+                      {endpoint.path}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                    {endpoint.description}
+                  </Typography>
+                  {endpoint.parameters && endpoint.parameters.length > 0 && (
+                    <Box sx={{ mt: 1, ml: 1 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                        Parameters:
+                      </Typography>
+                      {endpoint.parameters.map((param) => (
+                        <Box key={param.name} sx={{ display: 'flex', gap: 1, ml: 1, mt: 0.25 }}>
+                          <Typography variant="caption" fontFamily="monospace" color="primary.main">
+                            {param.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            ({param.type}){param.required ? ' *required' : ''}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            - {param.description}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                  {endpoint.notes && (
+                    <Alert severity="info" variant="outlined" sx={{ mt: 1, py: 0 }}>
+                      <Typography variant="caption">{endpoint.notes}</Typography>
+                    </Alert>
+                  )}
+                </Box>
+              ))}
+            </AccordionDetails>
+          </Accordion>
+        ))
+      )}
+    </Box>
+  );
+}
+
 export function APIExplorer() {
   const queryClient = useQueryClient();
   const [selectedKey, setSelectedKey] = useState<string>('');
@@ -184,6 +421,13 @@ export function APIExplorer() {
 
   // Get selected key info
   const selectedKeyInfo = apiKeys.find((k) => k.name === selectedKey);
+
+  // Determine if the selected gateway uses HTTP
+  const isHttpConnection = useMemo(() => {
+    if (!selectedKeyInfo?.gateway_url) return false;
+    const url = selectedKeyInfo.gateway_url.toLowerCase();
+    return url.startsWith('http://') || (!url.startsWith('https://') && !url.startsWith('http'));
+  }, [selectedKeyInfo]);
 
   // Fetch gateway info when key is selected
   const { data: gatewayInfo, isLoading: gatewayLoading, refetch: refetchGateway } = useQuery({
@@ -363,7 +607,15 @@ export function APIExplorer() {
       {/* Right Panel: Main Content */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Gateway Selector */}
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper
+          sx={{
+            p: 2,
+            mb: 2,
+            borderLeft: selectedKey
+              ? `4px solid ${isHttpConnection ? '#ff9800' : '#4caf50'}`
+              : undefined,
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <FormControl size="small" sx={{ minWidth: 250 }}>
               <InputLabel>Gateway</InputLabel>
@@ -411,6 +663,11 @@ export function APIExplorer() {
               </>
             )}
           </Box>
+          {selectedKey && isHttpConnection && (
+            <Alert severity="warning" sx={{ mt: 1.5 }} variant="outlined">
+              HTTP connection detected. Some API features require HTTPS. API key authentication works best over HTTPS.
+            </Alert>
+          )}
         </Paper>
 
         {/* Tabs */}
@@ -419,6 +676,7 @@ export function APIExplorer() {
             <Tab label="Dashboard" />
             <Tab label="Resources" disabled={!selectedKey} />
             <Tab label="Request Builder" disabled={!selectedKey} />
+            <Tab label="Documentation" />
           </Tabs>
 
           {/* Dashboard Tab */}
@@ -654,6 +912,14 @@ export function APIExplorer() {
                 </Box>
               )}
             </Box>
+          </TabPanel>
+
+          {/* Documentation Tab */}
+          <TabPanel value={tabValue} index={3}>
+            <DocumentationTab
+              selectedKeyInfo={selectedKeyInfo}
+              selectedKey={selectedKey}
+            />
           </TabPanel>
         </Paper>
       </Box>
