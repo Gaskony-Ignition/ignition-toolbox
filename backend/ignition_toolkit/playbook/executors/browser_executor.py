@@ -346,9 +346,12 @@ class BrowserGetTextHandler(StepHandler):
                     f"Element not found: '{selector}'",
                 )
 
-            text = await element.text_content()
-            if text is None:
-                text = ""
+            # For input/textarea elements, get the value attribute instead of text content
+            tag = await element.evaluate("el => el.tagName.toLowerCase()")
+            if tag in ("input", "textarea"):
+                text = await element.evaluate("el => el.value") or ""
+            else:
+                text = await element.text_content() or ""
 
             return {"selector": selector, "text": text.strip(), "status": "extracted"}
 
