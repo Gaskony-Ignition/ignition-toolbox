@@ -124,6 +124,10 @@ class Database:
             logger.error(f"Alembic migration failed: {e}, falling back to create_all()")
             self._create_tables_fallback()
 
+    def create_tables(self) -> None:
+        """Create all database tables (idempotent)"""
+        self._create_tables_fallback()
+
     def _create_tables_fallback(self) -> None:
         """Fallback: create tables using SQLAlchemy create_all()"""
         Base.metadata.create_all(bind=self.engine)
