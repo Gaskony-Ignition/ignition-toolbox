@@ -116,10 +116,15 @@ async def lifespan(app: FastAPI):
                 set_component_healthy("browser", "Chromium browser ready")
                 logger.info("[OK] Playwright browser ready")
             else:
-                # Browser not found - this shouldn't happen with bundled installer
-                set_component_degraded("browser", f"Browser not found at {browsers_path}")
-                logger.warning("[WARN]  Playwright browser not found. Playbooks requiring a browser will fail.")
-                logger.warning(f"   Expected browser location: {browsers_path}")
+                # Browser not found - provide diagnostic detail
+                if browsers_path.exists():
+                    contents = [p.name for p in browsers_path.iterdir()]
+                    detail = f"Browser directory exists at {browsers_path} but no Chromium executable found. Contents: {contents}"
+                else:
+                    detail = f"Browser directory not found at {browsers_path}"
+                set_component_degraded("browser", detail)
+                logger.warning(f"[WARN]  {detail}")
+                logger.warning("   Playbooks requiring a browser will fail.")
         except Exception as e:
             logger.warning(f"[WARN]  Browser check failed: {e}")
             set_component_degraded("browser", str(e))
