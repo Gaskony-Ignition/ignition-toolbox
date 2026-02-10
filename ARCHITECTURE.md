@@ -1350,7 +1350,6 @@ ignition_toolkit/api/
     ├── stackbuilder/        # Stack Builder endpoints
     ├── clouddesigner.py     # Cloud Designer endpoints
     ├── context.py           # Execution context endpoints
-    ├── clawdbot.py          # AI assistant endpoints
     ├── websockets.py        # WebSocket endpoints + broadcast
     ├── logs.py              # Log streaming endpoints
     ├── execution_queue.py   # Execution queue management

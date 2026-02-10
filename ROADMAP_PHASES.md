@@ -275,12 +275,6 @@
   - PerspectiveVerifyWithAIHandler registered
   - Effort: 20h
 
-- [ ] **Clawdbot Improvements** (deferred)
-  - Context-aware suggestions
-  - Playbook generation from description
-  - Error analysis and fixes
-  - Effort: 15h
-
 ---
 
 ## Phase 5: Performance & Scale (2-3 weeks, ~50h)

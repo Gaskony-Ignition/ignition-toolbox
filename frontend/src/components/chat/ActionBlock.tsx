@@ -313,8 +313,8 @@ export function ActionBlock({ action, onActionComplete }: ActionBlockProps) {
 export function parseActionBlocks(content: string): ParsedAction[] {
   const actions: ParsedAction[] = [];
 
-  // Match ```assistant-action ... ``` blocks (also support legacy clawdbot-action)
-  const actionBlockRegex = /```(?:assistant|clawdbot)-action\s*\n?([\s\S]*?)```/g;
+  // Match ```assistant-action ... ``` blocks
+  const actionBlockRegex = /```assistant-action\s*\n?([\s\S]*?)```/g;
   let match;
 
   while ((match = actionBlockRegex.exec(content)) !== null) {
@@ -341,5 +341,5 @@ export function parseActionBlocks(content: string): ParsedAction[] {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function removeActionBlocks(content: string): string {
-  return content.replace(/```(?:assistant|clawdbot)-action\s*\n?[\s\S]*?```/g, '').trim();
+  return content.replace(/```assistant-action\s*\n?[\s\S]*?```/g, '').trim();
 }
