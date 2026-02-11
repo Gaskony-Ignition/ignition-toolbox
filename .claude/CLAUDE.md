@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working with the Ignition Toolbo
 
 **Ignition Toolbox** is a distributable desktop application for visual acceptance testing of Ignition SCADA systems. It packages the Ignition Automation Toolkit as a standalone Electron app with an embedded Python backend.
 
-**Current Version:** 1.5.5
+**Current Version:** 1.5.21
 **Architecture:** Electron + Python subprocess
 **Target Platform:** Windows (primary), cross-platform possible
 **Key Technologies:** Electron, TypeScript, React 19, FastAPI, Playwright, SQLite
@@ -125,8 +125,8 @@ python run_backend.py
 # 1. Update version in package.json and frontend/package.json
 # 2. Commit changes
 # 3. Create and push a version tag:
-git tag v1.4.73
-git push origin v1.4.73
+git tag v1.5.21
+git push origin v1.5.21
 
 # This triggers GitHub Actions workflow (build-windows.yml) which:
 # - Builds on windows-latest runner
@@ -169,6 +169,12 @@ The Python backend is the full Ignition Automation Toolkit:
 | `ignition_toolkit/auth/` | API key authentication + RBAC |
 | `ignition_toolkit/execution/` | Parallel execution queue |
 | `ignition_toolkit/reporting/` | Analytics and report exports |
+| `ignition_toolkit/mcp_server.py` | MCP server (12 tools, 2 resources) |
+| `ignition_toolkit/startup/` | Startup validation and Playwright installer |
+| `ignition_toolkit/scheduler/` | Playbook scheduling |
+| `ignition_toolkit/update/` | Version update checking |
+| `ignition_toolkit/designer/` | Designer integration |
+| `ignition_toolkit/modules/` | Ignition module management |
 
 ### Frontend (`frontend/`)
 
@@ -176,8 +182,10 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, AICredentials, Designer, StackBuilder, APIExplorer, Settings, About |
+| `src/pages/` | 9 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Settings |
 | `src/components/` | Reusable UI components |
+| `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
+| `src/data/` | Static data (ignitionApiDocs.ts) |
 | `src/hooks/` | WebSocket hook, playbook order hook |
 | `src/store/` | Zustand global state |
 | `src/api/` | HTTP API client |
@@ -201,7 +209,7 @@ Detailed explanation:
 - What changed
 - Why it changed
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 
 # Create release
 git tag v1.0.1
@@ -223,8 +231,8 @@ GitHub Actions workflows in `.github/workflows/`:
 1. Make code changes and test locally (Python backend, frontend)
 2. Update version in `package.json` and `frontend/package.json`
 3. Commit all changes to main branch
-4. Create version tag: `git tag v1.4.73`
-5. Push tag: `git push origin v1.4.73`
+4. Create version tag: `git tag v1.5.21`
+5. Push tag: `git push origin v1.5.21`
 6. GitHub Actions automatically:
    - Builds on Windows runner
    - Packages with PyInstaller + electron-builder
@@ -258,9 +266,9 @@ You can also trigger builds from GitHub Actions UI:
 
 ---
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-11
 **Maintainer**: Nigel G
-**Status**: Production Ready (v1.5.5) - All Development Phases Complete
+**Status**: Production Ready (v1.5.21) - All Development Phases Complete
 
 ## Development Phases
 
