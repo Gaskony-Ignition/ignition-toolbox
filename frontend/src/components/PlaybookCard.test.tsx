@@ -104,7 +104,7 @@ describe('PlaybookCard', () => {
     expect(screen.getByText('A test playbook for testing')).toBeInTheDocument();
   });
 
-  it('displays version and step count chips', () => {
+  it('displays version text', () => {
     const playbook = createTestPlaybook({ version: '2.0', revision: 3, step_count: 10 });
     renderWithQueryClient(
       <PlaybookCard
@@ -114,10 +114,23 @@ describe('PlaybookCard', () => {
     );
 
     expect(screen.getByText('v2.0.r3')).toBeInTheDocument();
+  });
+
+  it('shows step count in expanded details', () => {
+    const playbook = createTestPlaybook({ step_count: 10 });
+    renderWithQueryClient(
+      <PlaybookCard
+        playbook={playbook}
+        onConfigure={mockOnConfigure}
+      />
+    );
+
+    // Expand the details section
+    fireEvent.click(screen.getByText('Details'));
     expect(screen.getByText('10 steps')).toBeInTheDocument();
   });
 
-  it('shows verified chip when playbook is verified', () => {
+  it('shows check icon when playbook is verified', () => {
     const playbook = createTestPlaybook({ verified: true });
     renderWithQueryClient(
       <PlaybookCard
@@ -126,10 +139,10 @@ describe('PlaybookCard', () => {
       />
     );
 
-    expect(screen.getByText('Verified')).toBeInTheDocument();
+    expect(screen.getByTestId('CheckCircleIcon')).toBeInTheDocument();
   });
 
-  it('shows disabled chip when playbook is disabled', () => {
+  it('disables configure button when playbook is disabled', () => {
     const playbook = createTestPlaybook({ enabled: false });
     renderWithQueryClient(
       <PlaybookCard
@@ -138,7 +151,8 @@ describe('PlaybookCard', () => {
       />
     );
 
-    expect(screen.getByText('Disabled')).toBeInTheDocument();
+    const configureButton = screen.getByRole('button', { name: /configure.*playbook/i });
+    expect(configureButton).toBeDisabled();
   });
 
   it('shows warning icon for unverified playbooks', () => {
@@ -223,7 +237,7 @@ describe('PlaybookCard', () => {
     expect(executeButton).not.toBeDisabled();
   });
 
-  it('has debug mode toggle', () => {
+  it('has debug mode toggle in expanded details', () => {
     const playbook = createTestPlaybook();
     renderWithQueryClient(
       <PlaybookCard
@@ -231,6 +245,9 @@ describe('PlaybookCard', () => {
         onConfigure={mockOnConfigure}
       />
     );
+
+    // Expand the details section
+    fireEvent.click(screen.getByText('Details'));
 
     // Verify debug label is present
     expect(screen.getByText('Debug')).toBeInTheDocument();
