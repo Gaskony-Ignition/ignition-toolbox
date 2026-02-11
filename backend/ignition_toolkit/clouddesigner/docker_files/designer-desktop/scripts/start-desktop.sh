@@ -43,6 +43,48 @@ mkdir -p /home/designer/.ignition/clientlauncher-data
 chown -R designer:designer /home/designer/.ignition
 
 # ============================================
+# Pre-configure Designer Launcher with gateway
+# ============================================
+# Write the launcher config JSON so the Designer Launcher starts with the
+# gateway already added. This avoids fragile xdotool UI automation for the
+# "Add Designer" flow. The automation script only needs to click "Open Designer"
+# and handle login.
+LAUNCHER_CONFIG="/home/designer/.ignition/clientlauncher-data/designer-launcher.json"
+if [ -n "$IGNITION_GATEWAY_URL" ]; then
+    # Strip trailing slash from gateway URL
+    GW_URL=$(echo "$IGNITION_GATEWAY_URL" | sed 's|/$||')
+    # Extract a display name from the URL (hostname:port)
+    GW_NAME=$(echo "$GW_URL" | sed 's|https\?://||')
+
+    cat > "$LAUNCHER_CONFIG" << LAUNCHER_EOF
+{
+  "version": null,
+  "global": {
+    "autoexit": false,
+    "application.view.mode": "CARD"
+  },
+  "applications": [
+    {
+      "name": "$GW_NAME",
+      "gateway.info": {
+        "gateway.name": "$GW_NAME",
+        "gateway.address": "$GW_URL",
+        "redundant.gateways": []
+      },
+      "connection.verified": true,
+      "autostart": false
+    }
+  ]
+}
+LAUNCHER_EOF
+    chown designer:designer "$LAUNCHER_CONFIG"
+    chmod 644 "$LAUNCHER_CONFIG"
+    echo "Designer Launcher pre-configured with gateway: $GW_URL"
+else
+    echo "No gateway URL provided - Designer Launcher will start unconfigured"
+fi
+
+# ============================================
 # Restore XFCE autostart (critical for auto-launch)
 # ============================================
 # The designer-home volume persists /home/designer across container restarts.

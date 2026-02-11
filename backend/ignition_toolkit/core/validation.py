@@ -108,6 +108,10 @@ class PathValidator:
         """
         Validate playbook path and return both base dir and full path
 
+        Searches all playbook directories in priority order (user dir first,
+        then built-in). This ensures user-modified playbooks (e.g. renamed)
+        are found before their original built-in copies.
+
         Args:
             path_str: User-provided relative path
             must_exist: Whether the file must exist
@@ -118,14 +122,20 @@ class PathValidator:
         Raises:
             HTTPException: If path is invalid or file not found
         """
-        from ignition_toolkit.core.paths import get_playbooks_dir
+        from ignition_toolkit.core.paths import get_all_playbook_dirs
 
-        playbooks_dir = get_playbooks_dir()
-        full_path = PathValidator.validate_playbook_path(
-            path_str, base_dir=playbooks_dir, must_exist=must_exist
+        for playbook_dir in get_all_playbook_dirs():
+            try:
+                full_path = PathValidator.validate_playbook_path(
+                    path_str, base_dir=playbook_dir, must_exist=must_exist
+                )
+                return playbook_dir, full_path
+            except HTTPException:
+                continue
+
+        raise HTTPException(
+            status_code=404, detail=f"Playbook file not found: {path_str}"
         )
-
-        return playbooks_dir, full_path
 
     @staticmethod
     def validate_path_safety(path: Path) -> None:

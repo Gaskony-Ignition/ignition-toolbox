@@ -1,17 +1,17 @@
 #!/bin/bash
 # designer-desktop/scripts/automate-designer-login.sh
 #
-# Automates the Designer Launcher gateway setup and login using xdotool.
+# Automates clicking "Open Designer" and logging in using xdotool.
+#
+# Prerequisites:
+#   - start-desktop.sh pre-writes designer-launcher.json with the gateway URL
+#   - The Designer Launcher starts with the gateway already configured
 #
 # Automation steps:
 # 1. Wait for Designer Launcher window to appear
-# 2. Click "Add Designer" button to open the dialog
-# 3. Navigate to "Manual" tab using arrow keys
-# 4. Tab to the Gateway URL input field and type the URL
-# 5. Press Enter to submit and add the gateway
-# 6. Click "Open Designer" to launch the designer
-# 7. Wait for login dialog (Designer downloads on first launch, 30-120s)
-# 8. Enter credentials and submit login
+# 2. Select the gateway card and open Designer (keyboard: Tab + Enter)
+# 3. Wait for login dialog (Designer downloads on first launch, 30-120s)
+# 4. Enter credentials and submit login
 #
 # Screenshots are saved to /tmp/automation-screenshots/ for debugging.
 #
@@ -38,17 +38,6 @@ screenshot() {
     fi
 }
 
-click_at() {
-    local x="$1"
-    local y="$2"
-    local desc="$3"
-    log "Clicking at ($x, $y): $desc"
-    xdotool mousemove --sync $x $y
-    sleep 0.3
-    xdotool click 1
-    sleep 0.5
-}
-
 log "=========================================="
 log "Designer Launcher Automation Starting"
 log "=========================================="
@@ -66,15 +55,15 @@ if [ -z "$IGNITION_GATEWAY_URL" ]; then
     exit 0
 fi
 
-# Keep the full URL with protocol for Manual tab entry (e.g., http://192.168.48.1:8088)
-# Just remove trailing slash if present
-GATEWAY_ADDRESS=$(echo "$IGNITION_GATEWAY_URL" | sed 's|/$||')
-log "Gateway URL: $GATEWAY_ADDRESS"
+log "Gateway URL: $IGNITION_GATEWAY_URL"
 log "Username: ${IGNITION_USERNAME:-not set}"
 
 export DISPLAY=:1
 
-log "Waiting for Designer Launcher window..."
+# ============================================
+# Step 1: Wait for Designer Launcher window
+# ============================================
+log "Step 1: Waiting for Designer Launcher window..."
 LAUNCHER_WINDOW=""
 MAX_WAIT=90
 WAITED=0
@@ -99,149 +88,126 @@ log "Found Designer Launcher window: $LAUNCHER_WINDOW"
 xdotool windowactivate --sync "$LAUNCHER_WINDOW"
 sleep 3
 
-eval $(xdotool getwindowgeometry --shell "$LAUNCHER_WINDOW")
-log "Window geometry: X=$X, Y=$Y, WIDTH=$WIDTH, HEIGHT=$HEIGHT"
-
 screenshot "01_launcher_ready"
 
 # ============================================
-# AUTOMATION STEPS
+# Step 2: Open Designer
 # ============================================
-# 1. Click "Add Designer" button to open dialog
-# 2. Click directly on the "Manual" tab (Alt+M doesn't work reliably)
-# 3. Click on the gateway URL input field
-# 4. Type the gateway address
-# 5. Press Enter to submit
-# ============================================
+# The gateway is pre-configured via designer-launcher.json (written by
+# start-desktop.sh). The launcher should show the gateway card already.
+# We use keyboard navigation to select and open it since xdotool mouse
+# coordinates are unreliable with Java Swing windows.
+log "Step 2: Opening Designer via keyboard navigation"
 
-# Step 1: Click "Add Designer" button in main view
-ADD_BTN_X=$((X + WIDTH / 2))
-ADD_BTN_Y=$((Y + 90 + (HEIGHT - 90) * 55 / 100))
-log "Step 1: Click 'Add Designer' button at ($ADD_BTN_X, $ADD_BTN_Y)"
-click_at $ADD_BTN_X $ADD_BTN_Y "Add Designer button"
-sleep 3  # Wait longer for dialog to fully render
+# Give the launcher extra time to render the gateway card
+sleep 2
 
-screenshot "02_after_add_designer_click"
+# Strategy: Use keyboard shortcut or double-click the gateway card.
+# Java Swing Designer Launcher: the gateway card is the main focusable
+# element. We try multiple approaches:
 
-# Step 2: Switch to Manual tab using Right arrow key
-# In Java Swing, when a tabbed pane has focus, Left/Right arrows switch tabs
-# First click on the On Your Network tab to ensure tab bar has focus
-# Then press Right arrow to move to Manual tab
-log "Step 2: Navigate to Manual tab using arrow keys"
-
-# Click on the "On Your Network" tab text to give it focus
-# This tab is at approximately dialog_left + 70 (for the tab text center)
-ON_YOUR_NETWORK_X=$((X + WIDTH * 22 / 100))
-ON_YOUR_NETWORK_Y=$((Y + 35))
-log "Clicking On Your Network tab at ($ON_YOUR_NETWORK_X, $ON_YOUR_NETWORK_Y) to focus tab bar"
-click_at $ON_YOUR_NETWORK_X $ON_YOUR_NETWORK_Y "On Your Network tab"
-sleep 0.5
-screenshot "03a_on_your_network_clicked"
-
-# Now press Right arrow to switch to Manual tab
-log "Pressing Right arrow to switch to Manual tab"
-xdotool key Right
-sleep 0.5
-screenshot "03b_after_right_arrow"
-
-# Press Enter or Space to activate the Manual tab
-xdotool key space
-sleep 1
-
-screenshot "03_manual_tab_activated"
-
-# Step 3: The Manual tab content should be visible now
-# The URL input field should be focused or we need to Tab to it
-xdotool key Tab
-sleep 0.3
-
-screenshot "03c_input_field_focused"
-
-# Step 4: Type the gateway address
-log "Step 4: Enter gateway address"
-xdotool type --clearmodifiers --delay 50 "$GATEWAY_ADDRESS"
-log "Typed gateway address: $GATEWAY_ADDRESS"
-sleep 1
-
-screenshot "04_address_entered"
-
-# Step 5: Press Enter to submit
-log "Step 5: Submit gateway"
-xdotool key Return
-sleep 3
-
-screenshot "05_after_submit"
-
-# ============================================
-# Step 6: Click "Open Designer" to launch
-# ============================================
-# After adding the gateway, we return to the main launcher view.
-# The "Open Designer" button appears at the bottom-right.
-log "Step 6: Preparing to click 'Open Designer'"
-
-# Wait for the dialog to fully close and main view to settle
-sleep 5
-screenshot "06_main_view_with_gateway"
-
-# Re-focus the launcher window and get updated geometry
-xdotool windowactivate --sync "$LAUNCHER_WINDOW"
-sleep 1
+# Approach 1: Double-click the center of the gateway card area
+# The gateway card occupies the center of the launcher window
 eval $(xdotool getwindowgeometry --shell "$LAUNCHER_WINDOW")
-log "Launcher geometry: X=$X, Y=$Y, WIDTH=$WIDTH, HEIGHT=$HEIGHT"
+log "Window geometry: X=$X, Y=$Y, WIDTH=$WIDTH, HEIGHT=$HEIGHT"
 
-# Move the launcher window to a known position (0,0) so we can calculate
-# absolute button coordinates precisely. XFCE window manager decorations
-# cause xdotool geometry to differ from actual screen position.
-log "Moving launcher to position (0,0) for reliable click targeting"
+# Move window to origin for predictable coordinates
 xdotool windowmove --sync "$LAUNCHER_WINDOW" 0 0
-sleep 1
-
-# Re-measure geometry after move
+sleep 0.5
 eval $(xdotool getwindowgeometry --shell "$LAUNCHER_WINDOW")
-log "New geometry after move: X=$X, Y=$Y, WIDTH=$WIDTH, HEIGHT=$HEIGHT"
-screenshot "06b_window_moved"
+log "Adjusted geometry: X=$X, Y=$Y, WIDTH=$WIDTH, HEIGHT=$HEIGHT"
 
-# The "Open Designer" button is in the bottom-right of the client area.
-# After moving to (0,0), the window frame starts at the screen origin.
-# In the main launcher view with a gateway card, the bottom button row
-# contains: [Edit] ............. [Add Designer] [Open Designer]
-# "Open Designer" is the rightmost button. We click at:
-#   X: about 90% of the way across (right-aligned button group)
-#   Y: about 93% of the way down (bottom button row, above window border)
-OPEN_BTN_X=$((WIDTH * 90 / 100))
-OPEN_BTN_Y=$((HEIGHT * 93 / 100))
-log "Clicking 'Open Designer' at ($OPEN_BTN_X, $OPEN_BTN_Y)"
-click_at $OPEN_BTN_X $OPEN_BTN_Y "Open Designer button"
-sleep 3
+# Gateway card is roughly in the upper-center of the window content area
+# (below the header bar, above the bottom button row)
+CARD_X=$((WIDTH / 2))
+CARD_Y=$((HEIGHT / 2))
+log "Double-clicking gateway card at ($CARD_X, $CARD_Y)"
+xdotool mousemove --sync $CARD_X $CARD_Y
+sleep 0.3
+xdotool click --repeat 2 --delay 100 1
+sleep 2
 
-screenshot "06c_after_open_click"
+screenshot "02a_after_double_click"
 
-# Verify: if a progress/download dialog appeared or the view changed, good.
-# If not, try a second click slightly offset (button edges vary by theme)
-OPEN_BTN_X2=$((WIDTH * 88 / 100))
-OPEN_BTN_Y2=$((HEIGHT * 91 / 100))
-log "Second attempt at ($OPEN_BTN_X2, $OPEN_BTN_Y2)"
-click_at $OPEN_BTN_X2 $OPEN_BTN_Y2 "Open Designer button (retry)"
-sleep 3
+# Check if designer download/launch started (a new window or dialog may appear)
+PROGRESS_WINDOW=$(xdotool search --name "Downloading" 2>/dev/null | head -1) || true
+LOGIN_WINDOW=$(xdotool search --name "Login" 2>/dev/null | head -1) || true
 
-screenshot "07_after_open_designer_click"
+if [ -n "$PROGRESS_WINDOW" ] || [ -n "$LOGIN_WINDOW" ]; then
+    log "Designer launch triggered by double-click"
+else
+    log "Double-click didn't trigger launch, trying keyboard approach"
+
+    # Approach 2: Re-focus launcher and use keyboard
+    xdotool windowactivate --sync "$LAUNCHER_WINDOW"
+    sleep 0.5
+
+    # Tab through UI elements. In the Designer Launcher, the gateway card
+    # should be selectable. After selecting it, Enter should open Designer.
+    # First, try clicking the card area to select it, then press Enter.
+    xdotool mousemove --sync $CARD_X $CARD_Y
+    sleep 0.2
+    xdotool click 1
+    sleep 0.5
+    xdotool key Return
+    sleep 2
+
+    screenshot "02b_after_click_enter"
+
+    # Check again
+    PROGRESS_WINDOW=$(xdotool search --name "Downloading" 2>/dev/null | head -1) || true
+    LOGIN_WINDOW=$(xdotool search --name "Login" 2>/dev/null | head -1) || true
+
+    if [ -z "$PROGRESS_WINDOW" ] && [ -z "$LOGIN_WINDOW" ]; then
+        log "Keyboard approach didn't trigger launch, trying Open Designer button click"
+
+        # Approach 3: Try clicking the "Open Designer" button area
+        # Button row is at the bottom of the window. Try several Y positions.
+        xdotool windowactivate --sync "$LAUNCHER_WINDOW"
+        sleep 0.5
+
+        for Y_PCT in 92 90 88 85; do
+            for X_PCT in 88 85 80 75; do
+                BTN_X=$((WIDTH * X_PCT / 100))
+                BTN_Y=$((HEIGHT * Y_PCT / 100))
+                log "Trying button click at ($BTN_X, $BTN_Y) [${X_PCT}%, ${Y_PCT}%]"
+                xdotool mousemove --sync $BTN_X $BTN_Y
+                sleep 0.2
+                xdotool click 1
+                sleep 1
+
+                # Quick check if something happened
+                PROGRESS_WINDOW=$(xdotool search --name "Downloading" 2>/dev/null | head -1) || true
+                LOGIN_WINDOW=$(xdotool search --name "Login" 2>/dev/null | head -1) || true
+                if [ -n "$PROGRESS_WINDOW" ] || [ -n "$LOGIN_WINDOW" ]; then
+                    log "Button click succeeded at ($BTN_X, $BTN_Y)"
+                    break 2
+                fi
+            done
+        done
+
+        screenshot "02c_after_button_clicks"
+    fi
+fi
+
+screenshot "03_after_open_designer"
 
 # Check if we need to handle login
 if [ -z "$IGNITION_USERNAME" ] || [ -z "$IGNITION_PASSWORD" ]; then
     log "No credentials provided - stopping automation after opening Designer"
-    screenshot "08_no_credentials"
+    screenshot "04_no_credentials"
     exit 0
 fi
 
 # ============================================
-# Step 7: Wait for login dialog
+# Step 3: Wait for login dialog
 # ============================================
 # The Designer downloads from the gateway on first launch, which can take
 # 30-120 seconds depending on network speed. Poll for the login dialog.
-log "Step 7: Waiting for login dialog (Designer may be downloading)..."
+log "Step 3: Waiting for login dialog (Designer may be downloading)..."
 
 LOGIN_WINDOW=""
-LOGIN_MAX_WAIT=120
+LOGIN_MAX_WAIT=180
 LOGIN_WAITED=0
 
 while [ -z "$LOGIN_WINDOW" ] && [ $LOGIN_WAITED -lt $LOGIN_MAX_WAIT ]; do
@@ -261,29 +227,29 @@ while [ -z "$LOGIN_WINDOW" ] && [ $LOGIN_WAITED -lt $LOGIN_MAX_WAIT ]; do
     DESIGNER_WINDOW=$(xdotool search --name "Ignition Designer" 2>/dev/null | grep -v "^${LAUNCHER_WINDOW}$" | head -1) || true
     if [ -n "$DESIGNER_WINDOW" ]; then
         log "Designer opened without login after ${LOGIN_WAITED}s"
-        screenshot "08_designer_no_login"
+        screenshot "05_designer_no_login"
         log "Automation complete - Designer is open"
         exit 0
     fi
 
     if [ $((LOGIN_WAITED % 15)) -eq 0 ]; then
         log "Still waiting for login dialog... ($LOGIN_WAITED/${LOGIN_MAX_WAIT}s)"
-        screenshot "07_waiting_${LOGIN_WAITED}s"
+        screenshot "04_waiting_${LOGIN_WAITED}s"
     fi
 done
 
 if [ -z "$LOGIN_WINDOW" ]; then
     log "WARNING: Login dialog not found after ${LOGIN_MAX_WAIT}s"
-    screenshot "08_no_login_dialog"
+    screenshot "05_no_login_dialog"
     log "Automation stopping - manual login may be required"
     exit 0
 fi
 
 # ============================================
-# Step 8: Enter credentials and login
+# Step 4: Enter credentials and login
 # ============================================
-log "Step 8: Entering credentials"
-screenshot "08_login_dialog_found"
+log "Step 4: Entering credentials"
+screenshot "06_login_dialog_found"
 
 xdotool windowactivate --sync "$LOGIN_WINDOW"
 sleep 1
@@ -292,7 +258,7 @@ sleep 1
 xdotool type --clearmodifiers --delay 30 "$IGNITION_USERNAME"
 log "Entered username: $IGNITION_USERNAME"
 sleep 0.5
-screenshot "09_username_entered"
+screenshot "07_username_entered"
 
 # Tab to password field and type password
 xdotool key Tab
@@ -300,13 +266,13 @@ sleep 0.3
 xdotool type --clearmodifiers --delay 30 "$IGNITION_PASSWORD"
 log "Entered password"
 sleep 0.5
-screenshot "10_password_entered"
+screenshot "08_password_entered"
 
 # Submit login
 xdotool key Return
 log "Submitted login"
 sleep 5
-screenshot "11_login_submitted"
+screenshot "09_login_submitted"
 
 # Wait for Designer to fully open
 log "Waiting for Designer to open..."
@@ -326,7 +292,7 @@ else
     log "Designer window not detected (may still be loading)"
 fi
 
-screenshot "12_final_state"
+screenshot "10_final_state"
 
 log "=========================================="
 log "Automation complete"

@@ -48,19 +48,23 @@ class PlaybookRunHandler(StepHandler):
         if not playbook_path:
             raise StepExecutionError("playbook", "Missing required parameter: playbook")
 
-        # Convert to absolute path
-        from ignition_toolkit.core.paths import get_playbooks_dir
+        # Convert to absolute path, searching user dir first then built-in
+        from ignition_toolkit.core.paths import get_all_playbook_dirs
         from ignition_toolkit.playbook.loader import PlaybookLoader
         from ignition_toolkit.playbook.metadata import PlaybookMetadataStore
 
         metadata_store = PlaybookMetadataStore()
 
         # Resolve playbook path relative to playbooks root directory
-        # (not relative to current playbook's directory)
-        playbooks_root = get_playbooks_dir()
-        full_path = playbooks_root / playbook_path
+        # Search user dir first so user-modified playbooks take priority
+        full_path = None
+        for playbooks_root in get_all_playbook_dirs():
+            candidate = playbooks_root / playbook_path
+            if candidate.exists():
+                full_path = candidate
+                break
 
-        if not full_path.exists():
+        if full_path is None:
             raise StepExecutionError("playbook", f"Playbook not found: {playbook_path}")
 
         # Get relative path for metadata lookup (relative to playbooks root)
