@@ -257,6 +257,18 @@ async def list_playbooks():
                 # Normalize path to use forward slashes for consistency across platforms
                 relative_path = str(yaml_file.relative_to(playbooks_dir)).replace("\\", "/")
 
+                # Auto-sync: if user-dir copy exists for a built-in playbook
+                # and user never edited it (revision 0), update from built-in
+                if source == "user-installed" and builtin_dir:
+                    builtin_file = builtin_dir / relative_path
+                    if builtin_file.exists():
+                        meta = metadata_store.get_metadata(relative_path)
+                        if meta.revision == 0 and meta.origin in ("built-in", "unknown"):
+                            if builtin_file.read_bytes() != yaml_file.read_bytes():
+                                shutil.copy2(builtin_file, yaml_file)
+                                logger.info(f"Auto-synced playbook from built-in: {relative_path}")
+                                playbook = loader.load_from_file(yaml_file)
+
                 if relative_path in seen_paths:
                     logger.debug(f"Skipping {relative_path} from {source} (already loaded)")
                     continue
