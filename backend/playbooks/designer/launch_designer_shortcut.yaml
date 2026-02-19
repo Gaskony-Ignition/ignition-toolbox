@@ -100,8 +100,9 @@ steps:
 
         print(f"[2/3] Entering credentials for user: {username}")
 
-        # Get path to PowerShell login script
-        script_dir = "/git/ignition-toolbox/ignition_toolkit/designer/scripts"
+        # Get path to PowerShell login script (resolve from package location)
+        import ignition_toolkit
+        script_dir = os.path.join(os.path.dirname(ignition_toolkit.__file__), "designer", "scripts")
         login_script = os.path.join(script_dir, "enter-designer-login.ps1")
 
         # Execute PowerShell script to enter credentials
@@ -164,8 +165,9 @@ steps:
 
         print(f"[3/3] Opening project '{project_name}'...")
 
-        # Get path to PowerShell project opener script
-        script_dir = "/git/ignition-toolbox/ignition_toolkit/designer/scripts"
+        # Get path to PowerShell project opener script (resolve from package location)
+        import ignition_toolkit
+        script_dir = os.path.join(os.path.dirname(ignition_toolkit.__file__), "designer", "scripts")
         project_script = os.path.join(script_dir, "open-designer-project-mouse.ps1")
 
         # Execute PowerShell script to open project
