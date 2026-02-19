@@ -1,6 +1,6 @@
 {
   "name": "ignition-toolbox",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "Ignition Automation Toolkit - Visual acceptance testing platform for Ignition SCADA",
   "main": "dist-electron/main.js",
   "author": "Nigel G",

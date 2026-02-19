@@ -40,9 +40,9 @@ steps:
 
         if len(parts) > 1:
             args = "-D" + parts[1]
-            launch_cmd = f'powershell.exe -Command "Start-Process \\"{designer_exe}\\" -ArgumentList \\"{args}\\""'
+            launch_cmd = f'powershell.exe -NoLogo -NoProfile -Command "Start-Process \\"{designer_exe}\\" -ArgumentList \\"{args}\\""'
         else:
-            launch_cmd = f'powershell.exe -Command "Start-Process \\"{designer_exe}\\""'
+            launch_cmd = f'powershell.exe -NoLogo -NoProfile -Command "Start-Process \\"{designer_exe}\\""'
 
         # Launch Designer
         proc = subprocess.Popen(launch_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -58,7 +58,7 @@ steps:
         while attempt < max_attempts:
             # Use list form to avoid shell expansion of $_ variable
             check_cmd = [
-                "powershell.exe",
+                "powershell.exe", "-NoLogo", "-NoProfile",
                 "-Command",
                 "Get-Process | Where-Object {$_.MainWindowTitle -eq 'Login - Ignition'} | Measure-Object | Select-Object -ExpandProperty Count"
             ]
@@ -93,6 +93,8 @@ steps:
     parameters:
       script: |
         import subprocess
+        import tempfile
+        import time
         import os
 
         username = r"""{{ parameter.gateway_credential.username }}"""
@@ -100,24 +102,79 @@ steps:
 
         print(f"[2/3] Entering credentials for user: {username}")
 
-        # Get path to PowerShell login script (resolve from package location)
-        import ignition_toolkit
-        script_dir = os.path.join(os.path.dirname(ignition_toolkit.__file__), "designer", "scripts")
-        login_script = os.path.join(script_dir, "enter-designer-login.ps1")
+        # Write PowerShell login script to a temp file at runtime
+        # (external .ps1 files are not bundled in PyInstaller frozen builds)
+        PS_LOGIN_SCRIPT = r'''
+        param(
+            [string]$Username,
+            [string]$Password
+        )
 
-        # Execute PowerShell script to enter credentials
-        login_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{login_script}" -Username "{username}" -Password "{password}"'
-        result = subprocess.run(login_cmd, shell=True, capture_output=True, text=True)
+        Add-Type -AssemblyName System.Windows.Forms
+
+        $designer = Get-Process | Where-Object {$_.MainWindowTitle -eq 'Login - Ignition'} | Select-Object -First 1
+
+        if ($designer) {
+            Add-Type -TypeDefinition @'
+            using System;
+            using System.Runtime.InteropServices;
+            public class Win32 {
+                [DllImport("user32.dll")]
+                public static extern bool SetForegroundWindow(IntPtr hWnd);
+                [DllImport("user32.dll")]
+                public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+            }
+        '@
+
+            [Win32]::ShowWindow($designer.MainWindowHandle, 9)
+            Start-Sleep -Milliseconds 500
+            [Win32]::SetForegroundWindow($designer.MainWindowHandle)
+            Start-Sleep -Milliseconds 300
+            [Win32]::SetForegroundWindow($designer.MainWindowHandle)
+            Start-Sleep -Milliseconds 300
+            [Win32]::SetForegroundWindow($designer.MainWindowHandle)
+            Start-Sleep -Milliseconds 800
+
+            [System.Windows.Forms.SendKeys]::SendWait($Username)
+            Start-Sleep -Milliseconds 100
+            [System.Windows.Forms.SendKeys]::SendWait('{TAB}')
+            Start-Sleep -Milliseconds 100
+            [System.Windows.Forms.SendKeys]::SendWait($Password)
+            Start-Sleep -Milliseconds 100
+            [System.Windows.Forms.SendKeys]::SendWait('{ENTER}')
+
+            Write-Output 'success'
+        } else {
+            Write-Output 'failed - window not found'
+        }
+        '''
+
+        # Write to temp file and execute (temp file avoids path/bundling issues)
+        fd, ps_file = tempfile.mkstemp(suffix='.ps1')
+        try:
+            os.write(fd, PS_LOGIN_SCRIPT.encode('utf-8'))
+            os.close(fd)
+
+            result = subprocess.run(
+                ["powershell.exe", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-File", ps_file, "-Username", username, "-Password", password],
+                capture_output=True, text=True
+            )
+        finally:
+            try:
+                os.unlink(ps_file)
+            except OSError:
+                pass
+
         output_lines = result.stdout.strip().split('\n')
 
         if not any(line.strip() == "success" for line in output_lines):
-            raise Exception(f"Failed to enter credentials. Result: {result.stdout.strip()}")
+            raise Exception(f"Failed to enter credentials. stdout: {result.stdout.strip()} stderr: {result.stderr.strip()}")
 
         print("✓ Credentials entered successfully")
 
         # Wait for project selection screen
         print("Waiting for project selection...")
-        import time
         designer_timeout = timeout_overrides.get("designer_launch", 60)
         sleep_interval = 3
         max_attempts = max(1, designer_timeout // sleep_interval)
@@ -125,9 +182,8 @@ steps:
         project_window = False
 
         while attempt < max_attempts:
-            # Use list form to avoid shell expansion of $_ variable
             check_cmd = [
-                "powershell.exe",
+                "powershell.exe", "-NoLogo", "-NoProfile",
                 "-Command",
                 "Get-Process | Where-Object {$_.MainWindowTitle -like '*Open/Create Project*'} | Measure-Object | Select-Object -ExpandProperty Count"
             ]
@@ -158,25 +214,127 @@ steps:
     parameters:
       script: |
         import subprocess
-        import os
+        import tempfile
         import time
+        import os
 
         project_name = r"""{{ project_name }}"""
 
         print(f"[3/3] Opening project '{project_name}'...")
 
-        # Get path to PowerShell project opener script (resolve from package location)
-        import ignition_toolkit
-        script_dir = os.path.join(os.path.dirname(ignition_toolkit.__file__), "designer", "scripts")
-        project_script = os.path.join(script_dir, "open-designer-project-mouse.ps1")
+        # Write PowerShell project opener script to a temp file at runtime
+        # (external .ps1 files are not bundled in PyInstaller frozen builds)
+        PS_PROJECT_SCRIPT = r'''
+        param(
+            [string]$ProjectName
+        )
 
-        # Execute PowerShell script to open project
-        project_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{project_script}" -ProjectName "{project_name}"'
-        result = subprocess.run(project_cmd, shell=True, capture_output=True, text=True)
+        Add-Type -AssemblyName System.Windows.Forms
+        Add-Type -AssemblyName System.Drawing
+
+        $designer = Get-Process | Where-Object {$_.MainWindowTitle -like '*Open/Create Project*'} | Select-Object -First 1
+
+        if ($designer) {
+            Add-Type -TypeDefinition @'
+            using System;
+            using System.Runtime.InteropServices;
+            public class Win32 {
+                [DllImport("user32.dll")]
+                public static extern bool SetForegroundWindow(IntPtr hWnd);
+                [DllImport("user32.dll")]
+                public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+                [DllImport("user32.dll")]
+                public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+                [StructLayout(LayoutKind.Sequential)]
+                public struct RECT {
+                    public int Left;
+                    public int Top;
+                    public int Right;
+                    public int Bottom;
+                }
+            }
+        '@
+
+            [Win32]::ShowWindow($designer.MainWindowHandle, 9)
+            Start-Sleep -Milliseconds 200
+            [Win32]::SetForegroundWindow($designer.MainWindowHandle)
+            Start-Sleep -Milliseconds 200
+            [Win32]::SetForegroundWindow($designer.MainWindowHandle)
+            Start-Sleep -Milliseconds 300
+
+            $rect = New-Object Win32+RECT
+            [Win32]::GetWindowRect($designer.MainWindowHandle, [ref]$rect)
+
+            $windowWidth = $rect.Right - $rect.Left
+            $windowHeight = $rect.Bottom - $rect.Top
+
+            $searchX = $rect.Left + ($windowWidth * 0.5)
+            $searchY = $rect.Top + ($windowHeight * 0.2)
+            [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($searchX, $searchY)
+            Start-Sleep -Milliseconds 100
+
+            Add-Type -TypeDefinition @'
+            using System;
+            using System.Runtime.InteropServices;
+            public class MouseClick {
+                [DllImport("user32.dll")]
+                public static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+                public const int MOUSEEVENTF_LEFTDOWN = 0x02;
+                public const int MOUSEEVENTF_LEFTUP = 0x04;
+            }
+        '@
+
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            Start-Sleep -Milliseconds 50
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            Start-Sleep -Milliseconds 150
+
+            [System.Windows.Forms.SendKeys]::SendWait('^a')
+            Start-Sleep -Milliseconds 50
+            [System.Windows.Forms.SendKeys]::SendWait($ProjectName)
+            Start-Sleep -Milliseconds 200
+
+            $projectRowX = $rect.Left + ($windowWidth * 0.20)
+            $projectRowY = $rect.Top + ($windowHeight * 0.32)
+            [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($projectRowX, $projectRowY)
+            Start-Sleep -Milliseconds 150
+
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            Start-Sleep -Milliseconds 50
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            Start-Sleep -Milliseconds 100
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            Start-Sleep -Milliseconds 50
+            [MouseClick]::mouse_event([MouseClick]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+
+            Write-Output 'success'
+        } else {
+            Write-Output 'failed - window not found'
+        }
+        '''
+
+        # Write to temp file and execute (temp file avoids path/bundling issues)
+        fd, ps_file = tempfile.mkstemp(suffix='.ps1')
+        try:
+            os.write(fd, PS_PROJECT_SCRIPT.encode('utf-8'))
+            os.close(fd)
+
+            result = subprocess.run(
+                ["powershell.exe", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-File", ps_file, "-ProjectName", project_name],
+                capture_output=True, text=True
+            )
+        finally:
+            try:
+                os.unlink(ps_file)
+            except OSError:
+                pass
+
         output_lines = result.stdout.strip().split('\n')
 
         if not any(line.strip() == "success" for line in output_lines):
-            raise Exception(f"Failed to open project. Result: {result.stdout.strip()}")
+            raise Exception(f"Failed to open project. stdout: {result.stdout.strip()} stderr: {result.stderr.strip()}")
 
         print("")
         print("=" * 50)
@@ -186,9 +344,8 @@ steps:
 
         # Wait and verify project opened
         time.sleep(5)
-        # Use list form to avoid shell expansion of $_ variable
         verify_cmd = [
-            "powershell.exe",
+            "powershell.exe", "-NoLogo", "-NoProfile",
             "-Command",
             "Get-Process | Where-Object {($_.ProcessName -eq 'java') -or ($_.ProcessName -eq 'javaw')} | Select-Object -ExpandProperty MainWindowTitle"
         ]
