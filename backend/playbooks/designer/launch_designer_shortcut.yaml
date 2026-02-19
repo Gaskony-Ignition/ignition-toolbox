@@ -107,10 +107,10 @@ steps:
         # Execute PowerShell script to enter credentials
         login_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{login_script}" -Username "{username}" -Password "{password}"'
         result = subprocess.run(login_cmd, shell=True, capture_output=True, text=True)
-        output = result.stdout.strip().split('\n')[-1].strip()
+        output_lines = result.stdout.strip().split('\n')
 
-        if output != "success":
-            raise Exception(f"Failed to enter credentials. Result: {output}")
+        if not any(line.strip() == "success" for line in output_lines):
+            raise Exception(f"Failed to enter credentials. Result: {result.stdout.strip()}")
 
         print("✓ Credentials entered successfully")
 
@@ -171,10 +171,10 @@ steps:
         # Execute PowerShell script to open project
         project_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{project_script}" -ProjectName "{project_name}"'
         result = subprocess.run(project_cmd, shell=True, capture_output=True, text=True)
-        output = result.stdout.strip().split('\n')[-1].strip()
+        output_lines = result.stdout.strip().split('\n')
 
-        if output != "success":
-            raise Exception(f"Failed to open project. Result: {output}")
+        if not any(line.strip() == "success" for line in output_lines):
+            raise Exception(f"Failed to open project. Result: {result.stdout.strip()}")
 
         print("")
         print("=" * 50)
