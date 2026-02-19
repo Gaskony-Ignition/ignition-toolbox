@@ -50,7 +50,6 @@ import {
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useStore } from '../store';
 import type { ExecutionStatusResponse } from '../types/api';
@@ -58,7 +57,8 @@ import type { ExecutionStatusResponse } from '../types/api';
 type StatusFilter = 'all' | 'running' | 'paused' | 'completed' | 'failed';
 
 export function Executions() {
-  const navigate = useNavigate();
+  const setActiveExecutionId = useStore((state) => state.setActiveExecutionId);
+  const setPlaybookSubTab = useStore((state) => state.setPlaybookSubTab);
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -509,7 +509,10 @@ export function Executions() {
                       <IconButton
                         size="small"
                         color="primary"
-                        onClick={() => navigate(`/executions/${execution.execution_id}`)}
+                        onClick={() => {
+                          setActiveExecutionId(execution.execution_id);
+                          setPlaybookSubTab('active-execution');
+                        }}
                         aria-label={`View ${execution.playbook_name} details`}
                       >
                         <ViewIcon fontSize="small" />

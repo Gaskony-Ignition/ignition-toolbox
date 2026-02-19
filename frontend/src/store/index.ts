@@ -5,6 +5,23 @@
 import { create } from 'zustand';
 import type { ExecutionUpdate, CredentialInfo, ScreenshotFrame } from '../types/api';
 
+// Tab navigation types
+export type MainTab = 'playbooks' | 'api' | 'stackbuilder' | 'udtbuilder' | 'settings';
+export type PlaybookSubTab = 'gateway' | 'designer' | 'perspective' | 'active-execution' | 'past-executions';
+
+// Initialize tab state from localStorage
+const getInitialMainTab = (): MainTab => {
+  const stored = localStorage.getItem('mainTab');
+  const valid: MainTab[] = ['playbooks', 'api', 'stackbuilder', 'udtbuilder', 'settings'];
+  return valid.includes(stored as MainTab) ? (stored as MainTab) : 'playbooks';
+};
+
+const getInitialPlaybookSubTab = (): PlaybookSubTab => {
+  const stored = localStorage.getItem('playbookSubTab');
+  const valid: PlaybookSubTab[] = ['gateway', 'designer', 'perspective', 'active-execution', 'past-executions'];
+  return valid.includes(stored as PlaybookSubTab) ? (stored as PlaybookSubTab) : 'gateway';
+};
+
 // Initialize theme from localStorage or default to 'dark'
 const getInitialTheme = (): 'dark' | 'light' => {
   const stored = localStorage.getItem('theme');
@@ -37,6 +54,14 @@ interface UpdateStatus {
 }
 
 interface AppState {
+  // Tab navigation
+  mainTab: MainTab;
+  setMainTab: (tab: MainTab) => void;
+  playbookSubTab: PlaybookSubTab;
+  setPlaybookSubTab: (tab: PlaybookSubTab) => void;
+  activeExecutionId: string | null;
+  setActiveExecutionId: (id: string | null) => void;
+
   // Execution updates from WebSocket
   executionUpdates: Map<string, ExecutionUpdate>;
   setExecutionUpdate: (executionId: string, update: ExecutionUpdate) => void;
@@ -78,6 +103,21 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set) => ({
+  mainTab: getInitialMainTab(),
+  setMainTab: (tab) => {
+    localStorage.setItem('mainTab', tab);
+    set({ mainTab: tab });
+  },
+
+  playbookSubTab: getInitialPlaybookSubTab(),
+  setPlaybookSubTab: (tab) => {
+    localStorage.setItem('playbookSubTab', tab);
+    set({ playbookSubTab: tab });
+  },
+
+  activeExecutionId: null,
+  setActiveExecutionId: (id) => set({ activeExecutionId: id }),
+
   executionUpdates: new Map(),
   setExecutionUpdate: (executionId, update) =>
     set((state) => {

@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -55,8 +54,11 @@ import type { ExecutionStatusResponse } from '../types/api';
 
 const logger = createLogger('ExecutionDetail');
 
-export function ExecutionDetail() {
-  const { executionId } = useParams<{ executionId: string }>();
+interface ExecutionDetailProps {
+  executionId?: string;
+}
+
+export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
   const executionUpdates = useStore((state) => state.executionUpdates);
   const [debugMode, setDebugMode] = useState(false);
   const [debugModeUserOverride, setDebugModeUserOverride] = useState(false);
@@ -251,7 +253,7 @@ export function ExecutionDetail() {
     <Box sx={{
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 56px - 32px)', // Viewport minus header (56px) and padding (2*16px)
+      height: 'calc(100vh - 96px - 32px)', // Viewport minus header (56px) + sub-tabs (40px) and padding (2*16px)
       overflow: 'hidden',
       bgcolor: 'background.default',
     }}>

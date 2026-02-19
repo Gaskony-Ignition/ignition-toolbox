@@ -1,6 +1,7 @@
 /**
- * Main layout with horizontal top navigation
- * Design inspired by CW Dashboard
+ * Main layout with hierarchical two-level tab navigation
+ * Row 1: Main tabs (Playbooks, API Explorer, Stacks, UDTs, Settings)
+ * Row 2: Sub-tabs (only visible when Playbooks is active)
  */
 
 import { useState, useEffect } from 'react';
@@ -28,36 +29,42 @@ import {
   Api as ApiIcon,
   Layers as StackIcon,
   AccountTree as UdtIcon,
-  PlaylistPlay as ExecutionsIcon,
+  PlayArrow as ActiveExecutionIcon,
+  History as PastExecutionsIcon,
+  AutoStories as PlaybooksIcon,
 } from '@mui/icons-material';
-import { useStore } from '../store';
+import { useStore, type MainTab, type PlaybookSubTab } from '../store';
 import { api } from '../api/client';
 import type { CredentialInfo } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
 
-// Domain tabs for playbook filtering
-export type DomainTab = 'gateway' | 'designer' | 'perspective' | 'executions' | 'api' | 'stackbuilder' | 'udtbuilder' | 'settings';
-
-const domainTabs: { id: DomainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
-  { id: 'gateway', label: 'Gateway', icon: <GatewayIcon fontSize="small" /> },
-  { id: 'designer', label: 'Designer', icon: <DesignerIcon fontSize="small" /> },
-  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon fontSize="small" />, badge: 'Beta' },
-  { id: 'executions', label: 'Executions', icon: <ExecutionsIcon fontSize="small" /> },
+const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
+  { id: 'playbooks', label: 'Playbooks', icon: <PlaybooksIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
   { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Beta' },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
 ];
 
+const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'active-execution', label: 'Active Execution', icon: <ActiveExecutionIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'past-executions', label: 'Past Executions', icon: <PastExecutionsIcon sx={{ fontSize: '1rem' }} /> },
+];
+
 interface LayoutProps {
-  activeTab: DomainTab;
-  onTabChange: (tab: DomainTab) => void;
   children: React.ReactNode;
 }
 
-export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
+  const mainTab = useStore((state) => state.mainTab);
+  const setMainTab = useStore((state) => state.setMainTab);
+  const playbookSubTab = useStore((state) => state.playbookSubTab);
+  const setPlaybookSubTab = useStore((state) => state.setPlaybookSubTab);
   const globalCredential = useStore((state) => state.globalCredential);
   const setGlobalCredential = useStore((state) => state.setGlobalCredential);
   const setSelectedCredential = useStore((state) => state.setSelectedCredential);
@@ -132,11 +139,9 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
 
   const handleCredentialSelect = (credentialName: string | null) => {
     setGlobalCredential(credentialName);
-    // Also set the full credential object for PlaybookCard/execution
     if (credentialName) {
       const fullCredential = credentials.find((c) => c.name === credentialName);
       setSelectedCredential(fullCredential || null);
-      // Persist to localStorage
       localStorage.setItem('selectedCredentialName', credentialName);
     } else {
       setSelectedCredential(null);
@@ -147,7 +152,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-      {/* Header */}
+      {/* Row 1: Main Header */}
       <Box
         component="header"
         sx={{
@@ -159,9 +164,10 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           px: 2,
+          flexShrink: 0,
         }}
       >
-        {/* Left side: Logo and tabs */}
+        {/* Left side: Logo and main tabs */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           {/* Logo/Title */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -171,22 +177,22 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
             </Typography>
           </Box>
 
-          {/* Tab Navigation */}
+          {/* Main Tab Navigation */}
           <Box component="nav" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {domainTabs.map((tab) => (
+            {mainTabs.map((tab) => (
               tab.iconOnly ? (
                 <Tooltip key={tab.id} title={tab.label} arrow>
                   <IconButton
-                    onClick={() => onTabChange(tab.id)}
+                    onClick={() => setMainTab(tab.id)}
                     size="small"
                     sx={{
                       p: 1,
                       borderRadius: 1,
-                      color: activeTab === tab.id ? 'primary.main' : 'text.secondary',
-                      bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      color: mainTab === tab.id ? 'primary.main' : 'text.secondary',
+                      bgcolor: mainTab === tab.id ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                       '&:hover': {
-                        bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                        color: activeTab === tab.id ? 'primary.main' : 'text.primary',
+                        bgcolor: mainTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                        color: mainTab === tab.id ? 'primary.main' : 'text.primary',
                       },
                     }}
                   >
@@ -196,7 +202,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
               ) : (
                 <Button
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => setMainTab(tab.id)}
                   startIcon={tab.icon}
                   size="small"
                   sx={{
@@ -206,11 +212,11 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
                     textTransform: 'none',
                     fontWeight: 500,
                     fontSize: '0.875rem',
-                    color: activeTab === tab.id ? 'primary.main' : 'text.secondary',
-                    bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                    color: mainTab === tab.id ? 'primary.main' : 'text.secondary',
+                    bgcolor: mainTab === tab.id ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                     '&:hover': {
-                      bgcolor: activeTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                      color: activeTab === tab.id ? 'primary.main' : 'text.primary',
+                      bgcolor: mainTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      color: mainTab === tab.id ? 'primary.main' : 'text.primary',
                     },
                   }}
                 >
@@ -236,7 +242,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
           </Box>
         </Box>
 
-        {/* Right side: Credential selector, health, version, theme toggle */}
+        {/* Right side: Credential selector, update, version */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Global Credential Selector */}
           <Button
@@ -296,7 +302,7 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
           {/* Update Available Indicator */}
           {updateStatus.available && (
             <Button
-              onClick={() => onTabChange('settings')}
+              onClick={() => setMainTab('settings')}
               startIcon={
                 <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <UpdateIcon />
@@ -344,6 +350,50 @@ export function Layout({ activeTab, onTabChange, children }: LayoutProps) {
           </Typography>
         </Box>
       </Box>
+
+      {/* Row 2: Sub-tabs (only when Playbooks main tab is active) */}
+      {mainTab === 'playbooks' && (
+        <Box
+          sx={{
+            height: 40,
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            px: 2,
+            pl: 8,
+            gap: 0.5,
+            flexShrink: 0,
+          }}
+        >
+          {playbookSubTabs.map((tab) => (
+            <Button
+              key={tab.id}
+              onClick={() => setPlaybookSubTab(tab.id)}
+              startIcon={tab.icon}
+              size="small"
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.8rem',
+                minHeight: 32,
+                color: playbookSubTab === tab.id ? 'primary.main' : 'text.secondary',
+                bgcolor: playbookSubTab === tab.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                '&:hover': {
+                  bgcolor: playbookSubTab === tab.id ? 'rgba(59, 130, 246, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                  color: playbookSubTab === tab.id ? 'primary.main' : 'text.primary',
+                },
+              }}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </Box>
+      )}
 
       {/* Main Content */}
       <Box

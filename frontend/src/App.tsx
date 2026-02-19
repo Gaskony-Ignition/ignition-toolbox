@@ -1,16 +1,18 @@
 /**
- * Main App component with tab-based navigation
+ * Main App component with two-level tab navigation
  *
  * Uses React.lazy for code splitting - heavier pages are loaded on-demand
  * to improve initial bundle size and load performance.
+ *
+ * Tab state is managed in Zustand (persisted to localStorage).
+ * No client-side routing — all navigation is tab-based.
  */
 
-import { useState, useMemo, Suspense, lazy } from 'react';
-import { HashRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { useMemo, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box, Typography } from '@mui/material';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Layout, type DomainTab } from './components/Layout';
+import { Layout } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
 import { Executions } from './pages/Executions';
 import { Settings } from './pages/Settings';
@@ -76,7 +78,6 @@ const themeColors = {
 
 /**
  * Create MUI theme from the current theme mode.
- * Shared by AppContent and ExecutionDetailWrapper to avoid duplication.
  */
 function createAppTheme(themeMode: 'dark' | 'light') {
   const colors = themeColors[themeMode];
@@ -125,7 +126,9 @@ function createAppTheme(themeMode: 'dark' | 'light') {
 }
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<DomainTab>('gateway');
+  const mainTab = useStore((state) => state.mainTab);
+  const playbookSubTab = useStore((state) => state.playbookSubTab);
+  const activeExecutionId = useStore((state) => state.activeExecutionId);
   const setExecutionUpdate = useStore((state) => state.setExecutionUpdate);
   const setScreenshotFrame = useStore((state) => state.setScreenshotFrame);
   const themeMode = useStore((state) => state.theme);
@@ -139,22 +142,44 @@ function AppContent() {
     onScreenshotFrame: (frame) => setScreenshotFrame(frame.executionId, frame),
   });
 
-  // Render content based on active tab
-  // Lazy-loaded components are wrapped in Suspense with a loading fallback
+  // Render content based on main tab and sub-tab
   const renderContent = () => {
-    switch (activeTab) {
-      case 'gateway':
-        return <Playbooks domainFilter="gateway" />;
-      case 'designer':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Designer />
-          </Suspense>
-        );
-      case 'perspective':
-        return <Playbooks domainFilter="perspective" />;
-      case 'executions':
-        return <Executions />;
+    switch (mainTab) {
+      case 'playbooks':
+        switch (playbookSubTab) {
+          case 'gateway':
+            return <Playbooks domainFilter="gateway" />;
+          case 'designer':
+            return (
+              <Suspense fallback={<PageLoader />}>
+                <Designer />
+              </Suspense>
+            );
+          case 'perspective':
+            return <Playbooks domainFilter="perspective" />;
+          case 'active-execution':
+            if (!activeExecutionId) {
+              return (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', opacity: 0.5 }}>
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    No Active Execution
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Run a playbook to see execution progress here
+                  </Typography>
+                </Box>
+              );
+            }
+            return (
+              <Suspense fallback={<PageLoader />}>
+                <ExecutionDetail executionId={activeExecutionId} />
+              </Suspense>
+            );
+          case 'past-executions':
+            return <Executions />;
+          default:
+            return <Playbooks domainFilter="gateway" />;
+        }
       case 'api':
         return (
           <Suspense fallback={<PageLoader />}>
@@ -183,7 +208,7 @@ function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+      <Layout>
         {renderContent()}
       </Layout>
       {/* Welcome dialog for first-time users */}
@@ -192,57 +217,11 @@ function AppContent() {
   );
 }
 
-// Wrapper for execution detail that handles routing
-function ExecutionDetailWrapper() {
-  const { executionId } = useParams<{ executionId: string }>();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<DomainTab>('gateway');
-  const setExecutionUpdate = useStore((state) => state.setExecutionUpdate);
-  const setScreenshotFrame = useStore((state) => state.setScreenshotFrame);
-  const themeMode = useStore((state) => state.theme);
-
-  // WebSocket for real-time updates
-  useWebSocket({
-    onExecutionUpdate: (update) => setExecutionUpdate(update.execution_id, update),
-    onScreenshotFrame: (frame) => setScreenshotFrame(frame.executionId, frame),
-  });
-
-  // Create theme (shared with AppContent via createAppTheme)
-  const theme = useMemo(() => createAppTheme(themeMode), [themeMode]);
-
-  // Handle tab change - navigate back to main app
-  const handleTabChange = (tab: DomainTab) => {
-    setActiveTab(tab);
-    navigate('/');
-  };
-
-  if (!executionId) {
-    navigate('/');
-    return null;
-  }
-
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Layout activeTab={activeTab} onTabChange={handleTabChange}>
-        <Suspense fallback={<PageLoader />}>
-          <ExecutionDetail />
-        </Suspense>
-      </Layout>
-    </ThemeProvider>
-  );
-}
-
 export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<AppContent />} />
-            <Route path="/executions/:executionId" element={<ExecutionDetailWrapper />} />
-          </Routes>
-        </HashRouter>
+        <AppContent />
       </QueryClientProvider>
     </ErrorBoundary>
   );

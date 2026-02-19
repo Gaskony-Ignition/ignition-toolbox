@@ -46,7 +46,6 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { createLogger } from '../utils/logger';
 import { PlaybookCard } from '../components/PlaybookCard';
@@ -187,7 +186,8 @@ interface PlaybooksProps {
 }
 
 export function Playbooks({ domainFilter }: PlaybooksProps) {
-  const navigate = useNavigate();
+  const setActiveExecutionId = useStore((state) => state.setActiveExecutionId);
+  const setPlaybookSubTab = useStore((state) => state.setPlaybookSubTab);
   const queryClient = useQueryClient();
   const gap = 2;
   const gridSpacing = 2;
@@ -337,8 +337,9 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         debug_mode,
       }).then(response => {
         logger.info('Execution started successfully:', response);
-        // Navigate to execution detail page AFTER getting execution ID
-        navigate(`/executions/${response.execution_id}`);
+        // Switch to execution detail sub-tab AFTER getting execution ID
+        setActiveExecutionId(response.execution_id);
+        setPlaybookSubTab('active-execution');
       }).catch(error => {
         logger.error('Failed to execute playbook:', error);
         logger.error('Error details:', error instanceof Error ? error.message : String(error));
@@ -389,8 +390,9 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         debug_mode,
         timeout_overrides: savedConfig.timeoutOverrides, // Include timeout overrides from saved config
       }).then(response => {
-        // Navigate to execution detail page AFTER getting execution ID
-        navigate(`/executions/${response.execution_id}`);
+        // Switch to execution detail sub-tab AFTER getting execution ID
+        setActiveExecutionId(response.execution_id);
+        setPlaybookSubTab('active-execution');
       }).catch(error => {
         logger.error('Failed to execute playbook:', error);
         showNotification('Failed to start execution. Please check the console for details.', 'error');
