@@ -31,12 +31,13 @@ class BrowserNavigateHandler(StepHandler):
 class BrowserClickHandler(StepHandler):
     """Handle browser.click step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 30000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
-        timeout = params.get("timeout", 30000)
+        timeout = params.get("timeout", self.default_timeout)
         force = params.get("force", False)
         await self.manager.click(selector, timeout=timeout, force=force)
         return {"selector": selector, "status": "clicked", "force": force}
@@ -45,13 +46,14 @@ class BrowserClickHandler(StepHandler):
 class BrowserFillHandler(StepHandler):
     """Handle browser.fill step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 30000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
         value = params.get("value")
-        timeout = params.get("timeout", 30000)
+        timeout = params.get("timeout", self.default_timeout)
         await self.manager.fill(selector, value, timeout=timeout)
         return {"selector": selector, "status": "filled"}
 
@@ -72,12 +74,13 @@ class BrowserScreenshotHandler(StepHandler):
 class BrowserWaitHandler(StepHandler):
     """Handle browser.wait step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 30000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
-        timeout = params.get("timeout", 30000)
+        timeout = params.get("timeout", self.default_timeout)
         await self.manager.wait_for_selector(selector, timeout=timeout)
         return {"selector": selector, "status": "found"}
 
@@ -85,13 +88,14 @@ class BrowserWaitHandler(StepHandler):
 class BrowserVerifyHandler(StepHandler):
     """Handle browser.verify step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 5000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
         exists = params.get("exists", True)  # Default: verify element exists
-        timeout = params.get("timeout", 5000)  # Shorter timeout for verification
+        timeout = params.get("timeout", self.default_timeout)  # Shorter timeout for verification
 
         try:
             # Try to find the element
@@ -126,13 +130,14 @@ class BrowserVerifyHandler(StepHandler):
 class BrowserFileUploadHandler(StepHandler):
     """Handle browser.file_upload step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 30000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
         file_path = params.get("file_path")
-        timeout = params.get("timeout", 30000)
+        timeout = params.get("timeout", self.default_timeout)
         await self.manager.set_input_files(selector, file_path, timeout=timeout)
         return {"selector": selector, "file_path": file_path, "status": "uploaded"}
 
@@ -140,8 +145,9 @@ class BrowserFileUploadHandler(StepHandler):
 class BrowserVerifyTextHandler(StepHandler):
     """Handle browser.verify_text step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 5000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         import re
@@ -149,7 +155,7 @@ class BrowserVerifyTextHandler(StepHandler):
         selector = params.get("selector")
         text = params.get("text")
         match_type = params.get("match", "exact")  # exact, contains, regex
-        timeout = params.get("timeout", 5000)
+        timeout = params.get("timeout", self.default_timeout)
 
         # Get element handle
         try:
@@ -204,14 +210,15 @@ class BrowserVerifyTextHandler(StepHandler):
 class BrowserVerifyAttributeHandler(StepHandler):
     """Handle browser.verify_attribute step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 5000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
         attribute = params.get("attribute")
         value = params.get("value")
-        timeout = params.get("timeout", 5000)
+        timeout = params.get("timeout", self.default_timeout)
 
         # Get element handle
         try:
@@ -251,13 +258,14 @@ class BrowserVerifyAttributeHandler(StepHandler):
 class BrowserVerifyStateHandler(StepHandler):
     """Handle browser.verify_state step"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 5000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
         state = params.get("state")  # visible, hidden, enabled, disabled
-        timeout = params.get("timeout", 5000)
+        timeout = params.get("timeout", self.default_timeout)
 
         # Get element handle
         try:
@@ -330,12 +338,13 @@ class BrowserVerifyStateHandler(StepHandler):
 class BrowserGetTextHandler(StepHandler):
     """Handle browser.get_text step - extract text content from an element"""
 
-    def __init__(self, manager: BrowserManager):
+    def __init__(self, manager: BrowserManager, default_timeout: int = 30000):
         self.manager = manager
+        self.default_timeout = default_timeout
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         selector = params.get("selector")
-        timeout = params.get("timeout", 30000)
+        timeout = params.get("timeout", self.default_timeout)
 
         try:
             page = await self.manager.get_page()

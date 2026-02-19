@@ -85,9 +85,10 @@ class UtilityPythonHandler(StepHandler):
     access as the backend process itself.
     """
 
-    def __init__(self, parameter_resolver=None):
+    def __init__(self, parameter_resolver=None, timeout_overrides=None):
         """Initialize handler with optional parameter resolver for variable access"""
         self.parameter_resolver = parameter_resolver
+        self.timeout_overrides = timeout_overrides or {}
 
     async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         script = params.get("script")
@@ -125,6 +126,7 @@ class UtilityPythonHandler(StepHandler):
                     "time": __import__("time"),
                     "set_variable": set_variable,
                     "get_variable": get_variable,
+                    "timeout_overrides": self.timeout_overrides,
                 }
 
                 # Redirect stdout to capture print() statements

@@ -156,17 +156,19 @@ class StepExecutor:
 
         # Browser handlers
         if self.browser_manager:
+            browser_timeout = self.timeout_overrides.get("browser_operation", 30000)
+            verify_timeout = self.timeout_overrides.get("browser_operation", 5000)
             handlers[StepType.BROWSER_NAVIGATE] = BrowserNavigateHandler(self.browser_manager)
-            handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(self.browser_manager)
-            handlers[StepType.BROWSER_FILL] = BrowserFillHandler(self.browser_manager)
-            handlers[StepType.BROWSER_FILE_UPLOAD] = BrowserFileUploadHandler(self.browser_manager)
+            handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_FILL] = BrowserFillHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_FILE_UPLOAD] = BrowserFileUploadHandler(self.browser_manager, default_timeout=browser_timeout)
             handlers[StepType.BROWSER_SCREENSHOT] = BrowserScreenshotHandler(self.browser_manager)
-            handlers[StepType.BROWSER_WAIT] = BrowserWaitHandler(self.browser_manager)
-            handlers[StepType.BROWSER_VERIFY] = BrowserVerifyHandler(self.browser_manager)
-            handlers[StepType.BROWSER_VERIFY_TEXT] = BrowserVerifyTextHandler(self.browser_manager)
-            handlers[StepType.BROWSER_VERIFY_ATTRIBUTE] = BrowserVerifyAttributeHandler(self.browser_manager)
-            handlers[StepType.BROWSER_VERIFY_STATE] = BrowserVerifyStateHandler(self.browser_manager)
-            handlers[StepType.BROWSER_GET_TEXT] = BrowserGetTextHandler(self.browser_manager)
+            handlers[StepType.BROWSER_WAIT] = BrowserWaitHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_VERIFY] = BrowserVerifyHandler(self.browser_manager, default_timeout=verify_timeout)
+            handlers[StepType.BROWSER_VERIFY_TEXT] = BrowserVerifyTextHandler(self.browser_manager, default_timeout=verify_timeout)
+            handlers[StepType.BROWSER_VERIFY_ATTRIBUTE] = BrowserVerifyAttributeHandler(self.browser_manager, default_timeout=verify_timeout)
+            handlers[StepType.BROWSER_VERIFY_STATE] = BrowserVerifyStateHandler(self.browser_manager, default_timeout=verify_timeout)
+            handlers[StepType.BROWSER_GET_TEXT] = BrowserGetTextHandler(self.browser_manager, default_timeout=browser_timeout)
 
         # Designer handlers
         if self.designer_manager:
@@ -185,7 +187,7 @@ class StepExecutor:
         handlers[StepType.SLEEP] = UtilitySleepHandler()
         handlers[StepType.LOG] = UtilityLogHandler()
         handlers[StepType.SET_VARIABLE] = UtilitySetVariableHandler()
-        handlers[StepType.PYTHON] = UtilityPythonHandler(self.parameter_resolver)
+        handlers[StepType.PYTHON] = UtilityPythonHandler(self.parameter_resolver, self.timeout_overrides)
 
         # Perspective FAT handlers (require browser manager)
         if self.browser_manager:

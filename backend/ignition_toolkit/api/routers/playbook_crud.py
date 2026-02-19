@@ -213,6 +213,59 @@ def validate_playbook_path(path_str: str) -> Path:
     raise HTTPException(status_code=404, detail=f"Playbook file not found: {path_str}")
 
 
+def _compute_relevant_timeouts(steps, playbook_dirs, domain=None) -> list[str]:
+    """
+    Analyze playbook step types to determine which timeout categories are relevant.
+
+    Inspects each step's type and, for playbook.run steps, resolves the nested
+    playbook one level deep to union its timeout categories too.
+
+    Returns a sorted list of applicable timeout category strings:
+        "browser_operation", "gateway_restart", "module_install"
+    """
+    result = set()
+
+    for step in steps:
+        step_type = step.type.value  # e.g. "browser.click", "gateway.restart"
+
+        if step_type.startswith("browser.") or step_type.startswith("perspective."):
+            result.add("browser_operation")
+        elif step_type in ("gateway.restart", "gateway.wait_for_ready"):
+            result.add("gateway_restart")
+        elif step_type in ("gateway.wait_for_module_installation", "gateway.upload_module"):
+            result.add("module_install")
+        elif step_type == "playbook.run":
+            # Resolve nested playbook one level deep
+            nested_path = step.parameters.get("playbook")
+            if nested_path:
+                try:
+                    nested_file = None
+                    for playbook_dir in playbook_dirs:
+                        candidate = playbook_dir / nested_path
+                        if candidate.exists():
+                            nested_file = candidate
+                            break
+                    if nested_file:
+                        nested_loader = PlaybookLoader()
+                        nested_playbook = nested_loader.load_from_file(nested_file)
+                        for nested_step in nested_playbook.steps:
+                            nested_type = nested_step.type.value
+                            if nested_type.startswith("browser.") or nested_type.startswith("perspective."):
+                                result.add("browser_operation")
+                            elif nested_type in ("gateway.restart", "gateway.wait_for_ready"):
+                                result.add("gateway_restart")
+                            elif nested_type in ("gateway.wait_for_module_installation", "gateway.upload_module"):
+                                result.add("module_install")
+                except Exception:
+                    pass  # Skip silently on any error (missing file, parse error, etc.)
+
+    # Designer domain playbooks use designer_launch timeout
+    if domain == "designer":
+        result.add("designer_launch")
+
+    return sorted(result)
+
+
 # ============================================================================
 # Routes
 # ============================================================================
@@ -315,6 +368,8 @@ async def list_playbooks():
                     meta.origin = source
                     metadata_store.update_metadata(relative_path, meta)
 
+                relevant_timeouts = _compute_relevant_timeouts(playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain"))
+
                 playbooks.append(
                     PlaybookInfo(
                         name=playbook.name,
@@ -335,6 +390,7 @@ async def list_playbooks():
                         origin=meta.origin,
                         duplicated_from=meta.duplicated_from,
                         created_at=meta.created_at,
+                        relevant_timeouts=relevant_timeouts,
                     )
                 )
             except Exception as e:
@@ -379,6 +435,9 @@ async def get_playbook(playbook_path: str):
         relative_path = _get_relative_to_any_playbook_dir(validated_path)
         meta = metadata_store.get_metadata(relative_path)
 
+        playbook_dirs = get_all_playbook_dirs()
+        relevant_timeouts = _compute_relevant_timeouts(playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain"))
+
         return PlaybookInfo(
             name=playbook.name,
             path=relative_path,
@@ -398,6 +457,7 @@ async def get_playbook(playbook_path: str):
             origin=meta.origin,
             duplicated_from=meta.duplicated_from,
             created_at=meta.created_at,
+            relevant_timeouts=relevant_timeouts,
         )
     except HTTPException:
         raise

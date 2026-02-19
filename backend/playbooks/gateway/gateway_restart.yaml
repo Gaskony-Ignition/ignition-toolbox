@@ -151,8 +151,9 @@ steps:
         import httpx
 
         gateway_url = r"""{{ parameter.gateway_url }}"""
-        max_attempts = 20
+        gateway_timeout = timeout_overrides.get("gateway_restart", 120)
         wait_seconds = 3
+        max_attempts = max(1, gateway_timeout // wait_seconds)
 
         print(f"Waiting for Gateway to go offline (confirming restart started)...")
         print(f"Max attempts: {max_attempts}, interval: {wait_seconds}s")
@@ -189,8 +190,9 @@ steps:
         import httpx
 
         gateway_url = r"""{{ parameter.gateway_url }}"""
-        max_attempts = 30
+        gateway_timeout = timeout_overrides.get("gateway_restart", 120)
         wait_seconds = 5
+        max_attempts = max(1, gateway_timeout // wait_seconds)
 
         print(f"Polling {gateway_url} until it comes back online...")
         print(f"Max attempts: {max_attempts}, interval: {wait_seconds}s")

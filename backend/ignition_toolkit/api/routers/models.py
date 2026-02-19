@@ -57,6 +57,7 @@ class PlaybookInfo(BaseModel):
     origin: str = "unknown"  # built-in, user-created, duplicated, unknown
     duplicated_from: str | None = None  # Source playbook path if duplicated
     created_at: str | None = None  # When playbook was created/added
+    relevant_timeouts: list[str] = []  # Timeout categories applicable to this playbook
 
 
 # ============================================================================

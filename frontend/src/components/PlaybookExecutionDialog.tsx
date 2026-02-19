@@ -227,6 +227,7 @@ export function PlaybookExecutionDialog({
           <TimeoutSettings
             timeoutOverrides={timeoutOverrides}
             onChange={handleTimeoutChange}
+            relevantTimeouts={playbook.relevant_timeouts}
           />
         </Box>
       </DialogContent>

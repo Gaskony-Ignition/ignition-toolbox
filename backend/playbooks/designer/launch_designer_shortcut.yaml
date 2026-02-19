@@ -49,7 +49,9 @@ steps:
         proc.wait()
 
         print("Waiting for login window...")
-        max_attempts = 6
+        designer_timeout = timeout_overrides.get("designer_launch", 60)
+        sleep_interval = 5
+        max_attempts = max(1, designer_timeout // sleep_interval)
         attempt = 0
         login_window = False
 
@@ -74,7 +76,7 @@ steps:
                 time.sleep(5)
 
         if not login_window:
-            raise Exception("Login window did not appear after 30 seconds")
+            raise Exception(f"Login window did not appear after {designer_timeout} seconds")
 
         # Wait for UI to fully initialize (Java Swing needs time after window appears)
         print("Allowing login window to fully initialize...")
@@ -115,7 +117,9 @@ steps:
         # Wait for project selection screen
         print("Waiting for project selection...")
         import time
-        max_attempts = 5
+        designer_timeout = timeout_overrides.get("designer_launch", 60)
+        sleep_interval = 3
+        max_attempts = max(1, designer_timeout // sleep_interval)
         attempt = 0
         project_window = False
 
@@ -140,7 +144,7 @@ steps:
                 time.sleep(3)
 
         if not project_window:
-            raise Exception("Project selection screen did not appear. Login may have failed.")
+            raise Exception(f"Project selection screen did not appear after {designer_timeout} seconds. Login may have failed.")
 
         print("PROJECT_SELECTION_READY=true")
     timeout: 60

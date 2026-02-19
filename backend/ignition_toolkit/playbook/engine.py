@@ -79,6 +79,7 @@ class PlaybookEngine:
                 - gateway_restart: Gateway restart timeout in seconds (default: 120)
                 - module_install: Module installation timeout in seconds (default: 300)
                 - browser_operation: Browser operation timeout in milliseconds (default: 30000)
+                - designer_launch: Designer window detection timeout in seconds (default: 60)
         """
         self.gateway_client = gateway_client
         self.credential_vault = credential_vault
@@ -103,6 +104,10 @@ class PlaybookEngine:
     def get_browser_operation_timeout(self) -> int:
         """Get browser operation timeout in milliseconds (default: 30000)"""
         return self.timeout_overrides.get("browser_operation", 30000)
+
+    def get_designer_launch_timeout(self) -> int:
+        """Get designer launch timeout in seconds (default: 60)"""
+        return self.timeout_overrides.get("designer_launch", 60)
 
     def set_update_callback(self, callback: Callable[[ExecutionState], None]) -> None:
         """

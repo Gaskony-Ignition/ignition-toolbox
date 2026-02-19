@@ -62,7 +62,9 @@ steps:
         automation = LinuxDesignerAutomation()
 
         print("Waiting for login dialog...")
-        max_attempts = 12
+        designer_timeout = timeout_overrides.get("designer_launch", 60)
+        sleep_interval = 7  # 5s timeout + 2s sleep per attempt
+        max_attempts = max(1, designer_timeout // sleep_interval)
         attempt = 0
         login_found = False
 
@@ -79,7 +81,7 @@ steps:
                 time.sleep(2)
 
         if not login_found:
-            raise Exception("Login dialog did not appear after 60 seconds")
+            raise Exception(f"Login dialog did not appear after {designer_timeout} seconds")
 
         # Wait for UI to fully initialize
         print("Allowing login dialog to fully initialize...")

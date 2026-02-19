@@ -41,12 +41,14 @@ export interface PlaybookInfo {
   origin: string;  // built-in, user-created, duplicated, unknown
   duplicated_from: string | null;  // Source playbook path if duplicated
   created_at: string | null;  // When playbook was created/added
+  relevant_timeouts: string[];  // Timeout categories applicable to this playbook
 }
 
 export interface TimeoutOverrides {
   gateway_restart?: number;   // seconds (default: 120)
   module_install?: number;    // seconds (default: 300)
   browser_operation?: number; // milliseconds (default: 30000)
+  designer_launch?: number;   // seconds (default: 60)
 }
 
 export interface ExecutionRequest {
