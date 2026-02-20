@@ -2,7 +2,7 @@
  * Custom hook for managing user-created playbook sections with localStorage persistence
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface PlaybookSection {
   id: string;
@@ -38,6 +38,12 @@ export function usePlaybookSections(domain: string): PlaybookSectionsState {
     const stored = localStorage.getItem(getStorageKey(domain));
     return stored ? JSON.parse(stored) : [];
   });
+
+  // Re-read from localStorage when domain changes (component is reused across sub-tabs)
+  useEffect(() => {
+    const stored = localStorage.getItem(getStorageKey(domain));
+    setSections(stored ? JSON.parse(stored) : []);
+  }, [domain]);
 
   const persist = useCallback((newSections: PlaybookSection[]) => {
     setSections(newSections);
