@@ -483,7 +483,7 @@ export function StackBuilder() {
   } | null>(null);
 
   // Fetch catalog
-  const { data: catalog, isLoading: catalogLoading } = useQuery({
+  const { data: catalog, isLoading: catalogLoading, error: catalogError } = useQuery({
     queryKey: ['stackbuilder-catalog'],
     queryFn: () => api.stackBuilder.getCatalog(),
   });
@@ -545,7 +545,7 @@ export function StackBuilder() {
   // Download offline bundle mutation
   const offlineBundleMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/stackbuilder/generate-offline-bundle', {
+      const response = await fetch(`${api.getBaseUrl()}/api/stackbuilder/generate-offline-bundle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -698,6 +698,14 @@ export function StackBuilder() {
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
+          ) : catalogError ? (
+            <Alert severity="error" sx={{ m: 1 }}>
+              Failed to load service catalog. Make sure the backend is running.
+            </Alert>
+          ) : applications.length === 0 ? (
+            <Alert severity="info" sx={{ m: 1 }}>
+              No services available in the catalog.
+            </Alert>
           ) : (
             <Box>
               {categories.map((category) => (
@@ -799,7 +807,7 @@ export function StackBuilder() {
                 size="small"
                 variant="outlined"
                 startIcon={<CloudDownloadIcon />}
-                href="/api/stackbuilder/download/docker-installer/linux"
+                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/linux`}
                 download="install-docker-linux.sh"
               >
                 Linux Script
@@ -808,7 +816,7 @@ export function StackBuilder() {
                 size="small"
                 variant="outlined"
                 startIcon={<CloudDownloadIcon />}
-                href="/api/stackbuilder/download/docker-installer/windows"
+                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/windows`}
                 download="install-docker-windows.ps1"
               >
                 Windows Script

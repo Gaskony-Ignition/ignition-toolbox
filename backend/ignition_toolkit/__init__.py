@@ -4,7 +4,7 @@ Ignition Automation Toolkit
 Lightweight, transferable automation platform for Ignition SCADA Gateway operations.
 """
 
-__version__ = "2.0.15"  # Updated: 2026-02-20
+__version__ = "2.0.16"  # Updated: 2026-02-20
 __build_date__ = "2026-02-20"
 __phases_complete__ = "10/10 (100%) + Plugin Architecture Complete"
 __author__ = "Nigel G"

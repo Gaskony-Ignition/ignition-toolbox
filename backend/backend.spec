@@ -94,6 +94,8 @@ datas = [
     (str(backend_dir / 'playbooks'), 'playbooks'),
     # Include CloudDesigner Docker files
     (str(backend_dir / 'ignition_toolkit' / 'clouddesigner' / 'docker_files'), 'clouddesigner/docker_files'),
+    # Include StackBuilder catalog and integration data
+    (str(backend_dir / 'ignition_toolkit' / 'stackbuilder' / 'data'), 'stackbuilder/data'),
 ]
 
 # Add Playwright driver (required for browser installation command)

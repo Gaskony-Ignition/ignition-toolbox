@@ -70,7 +70,7 @@ function getBadgeSx(badge: string) {
 const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
   { id: 'playbooks', label: 'Playbooks', icon: <PlaybooksIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
-  { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
+  { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Coming Soon' },
   { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Coming Soon' },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
 ];

@@ -7,10 +7,18 @@ Ported from ignition-stack-builder project.
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _get_data_path(filename: str) -> Path:
+    """Get path to a stackbuilder data file, handling frozen mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "stackbuilder" / "data" / filename
+    return Path(__file__).parent / "data" / filename
 
 
 class IntegrationEngine:
@@ -24,7 +32,7 @@ class IntegrationEngine:
             integrations_path: Path to integrations.json. If None, uses default.
         """
         if integrations_path is None:
-            integrations_path = Path(__file__).parent / "data" / "integrations.json"
+            integrations_path = _get_data_path("integrations.json")
 
         self.integrations_path = integrations_path
         self._integrations: dict[str, Any] | None = None

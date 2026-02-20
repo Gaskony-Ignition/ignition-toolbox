@@ -222,14 +222,14 @@ function DroppableZone({ id, children }: { id: string; children: React.ReactNode
     <Box
       ref={setNodeRef}
       sx={{
-        minHeight: 40,
+        minHeight: 48,
+        p: 0.5,
         borderRadius: 1,
         transition: 'all 0.2s ease',
+        border: '2px dashed transparent',
         ...(isOver && {
-          bgcolor: 'rgba(59, 130, 246, 0.08)',
-          outline: '2px dashed',
-          outlineColor: 'primary.main',
-          outlineOffset: 2,
+          bgcolor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: 'primary.main',
         }),
       }}
     >
@@ -388,9 +388,11 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
     }
   }, [playbooks]);
 
-  // Configure drag sensors
+  // Configure drag sensors with activation distance to prevent accidental drags
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -697,6 +699,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         const unsortedPlaybooks = filteredPlaybooks.filter(p => unsortedPaths.includes(p.path));
         const sectionMeta = sections.map(s => ({ id: s.id, name: s.name }));
 
+        // Helper: find which section a playbook belongs to (null = unsorted)
+        const findPlaybookSection = (path: string): string | null => {
+          const section = sections.find(s => s.playbooks.includes(path));
+          return section?.id || null;
+        };
+
         // Unified drag handler: supports reordering within containers AND moving between sections
         const handleSectionDragEnd = (event: DragEndEvent) => {
           const { active, over } = event;
@@ -710,19 +718,30 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
           const isPlaybookDrag = activeId.includes('/');
 
           if (isPlaybookDrag) {
-            // Determine which section the playbook is being dropped into
-            // The over target could be a section droppable zone ID (prefixed with 'drop-')
-            // or another playbook card within a section
-            const dropSectionId = overId.startsWith('drop-') ? overId.replace('drop-', '') : null;
+            const activeSectionId = findPlaybookSection(activeId);
+            let targetSectionId: string | null | undefined = undefined; // undefined = no move
 
-            if (dropSectionId) {
-              // Dropped on a section zone
-              const targetSection = dropSectionId === 'unsorted' ? null : dropSectionId;
-              movePlaybook(activeId, targetSection);
-              return;
+            if (overId.startsWith('drop-')) {
+              // Dropped on a droppable zone
+              targetSectionId = overId === 'drop-unsorted' ? null : overId.replace('drop-', '');
+            } else if (overId.includes('/')) {
+              // Dropped on another playbook card — find its section
+              const overSectionId = findPlaybookSection(overId);
+              if (overSectionId !== activeSectionId) {
+                targetSectionId = overSectionId;
+              }
+              // Same section: no cross-section move needed
+            } else {
+              // Dropped on a section accordion header (section ID without 'drop-' prefix)
+              const matchedSection = sections.find(s => s.id === overId);
+              if (matchedSection) {
+                targetSectionId = matchedSection.id;
+              }
             }
 
-            // Otherwise it's a reorder within the same container — no cross-section move needed
+            if (targetSectionId !== undefined && targetSectionId !== activeSectionId) {
+              movePlaybook(activeId, targetSectionId);
+            }
           } else {
             // Section reordering
             const oldIndex = sections.findIndex(s => s.id === activeId);

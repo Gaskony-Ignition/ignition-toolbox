@@ -6,10 +6,18 @@ Loads and manages the catalog of available services for Docker Compose stacks.
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _get_data_path(filename: str) -> Path:
+    """Get path to a stackbuilder data file, handling frozen mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "stackbuilder" / "data" / filename
+    return Path(__file__).parent / "data" / filename
 
 
 class ServiceCatalog:
@@ -28,7 +36,7 @@ class ServiceCatalog:
             catalog_path: Path to catalog.json. If None, uses default location.
         """
         if catalog_path is None:
-            catalog_path = Path(__file__).parent / "data" / "catalog.json"
+            catalog_path = _get_data_path("catalog.json")
 
         self.catalog_path = catalog_path
         self._catalog: dict[str, Any] | None = None
