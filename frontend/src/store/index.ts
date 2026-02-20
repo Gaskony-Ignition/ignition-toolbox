@@ -7,7 +7,7 @@ import type { ExecutionUpdate, CredentialInfo, ScreenshotFrame } from '../types/
 
 // Tab navigation types
 export type MainTab = 'playbooks' | 'designer' | 'api' | 'stackbuilder' | 'udtbuilder' | 'settings';
-export type PlaybookSubTab = 'gateway' | 'perspective' | 'active-execution' | 'past-executions';
+export type PlaybookSubTab = 'gateway' | 'designer' | 'perspective' | 'active-execution' | 'past-executions';
 export type StackSubTab = 'services' | 'integrations' | 'preview';
 
 // Initialize tab state from localStorage
@@ -19,7 +19,7 @@ const getInitialMainTab = (): MainTab => {
 
 const getInitialPlaybookSubTab = (): PlaybookSubTab => {
   const stored = localStorage.getItem('playbookSubTab');
-  const valid: PlaybookSubTab[] = ['gateway', 'perspective', 'active-execution', 'past-executions'];
+  const valid: PlaybookSubTab[] = ['gateway', 'designer', 'perspective', 'active-execution', 'past-executions'];
   return valid.includes(stored as PlaybookSubTab) ? (stored as PlaybookSubTab) : 'gateway';
 };
 

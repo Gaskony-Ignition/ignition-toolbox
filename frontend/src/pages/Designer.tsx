@@ -49,7 +49,7 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Designer');
 
-export function Designer() {
+export function Designer({ hidePlaybooks }: { hidePlaybooks?: boolean } = {}) {
   const queryClient = useQueryClient();
   const selectedCredential = useStore((state) => state.selectedCredential);
   const [startError, setStartError] = useState<string | null>(null);
@@ -781,10 +781,13 @@ Images Ready: ${imagesReady ? 'Yes' : 'No'}${allStatuses?.statuses ? '\n\nAll Co
         )}
       </Paper>
 
-      <Divider />
-
-      {/* Designer Playbooks Section */}
-      <Playbooks domainFilter="designer" />
+      {!hidePlaybooks && (
+        <>
+          <Divider />
+          {/* Designer Playbooks Section */}
+          <Playbooks domainFilter="designer" />
+        </>
+      )}
 
       {/* Cleanup Confirmation Dialog */}
       <Dialog

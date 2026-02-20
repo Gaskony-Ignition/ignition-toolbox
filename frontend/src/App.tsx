@@ -149,6 +149,8 @@ function AppContent() {
         switch (playbookSubTab) {
           case 'gateway':
             return <Playbooks domainFilter="gateway" />;
+          case 'designer':
+            return <Playbooks domainFilter="designer" />;
           case 'perspective':
             return <Playbooks domainFilter="perspective" />;
           case 'active-execution':
@@ -177,7 +179,7 @@ function AppContent() {
       case 'designer':
         return (
           <Suspense fallback={<PageLoader />}>
-            <Designer />
+            <Designer hidePlaybooks />
           </Suspense>
         );
       case 'api':

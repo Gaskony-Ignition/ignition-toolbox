@@ -54,7 +54,6 @@ import {
   PlayArrow as DeployIcon,
   Stop as StopIcon,
   Circle as StatusIcon,
-  Tune as TuneIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type StackBuilderApplication } from '../api/client';
@@ -1118,7 +1117,7 @@ export function StackBuilder() {
                   p: 0.75,
                 }}
               >
-                <TuneIcon fontSize="small" />
+                <SettingsIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
