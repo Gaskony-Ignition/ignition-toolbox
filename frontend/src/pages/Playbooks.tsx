@@ -16,6 +16,11 @@ import {
   Tooltip,
   Snackbar,
   Alert as MuiAlert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -255,6 +260,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
   const [submitPlaybook, setSubmitPlaybook] = useState<PlaybookInfo | null>(null);
+  const [sectionNameDialog, setSectionNameDialog] = useState<{
+    open: boolean;
+    title: string;
+    value: string;
+    onConfirm: (name: string) => void;
+  }>({ open: false, title: '', value: '', onConfirm: () => {} });
 
   // Section management (per-domain, only used in filtered view)
   const sectionsDomain = domainFilter || 'gateway';
@@ -512,10 +523,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   };
 
   const handleNewSection = () => {
-    const name = window.prompt('Section name:');
-    if (name?.trim()) {
-      createSection(name.trim());
-    }
+    setSectionNameDialog({
+      open: true,
+      title: 'New Section',
+      value: '',
+      onConfirm: (name) => createSection(name),
+    });
   };
 
   const handleRefresh = () => {
@@ -735,8 +748,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                       dragEnabled={dragEnabled}
                       title={`${section.name} (${sectionPlaybooks.length})`}
                       onRename={() => {
-                        const newName = window.prompt('Rename section:', section.name);
-                        if (newName?.trim()) renameSection(section.id, newName.trim());
+                        setSectionNameDialog({
+                          open: true,
+                          title: 'Rename Section',
+                          value: section.name,
+                          onConfirm: (name) => renameSection(section.id, name),
+                        });
                       }}
                       onDelete={() => {
                         if (window.confirm(`Delete section "${section.name}"? Playbooks will move to Unsorted.`)) {
@@ -966,6 +983,49 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
           // Optionally refresh the playbooks list
         }}
       />
+
+      {/* Section Name Dialog (create/rename) */}
+      <Dialog
+        open={sectionNameDialog.open}
+        onClose={() => setSectionNameDialog(prev => ({ ...prev, open: false }))}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{sectionNameDialog.title}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Section name"
+            value={sectionNameDialog.value}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSectionNameDialog(prev => ({ ...prev, value: e.target.value }))
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && sectionNameDialog.value.trim()) {
+                sectionNameDialog.onConfirm(sectionNameDialog.value.trim());
+                setSectionNameDialog(prev => ({ ...prev, open: false }));
+              }
+            }}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSectionNameDialog(prev => ({ ...prev, open: false }))}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!sectionNameDialog.value.trim()}
+            onClick={() => {
+              sectionNameDialog.onConfirm(sectionNameDialog.value.trim());
+              setSectionNameDialog(prev => ({ ...prev, open: false }));
+            }}
+          >
+            {sectionNameDialog.title === 'New Section' ? 'Create' : 'Rename'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar
