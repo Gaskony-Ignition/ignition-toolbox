@@ -18,35 +18,35 @@
       "group": "Module Upgrades",
       "release_notes": "Initial library release - module upgrade playbook for Claude AI module"
     },
-    "gateway/module_upgrade_GIT": {
+    "gateway/module_upgrade_Git": {
       "version": "4.0",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
-      "description": "Upgrade an existing module - Uninstall old version then install new version (GIT module)",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_GIT.yaml",
-      "checksum": "sha256:631cb242ae077d0e5d1fdd88d3339d0c97dfd57c39f10251c9dc8e7f8dbcab71",
+      "description": "Upgrade an existing module - Uninstall old version then install new version (Git module)",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_Git.yaml",
+      "checksum": "sha256:15d8b5522da57f65dd911e8fa14deb61c6e0e4623981489bf091df9793decf6c",
       "size_bytes": 4746,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["module", "upgrade", "git"],
       "group": "Module Upgrades",
-      "release_notes": "Initial library release - module upgrade playbook for GIT module"
+      "release_notes": "Initial library release - module upgrade playbook for Git module"
     },
-    "gateway/module_upgrade_ONVIF": {
+    "gateway/module_upgrade_Camera": {
       "version": "4.0",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
-      "description": "Upgrade an existing module - Uninstall old version then install new version (ONVIF module)",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_ONVIF.yaml",
-      "checksum": "sha256:66516f216a9fe3e4fa67bcf64341f946c10c48febeb93554248cf09a9e144faa",
-      "size_bytes": 4748,
+      "description": "Upgrade an existing module - Uninstall old version then install new version (Camera module)",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_Camera.yaml",
+      "checksum": "sha256:5495ccc6705ce7a47f34cf2f3a412d8dcd3e85bf6fba114e8b0f2e7690cfd6f0",
+      "size_bytes": 4749,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["module", "upgrade", "onvif"],
+      "tags": ["module", "upgrade", "camera", "onvif"],
       "group": "Module Upgrades",
-      "release_notes": "Initial library release - module upgrade playbook for ONVIF module"
+      "release_notes": "Initial library release - module upgrade playbook for Camera module"
     },
     "gateway/module_upgrade_Python3": {
       "version": "4.0",
@@ -63,20 +63,20 @@
       "group": "Module Upgrades",
       "release_notes": "Initial library release - module upgrade playbook for Python3 module"
     },
-    "gateway/module_upgrade_Sim": {
+    "gateway/module_upgrade_Emulate": {
       "version": "4.0",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
-      "description": "Upgrade an existing module - Uninstall old version then install new version (Sim module)",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_Sim.yaml",
-      "checksum": "sha256:2ebde682b1887e06b990adf25a13dd765ed575445c97d91cfc3fd4845993a227",
-      "size_bytes": 4746,
+      "description": "Upgrade an existing module - Uninstall old version then install new version (Emulate module)",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade_Emulate.yaml",
+      "checksum": "sha256:6c10c2554c1781dab86b53c3eccbc6e462eebb392ac94f996656153c1f02db8c",
+      "size_bytes": 4750,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["module", "upgrade", "sim", "simulation"],
+      "tags": ["module", "upgrade", "emulate", "simulation"],
       "group": "Module Upgrades",
-      "release_notes": "Initial library release - module upgrade playbook for Sim module"
+      "release_notes": "Initial library release - module upgrade playbook for Emulate module"
     },
     "perspective/test_buttons": {
       "version": "1.0",

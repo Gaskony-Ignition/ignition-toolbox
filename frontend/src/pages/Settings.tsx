@@ -24,6 +24,7 @@ import {
   RadioGroup,
   Radio,
   FormControl,
+  TextField,
 } from '@mui/material';
 import {
   Key as CredentialsIcon,
@@ -280,7 +281,7 @@ export function Settings() {
               <TextField
                 label="GitHub Personal Access Token"
                 value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGithubToken(e.target.value)}
                 type="password"
                 size="small"
                 fullWidth

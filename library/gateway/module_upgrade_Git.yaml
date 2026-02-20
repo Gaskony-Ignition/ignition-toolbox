@@ -1,4 +1,4 @@
-name: Module Upgrade (Sim)
+name: Module Upgrade (Git)
 version: "4.0"
 description: Upgrade an existing module - Uninstall old version then install new version
 domain: gateway

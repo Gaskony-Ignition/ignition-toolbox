@@ -1,4 +1,4 @@
-name: Module Upgrade (GIT)
+name: Module Upgrade (Camera)
 version: "4.0"
 description: Upgrade an existing module - Uninstall old version then install new version
 domain: gateway
