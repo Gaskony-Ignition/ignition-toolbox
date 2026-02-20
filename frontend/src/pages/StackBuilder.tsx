@@ -522,7 +522,7 @@ export function StackBuilder() {
       }),
     onSuccess: (data) => {
       setPreviewContent(data.docker_compose);
-      setTabValue(3);
+      useStore.getState().setStackSubTab('preview');
     },
   });
 
