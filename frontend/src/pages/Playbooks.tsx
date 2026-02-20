@@ -43,6 +43,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragEndEvent,
 } from '@dnd-kit/core';
 import {
@@ -211,6 +212,29 @@ function SortableAccordion({
         </AccordionDetails>
       </Accordion>
     </div>
+  );
+}
+
+// Droppable zone wrapper for section drop targets
+function DroppableZone({ id, children }: { id: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        minHeight: 40,
+        borderRadius: 1,
+        transition: 'all 0.2s ease',
+        ...(isOver && {
+          bgcolor: 'rgba(59, 130, 246, 0.08)',
+          outline: '2px dashed',
+          outlineColor: 'primary.main',
+          outlineOffset: 2,
+        }),
+      }}
+    >
+      {children}
+    </Box>
   );
 }
 
@@ -673,12 +697,44 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         const unsortedPlaybooks = filteredPlaybooks.filter(p => unsortedPaths.includes(p.path));
         const sectionMeta = sections.map(s => ({ id: s.id, name: s.name }));
 
-        const domainDragHandler =
-          domainFilter === 'gateway' ? handleGatewayDragEnd :
-          domainFilter === 'designer' ? handleDesignerDragEnd :
-          handlePerspectiveDragEnd;
+        // Unified drag handler: supports reordering within containers AND moving between sections
+        const handleSectionDragEnd = (event: DragEndEvent) => {
+          const { active, over } = event;
+          if (!over) return;
+
+          const activeId = String(active.id);
+          const overId = String(over.id);
+          if (activeId === overId) return;
+
+          // Check if active item is a playbook path (contains '/')
+          const isPlaybookDrag = activeId.includes('/');
+
+          if (isPlaybookDrag) {
+            // Determine which section the playbook is being dropped into
+            // The over target could be a section droppable zone ID (prefixed with 'drop-')
+            // or another playbook card within a section
+            const dropSectionId = overId.startsWith('drop-') ? overId.replace('drop-', '') : null;
+
+            if (dropSectionId) {
+              // Dropped on a section zone
+              const targetSection = dropSectionId === 'unsorted' ? null : dropSectionId;
+              movePlaybook(activeId, targetSection);
+              return;
+            }
+
+            // Otherwise it's a reorder within the same container — no cross-section move needed
+          } else {
+            // Section reordering
+            const oldIndex = sections.findIndex(s => s.id === activeId);
+            const newIndex = sections.findIndex(s => s.id === overId);
+            if (oldIndex !== -1 && newIndex !== -1) {
+              reorderSections(arrayMove(sections, oldIndex, newIndex));
+            }
+          }
+        };
 
         return (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
             {/* Unverified warning banner */}
             {unverified.length > 0 && (
@@ -688,12 +744,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
             )}
 
             {/* Unsorted playbooks */}
-            {unsortedPlaybooks.length > 0 && (
+            <DroppableZone id="drop-unsorted">
               <Box>
                 <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500, mb: 1.5 }}>
                   Unsorted ({unsortedPlaybooks.length})
                 </Typography>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={domainDragHandler}>
+                {unsortedPlaybooks.length > 0 ? (
                   <SortableContext items={unsortedPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
                     <Box
                       sx={{
@@ -720,87 +776,81 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                       ))}
                     </Box>
                   </SortableContext>
-                </DndContext>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                    All playbooks are organized into sections.
+                  </Typography>
+                )}
               </Box>
-            )}
+            </DroppableZone>
 
             {/* User sections */}
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event: DragEndEvent) => {
-              const { active, over } = event;
-              if (over && active.id !== over.id) {
-                const oldIndex = sections.findIndex(s => s.id === active.id);
-                const newIndex = sections.findIndex(s => s.id === over.id);
-                if (oldIndex !== -1 && newIndex !== -1) {
-                  reorderSections(arrayMove(sections, oldIndex, newIndex));
-                }
-              }
-            }}>
-              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                {sections.map((section) => {
-                  const sectionPlaybooks = filteredPlaybooks.filter(p => section.playbooks.includes(p.path));
+            <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+              {sections.map((section) => {
+                const sectionPlaybooks = filteredPlaybooks.filter(p => section.playbooks.includes(p.path));
 
-                  return (
-                    <SortableAccordion
-                      key={section.id}
-                      categoryId={section.id}
-                      expanded={section.expanded}
-                      onChange={() => toggleSection(section.id)}
-                      dragEnabled={dragEnabled}
-                      title={`${section.name} (${sectionPlaybooks.length})`}
-                      onRename={() => {
-                        setSectionNameDialog({
-                          open: true,
-                          title: 'Rename Section',
-                          value: section.name,
-                          onConfirm: (name) => renameSection(section.id, name),
-                        });
-                      }}
-                      onDelete={() => {
-                        if (window.confirm(`Delete section "${section.name}"? Playbooks will move to Unsorted.`)) {
-                          deleteSection(section.id);
-                        }
-                      }}
-                    >
+                return (
+                  <SortableAccordion
+                    key={section.id}
+                    categoryId={section.id}
+                    expanded={section.expanded}
+                    onChange={() => toggleSection(section.id)}
+                    dragEnabled={dragEnabled}
+                    title={`${section.name} (${sectionPlaybooks.length})`}
+                    onRename={() => {
+                      setSectionNameDialog({
+                        open: true,
+                        title: 'Rename Section',
+                        value: section.name,
+                        onConfirm: (name) => renameSection(section.id, name),
+                      });
+                    }}
+                    onDelete={() => {
+                      if (window.confirm(`Delete section "${section.name}"? Playbooks will move to Unsorted.`)) {
+                        deleteSection(section.id);
+                      }
+                    }}
+                  >
+                    <DroppableZone id={`drop-${section.id}`}>
                       {sectionPlaybooks.length > 0 ? (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={domainDragHandler}>
-                          <SortableContext items={sectionPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
-                            <Box
-                              sx={{
-                                display: 'grid',
-                                gridTemplateColumns: getGridColumns(),
-                                gap: gridSpacing,
-                              }}
-                            >
-                              {sectionPlaybooks.map((playbook) => (
-                                <SortablePlaybookCard
-                                  key={playbook.path}
-                                  playbook={playbook}
-                                  onConfigure={handleConfigure}
-                                  onExecute={handleExecute}
-                                  onExport={handleExport}
-                                  onViewSteps={handleViewSteps}
-                                  onEditPlaybook={handleEditPlaybook}
-                                  onSubmitToLibrary={handleSubmitToLibrary}
-                                  dragEnabled={dragEnabled}
-                                  availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
-                                  sections={sectionMeta}
-                                  onMoveToSection={handleMoveToSection}
-                                />
-                              ))}
-                            </Box>
-                          </SortableContext>
-                        </DndContext>
+                        <SortableContext items={sectionPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
+                          <Box
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: getGridColumns(),
+                              gap: gridSpacing,
+                            }}
+                          >
+                            {sectionPlaybooks.map((playbook) => (
+                              <SortablePlaybookCard
+                                key={playbook.path}
+                                playbook={playbook}
+                                onConfigure={handleConfigure}
+                                onExecute={handleExecute}
+                                onExport={handleExport}
+                                onViewSteps={handleViewSteps}
+                                onEditPlaybook={handleEditPlaybook}
+                                onSubmitToLibrary={handleSubmitToLibrary}
+                                dragEnabled={dragEnabled}
+                                availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
+                                sections={sectionMeta}
+                                onMoveToSection={handleMoveToSection}
+                              />
+                            ))}
+                          </Box>
+                        </SortableContext>
                       ) : (
-                        <Alert severity="info" sx={{ mt: 1 }}>
-                          No playbooks in this section. Use the card menu to move playbooks here.
-                        </Alert>
+                        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                          Drag playbooks here or use card menu &rarr; Move to Section
+                        </Typography>
                       )}
-                    </SortableAccordion>
-                  );
-                })}
-              </SortableContext>
-            </DndContext>
+                    </DroppableZone>
+                  </SortableAccordion>
+                );
+              })}
+            </SortableContext>
           </Box>
+          </DndContext>
         );
       })()}
 
