@@ -155,7 +155,7 @@ describe('PlaybookCard', () => {
     expect(configureButton).toBeDisabled();
   });
 
-  it('shows warning icon for unverified playbooks', () => {
+  it('does not show warning icon for unverified playbooks', () => {
     const playbook = createTestPlaybook({ verified: false });
     renderWithQueryClient(
       <PlaybookCard
@@ -164,7 +164,7 @@ describe('PlaybookCard', () => {
       />
     );
 
-    expect(screen.getByTestId('WarningIcon')).toBeInTheDocument();
+    expect(screen.queryByTestId('WarningIcon')).not.toBeInTheDocument();
   });
 
   it('calls onConfigure when Configure button is clicked', () => {
