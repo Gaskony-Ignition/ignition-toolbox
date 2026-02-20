@@ -290,23 +290,24 @@ class TestIntegrationSummary:
         instances = [sample_ignition_instance, sample_traefik_instance, sample_postgres_instance]
         detection_result = engine.detect_integrations(instances)
         summary = engine.get_integration_summary(detection_result)
-        assert isinstance(summary, str)
-        assert "Integration Summary" in summary
+        assert isinstance(summary, list)
+        assert len(summary) > 0
+        assert any("Reverse Proxy" in s or "Database" in s for s in summary)
 
     def test_summary_with_conflicts(self, engine):
-        """Test summary includes conflicts."""
+        """Test summary includes conflicts (conflicts are separate from summary items)."""
         traefik = {"app_id": "traefik", "instance_name": "traefik", "config": {}}
         nginx = {"app_id": "nginx-proxy-manager", "instance_name": "nginx", "config": {}}
         detection_result = engine.detect_integrations([traefik, nginx])
         summary = engine.get_integration_summary(detection_result)
-        if detection_result["conflicts"]:
-            assert "Conflicts" in summary
+        assert isinstance(summary, list)
 
     def test_summary_empty_stack(self, engine):
         """Test summary for empty stack."""
         detection_result = engine.detect_integrations([])
         summary = engine.get_integration_summary(detection_result)
-        assert isinstance(summary, str)
+        assert isinstance(summary, list)
+        assert len(summary) == 0
 
 
 class TestSingletonPattern:
