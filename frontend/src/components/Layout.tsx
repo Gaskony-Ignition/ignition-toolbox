@@ -4,7 +4,7 @@
  * Row 2: Sub-tabs (only visible when Playbooks is active)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -17,9 +17,11 @@ import {
   IconButton,
   Chip,
   SvgIcon,
+  Badge,
 } from '@mui/material';
 import {
   Storage as GatewayIcon,
+  Dns as ContainerIcon,
   DesignServices as DesignerIcon,
   Visibility as PerspectiveIcon,
   Settings as SettingsIcon,
@@ -163,6 +165,22 @@ export function Layout({ children }: LayoutProps) {
       }
     }
   }, [credentials, setGlobalCredential, setSelectedCredential]);
+
+  // Active execution indicator
+  const executionUpdates = useStore((state) => state.executionUpdates);
+  const activeExecutions = useMemo(
+    () => [...executionUpdates.values()].filter((e) => e.status === 'running' || e.status === 'paused'),
+    [executionUpdates],
+  );
+
+  // Cloud Designer container status (poll every 10s)
+  const { data: containerStatus } = useQuery({
+    queryKey: ['clouddesigner-status-header'],
+    queryFn: api.cloudDesigner.getStatus,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+  const isDesignerRunning = containerStatus?.status === 'running';
 
   const handleCredentialClick = (event: React.MouseEvent<HTMLElement>) => {
     setCredentialAnchor(event.currentTarget);
@@ -321,6 +339,80 @@ export function Layout({ children }: LayoutProps) {
               </MenuItem>
             )}
           </Menu>
+
+          {/* Active Execution Indicator */}
+          {activeExecutions.length > 0 && (
+            <Tooltip
+              title={
+                activeExecutions.length === 1
+                  ? `1 execution ${activeExecutions[0].status}`
+                  : `${activeExecutions.length} executions running`
+              }
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setMainTab('playbooks');
+                  setPlaybookSubTab('active-execution');
+                }}
+                sx={{ position: 'relative', color: 'primary.main' }}
+              >
+                <Badge
+                  badgeContent={activeExecutions.length > 1 ? activeExecutions.length : 0}
+                  color="primary"
+                  sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem', minWidth: 16, height: 16 } }}
+                >
+                  <ActiveExecutionIcon />
+                </Badge>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    width: 8,
+                    height: 8,
+                    bgcolor: '#3b82f6',
+                    borderRadius: '50%',
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                      '50%': { opacity: 0.6, transform: 'scale(1.2)' },
+                    },
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {/* Browser Designer Running Indicator */}
+          {isDesignerRunning && (
+            <Tooltip
+              title={`Browser Designer running${containerStatus?.port ? ` (port ${containerStatus.port})` : ''}`}
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={() => setMainTab('designer')}
+                sx={{ position: 'relative', color: 'text.secondary' }}
+              >
+                <ContainerIcon />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: 4,
+                    width: 8,
+                    height: 8,
+                    bgcolor: '#22c55e',
+                    borderRadius: '50%',
+                    border: '1.5px solid',
+                    borderColor: 'background.paper',
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Update Available Indicator */}
           {updateStatus.available && (
