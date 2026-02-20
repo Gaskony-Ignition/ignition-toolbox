@@ -87,7 +87,7 @@ export function PlaybookUpdatesDialog({ open, onClose }: PlaybookUpdatesDialogPr
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch available updates
+  // Fetch available updates (auto-refreshes from GitHub via cache TTL)
   const { data, isLoading, error, refetch } = useQuery<UpdatesResponse>({
     queryKey: ['playbook-updates'],
     queryFn: async () => {
@@ -130,7 +130,9 @@ export function PlaybookUpdatesDialog({ open, onClose }: PlaybookUpdatesDialogPr
     updateMutation.mutate(playbookPath);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    // Force refresh from GitHub (bypass cache TTL)
+    await fetch(`${api.getBaseUrl()}/api/playbooks/updates?force_refresh=true`);
     refetch();
   };
 

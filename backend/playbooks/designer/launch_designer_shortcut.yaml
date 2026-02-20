@@ -2,6 +2,8 @@ name: "Launch Designer via Shortcut"
 version: "1.0"
 description: "Launch Ignition Designer application"
 domain: designer
+group: "Designer (Base Playbooks)"
+verified: true
 
 parameters:
   - name: designer_shortcut

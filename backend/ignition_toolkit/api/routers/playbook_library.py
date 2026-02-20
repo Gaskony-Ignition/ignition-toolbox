@@ -193,6 +193,7 @@ async def check_for_updates(force_refresh: bool = False):
     Check for available playbook updates
 
     Compares installed playbooks against available versions in the repository.
+    Automatically refreshes from GitHub when cache is stale (1 hour TTL).
 
     Args:
         force_refresh: Force refresh from GitHub (ignore cache)
@@ -205,8 +206,8 @@ async def check_for_updates(force_refresh: bool = False):
 
         checker = PlaybookUpdateChecker()
 
-        if force_refresh:
-            await checker.refresh(force=True)
+        # Always refresh (uses cache TTL internally, so this is cheap when fresh)
+        await checker.refresh(force=force_refresh)
 
         result = checker.check_for_updates()
 
@@ -254,11 +255,16 @@ async def get_update_stats():
     Get update statistics
 
     Returns summary statistics about available updates.
+    Automatically refreshes from GitHub when cache is stale (1 hour TTL).
     """
     try:
         from ignition_toolkit.playbook.update_checker import PlaybookUpdateChecker
 
         checker = PlaybookUpdateChecker()
+
+        # Auto-refresh (uses cache TTL internally, so this is cheap when fresh)
+        await checker.refresh()
+
         result = checker.check_for_updates()
 
         updates_by_domain = {}

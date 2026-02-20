@@ -12,7 +12,7 @@ Registry is persisted to ~/.ignition-toolkit/registry.json
 import json
 import logging
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +23,7 @@ from ignition_toolkit.core.paths import get_user_data_dir
 logger = logging.getLogger(__name__)
 
 # GitHub repository settings
-DEFAULT_REPO = "nigelgwork/ignition-toolbox"
+DEFAULT_REPO = "Gaskony-Ignition/ignition-toolbox"
 # Use GitHub API for more reliable access (raw.githubusercontent can have cache delays)
 DEFAULT_INDEX_URL = f"https://api.github.com/repos/{DEFAULT_REPO}/contents/playbooks-index.json"
 
@@ -265,6 +265,9 @@ class PlaybookRegistry:
         """
         return playbook_path in self.installed
 
+    # Cache TTL: auto-refresh from GitHub after this duration
+    CACHE_TTL = timedelta(hours=1)
+
     async def fetch_available_playbooks(
         self,
         index_url: str = DEFAULT_INDEX_URL,
@@ -280,10 +283,16 @@ class PlaybookRegistry:
         Returns:
             Dictionary mapping playbook paths to metadata
         """
-        # TODO: Add cache TTL check (only refresh if >1 hour old)
         if not force_refresh and self.last_fetched and self.available:
-            logger.info("Using cached available playbooks")
-            return self.available
+            # Check if cache is still fresh
+            try:
+                fetched_time = datetime.fromisoformat(self.last_fetched)
+                if datetime.now(timezone.utc) - fetched_time < self.CACHE_TTL:
+                    logger.info("Using cached available playbooks (cache still fresh)")
+                    return self.available
+                logger.info("Cache expired, refreshing from GitHub")
+            except (ValueError, TypeError):
+                logger.warning("Invalid last_fetched timestamp, refreshing")
 
         try:
             logger.info(f"Fetching playbook index from: {index_url}")

@@ -27,6 +27,8 @@ import {
   Store as StoreIcon,
   SystemUpdate as UpdateIcon,
   RestartAlt as ResetIcon,
+  VerifiedUser as VerifiedIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -58,11 +60,11 @@ import { PlaybookUpdatesDialog } from '../components/PlaybookUpdatesDialog';
 import { PlaybookEditorDialog } from '../components/PlaybookEditorDialog';
 import { CreatePlaybookDialog } from '../components/CreatePlaybookDialog';
 import { useStore } from '../store';
-import { useCategoryOrder, useCategoryExpanded, useGroupExpanded } from '../hooks/usePlaybookOrder';
+import { useCategoryOrder, useCategoryExpanded } from '../hooks/usePlaybookOrder';
 import type { PlaybookInfo } from '../types/api';
 
 // Extracted modules
-import { categorizePlaybooks, groupPlaybooks, domainNames } from './PlaybookCategorySection';
+import { categorizePlaybooks, splitByVerification, domainNames } from './PlaybookCategorySection';
 import { createCategoryDragEndHandler } from './PlaybookDragHandlers';
 import {
   handleExport as doExport,
@@ -177,7 +179,7 @@ function SortableAccordion({
 }
 
 // Inline utility functions (getPlaybookOrder, savePlaybookOrder, applyOrder,
-// categorizePlaybooks, groupPlaybooks) have been extracted to:
+// categorizePlaybooks, splitByVerification) have been extracted to:
 // - PlaybookDragHandlers.ts
 // - PlaybookCategorySection.tsx
 
@@ -220,7 +222,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   const [stepsDialogPlaybook, setStepsDialogPlaybook] = useState<PlaybookInfo | null>(null);
   const [editorPlaybook, setEditorPlaybook] = useState<PlaybookInfo | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const { expanded: expandedGroups, toggleExpanded: toggleGroupExpanded } = useGroupExpanded();
   const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
   const [updatesDialogOpen, setUpdatesDialogOpen] = useState(false);
 
@@ -605,74 +606,75 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         }>
           <SortableContext items={filteredPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
             {(() => {
-              const { grouped, ungrouped } = groupPlaybooks(filteredPlaybooks);
+              const { verified, unverified } = splitByVerification(filteredPlaybooks);
               return (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
-                  {/* Ungrouped playbooks */}
-                  {ungrouped.length > 0 && (
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: getGridColumns(),
-                        gap: gridSpacing,
-                      }}
-                    >
-                      {ungrouped.map((playbook) => (
-                        <SortablePlaybookCard
-                          key={playbook.path}
-                          playbook={playbook}
-                          onConfigure={handleConfigure}
-                          onExecute={handleExecute}
-                          onExport={handleExport}
-                          onViewSteps={handleViewSteps}
-                          onEditPlaybook={handleEditPlaybook}
-                          dragEnabled={dragEnabled}
-                        />
-                      ))}
+                  {/* Verified playbooks */}
+                  {verified.length > 0 && (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <VerifiedIcon fontSize="small" color="success" />
+                        <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
+                          Verified ({verified.length})
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: getGridColumns(),
+                          gap: gridSpacing,
+                        }}
+                      >
+                        {verified.map((playbook) => (
+                          <SortablePlaybookCard
+                            key={playbook.path}
+                            playbook={playbook}
+                            onConfigure={handleConfigure}
+                            onExecute={handleExecute}
+                            onExport={handleExport}
+                            onViewSteps={handleViewSteps}
+                            onEditPlaybook={handleEditPlaybook}
+                            dragEnabled={dragEnabled}
+                          />
+                        ))}
+                      </Box>
                     </Box>
                   )}
 
-                  {/* Grouped playbooks */}
-                  {Object.entries(grouped).map(([groupName, groupPlaybooks]) => (
-                    <Accordion
-                      key={groupName}
-                      expanded={dragEnabled || (expandedGroups[groupName] !== undefined ? expandedGroups[groupName] : false)}
-                      onChange={() => {
-                        if (!dragEnabled) {
-                          toggleGroupExpanded(groupName);
-                        }
-                      }}
-                      sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
-                    >
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: '32px !important', '& .MuiAccordionSummary-content': { my: '6px !important' } }}>
+                  {/* Unverified playbooks */}
+                  {unverified.length > 0 && (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <WarningIcon fontSize="small" color="warning" />
                         <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                          {groupName} ({groupPlaybooks.length})
+                          Unverified ({unverified.length})
                         </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <Box
-                          sx={{
-                            display: 'grid',
-                            gridTemplateColumns: getGridColumns(),
-                            gap: gridSpacing,
-                          }}
-                        >
-                          {groupPlaybooks.map((playbook) => (
-                            <SortablePlaybookCard
-                              key={playbook.path}
-                              playbook={playbook}
-                              onConfigure={handleConfigure}
-                              onExecute={handleExecute}
-                              onExport={handleExport}
-                              onViewSteps={handleViewSteps}
-                              onEditPlaybook={handleEditPlaybook}
-                              dragEnabled={dragEnabled}
-                            />
-                          ))}
-                        </Box>
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
+                      </Box>
+                      <Alert severity="warning" sx={{ mb: 1.5 }}>
+                        Unverified playbooks have not been reviewed or tested by the maintainer. Use at your own risk — review the playbook steps before executing.
+                      </Alert>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: getGridColumns(),
+                          gap: gridSpacing,
+                        }}
+                      >
+                        {unverified.map((playbook) => (
+                          <SortablePlaybookCard
+                            key={playbook.path}
+                            playbook={playbook}
+                            onConfigure={handleConfigure}
+                            onExecute={handleExecute}
+                            onExport={handleExport}
+                            onViewSteps={handleViewSteps}
+                            onEditPlaybook={handleEditPlaybook}
+                            dragEnabled={dragEnabled}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
               );
             })()}
@@ -720,19 +722,21 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                     title={categoryConfig.title}
                   >
                     {categoryConfig.playbooks.length > 0 ? (
-                      (() => {
-                        // Special handling for gateway (has groups)
-                        if (categoryId === 'gateway') {
-                          const { grouped, ungrouped } = groupPlaybooks(categoryConfig.playbooks);
-                          // Collect all playbook IDs for single DndContext
-                          const allPlaybookIds = categoryConfig.playbooks.map(p => p.path);
-
-                          return (
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={categoryConfig.dragHandler}>
-                              <SortableContext items={allPlaybookIds} strategy={verticalListSortingStrategy}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
-                                  {/* Ungrouped playbooks */}
-                                  {ungrouped.length > 0 && (
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={categoryConfig.dragHandler}>
+                        <SortableContext items={categoryConfig.playbooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
+                          {(() => {
+                            const { verified, unverified } = splitByVerification(categoryConfig.playbooks);
+                            return (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
+                                {/* Verified playbooks */}
+                                {verified.length > 0 && (
+                                  <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                      <VerifiedIcon fontSize="small" color="success" />
+                                      <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
+                                        Verified ({verified.length})
+                                      </Typography>
+                                    </Box>
                                     <Box
                                       sx={{
                                         display: 'grid',
@@ -740,7 +744,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                                         gap: gridSpacing,
                                       }}
                                     >
-                                      {ungrouped.map((playbook) => (
+                                      {verified.map((playbook) => (
                                         <SortablePlaybookCard
                                           key={playbook.path}
                                           playbook={playbook}
@@ -753,83 +757,48 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                                         />
                                       ))}
                                     </Box>
-                                  )}
+                                  </Box>
+                                )}
 
-                                  {/* Grouped playbooks */}
-                                  {Object.entries(grouped).map(([groupName, groupPlaybooks]) => (
-                                    <Accordion
-                                      key={groupName}
-                                      expanded={dragEnabled || (expandedGroups[groupName] !== undefined ? expandedGroups[groupName] : false)}
-                                      onChange={() => {
-                                        if (!dragEnabled) {
-                                          toggleGroupExpanded(groupName);
-                                        }
+                                {/* Unverified playbooks */}
+                                {unverified.length > 0 && (
+                                  <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                      <WarningIcon fontSize="small" color="warning" />
+                                      <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
+                                        Unverified ({unverified.length})
+                                      </Typography>
+                                    </Box>
+                                    <Alert severity="warning" sx={{ mb: 1.5 }}>
+                                      Unverified playbooks have not been reviewed or tested by the maintainer. Use at your own risk — review the playbook steps before executing.
+                                    </Alert>
+                                    <Box
+                                      sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: getGridColumns(true),
+                                        gap: gridSpacing,
                                       }}
-                                      sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
                                     >
-                                      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: '32px !important', '& .MuiAccordionSummary-content': { my: '6px !important' } }}>
-                                        <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                                          📂 {groupName} ({groupPlaybooks.length})
-                                        </Typography>
-                                      </AccordionSummary>
-                                      <AccordionDetails>
-                                        <Box
-                                          sx={{
-                                            display: 'grid',
-                                            gridTemplateColumns: getGridColumns(true),
-                                            gap: gridSpacing,
-                                          }}
-                                        >
-                                          {groupPlaybooks.map((playbook) => (
-                                            <SortablePlaybookCard
-                                              key={playbook.path}
-                                              playbook={playbook}
-                                              onConfigure={handleConfigure}
-                                              onExecute={handleExecute}
-                                              onExport={handleExport}
-                                              onViewSteps={handleViewSteps}
-                                              onEditPlaybook={handleEditPlaybook}
-                                              dragEnabled={dragEnabled}
-                                            />
-                                          ))}
-                                        </Box>
-                                      </AccordionDetails>
-                                    </Accordion>
-                                  ))}
-                                </Box>
-                              </SortableContext>
-                            </DndContext>
-                          );
-                        }
-
-                        // Standard rendering for designer and perspective
-                        return (
-                          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={categoryConfig.dragHandler}>
-                            <SortableContext items={categoryConfig.playbooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
-                              <Box
-                                sx={{
-                                  display: 'grid',
-                                  gridTemplateColumns: getGridColumns(true),
-                                  gap: gridSpacing,
-                                }}
-                              >
-                                {categoryConfig.playbooks.map((playbook) => (
-                                  <SortablePlaybookCard
-                                    key={playbook.path}
-                                    playbook={playbook}
-                                    onConfigure={handleConfigure}
-                                    onExecute={handleExecute}
-                                    onExport={handleExport}
-                                    onViewSteps={handleViewSteps}
-                                    onEditPlaybook={handleEditPlaybook}
-                                    dragEnabled={dragEnabled}
-                                  />
-                                ))}
+                                      {unverified.map((playbook) => (
+                                        <SortablePlaybookCard
+                                          key={playbook.path}
+                                          playbook={playbook}
+                                          onConfigure={handleConfigure}
+                                          onExecute={handleExecute}
+                                          onExport={handleExport}
+                                          onViewSteps={handleViewSteps}
+                                          onEditPlaybook={handleEditPlaybook}
+                                          dragEnabled={dragEnabled}
+                                        />
+                                      ))}
+                                    </Box>
+                                  </Box>
+                                )}
                               </Box>
-                            </SortableContext>
-                          </DndContext>
-                        );
-                      })()
+                            );
+                          })()}
+                        </SortableContext>
+                      </DndContext>
                     ) : (
                       <Alert severity="info">
                         {categoryConfig.emptyMessage}

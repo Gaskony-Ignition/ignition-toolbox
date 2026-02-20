@@ -16,6 +16,7 @@ import {
   Tooltip,
   IconButton,
   Chip,
+  SvgIcon,
 } from '@mui/material';
 import {
   Storage as GatewayIcon,
@@ -25,7 +26,6 @@ import {
   KeyboardArrowDown as ArrowDownIcon,
   Key as KeyIcon,
   SystemUpdateAlt as UpdateIcon,
-  Handyman as ToolboxIcon,
   Api as ApiIcon,
   Layers as StackIcon,
   AccountTree as UdtIcon,
@@ -40,18 +40,41 @@ import { useQuery } from '@tanstack/react-query';
 import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
 
+// Custom icon: wrench + flame accent (Ignition Toolbox branding)
+function IgnitionToolboxIcon(props: React.ComponentProps<typeof SvgIcon>) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" />
+      <path d="M18 1c-1.5 1.8-2.5 3.5-2.5 5 0 1.6 1.1 2.5 2.5 2.5s2.5-.9 2.5-2.5c0-1.5-1-3.2-2.5-5z" />
+    </SvgIcon>
+  );
+}
+
+function getBadgeSx(badge: string) {
+  const isOrange = badge === 'Beta';
+  return {
+    ml: 0.5,
+    height: 18,
+    fontSize: '0.65rem',
+    fontWeight: 600,
+    bgcolor: isOrange ? 'rgba(255, 152, 0, 0.15)' : 'rgba(147, 51, 234, 0.15)',
+    color: isOrange ? '#ff9800' : '#a855f7',
+    border: isOrange ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(147, 51, 234, 0.3)',
+  };
+}
+
 const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
   { id: 'playbooks', label: 'Playbooks', icon: <PlaybooksIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
-  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Beta' },
+  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Coming Soon' },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
 ];
 
-const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode }[] = [
+const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
-  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} />, badge: 'Coming Soon' },
   { id: 'active-execution', label: 'Active Execution', icon: <ActiveExecutionIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'past-executions', label: 'Past Executions', icon: <PastExecutionsIcon sx={{ fontSize: '1rem' }} /> },
 ];
@@ -171,7 +194,7 @@ export function Layout({ children }: LayoutProps) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           {/* Logo/Title */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ToolboxIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+            <IgnitionToolboxIcon sx={{ color: 'primary.main', fontSize: 24 }} />
             <Typography variant="h6" fontWeight="bold" color="text.primary">
               Ignition Toolbox
             </Typography>
@@ -222,19 +245,7 @@ export function Layout({ children }: LayoutProps) {
                 >
                   {tab.label}
                   {tab.badge && (
-                    <Chip
-                      label={tab.badge}
-                      size="small"
-                      sx={{
-                        ml: 0.5,
-                        height: 18,
-                        fontSize: '0.65rem',
-                        fontWeight: 600,
-                        bgcolor: 'rgba(255, 152, 0, 0.15)',
-                        color: '#ff9800',
-                        border: '1px solid rgba(255, 152, 0, 0.3)',
-                      }}
-                    />
+                    <Chip label={tab.badge} size="small" sx={getBadgeSx(tab.badge)} />
                   )}
                 </Button>
               )
@@ -362,7 +373,7 @@ export function Layout({ children }: LayoutProps) {
             display: 'flex',
             alignItems: 'center',
             px: 2,
-            pl: 8,
+            justifyContent: 'flex-end',
             gap: 0.5,
             flexShrink: 0,
           }}
@@ -390,6 +401,9 @@ export function Layout({ children }: LayoutProps) {
               }}
             >
               {tab.label}
+              {tab.badge && (
+                <Chip label={tab.badge} size="small" sx={getBadgeSx(tab.badge)} />
+              )}
             </Button>
           ))}
         </Box>

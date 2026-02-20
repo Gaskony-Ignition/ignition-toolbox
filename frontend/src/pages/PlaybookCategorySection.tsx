@@ -59,24 +59,21 @@ export function categorizePlaybooks(playbooks: PlaybookInfo[]) {
 }
 
 /**
- * Group playbooks by their group field
+ * Split playbooks into verified and unverified groups
  */
-export function groupPlaybooks(playbooks: PlaybookInfo[]) {
-  const grouped: Record<string, PlaybookInfo[]> = {};
-  const ungrouped: PlaybookInfo[] = [];
+export function splitByVerification(playbooks: PlaybookInfo[]) {
+  const verified: PlaybookInfo[] = [];
+  const unverified: PlaybookInfo[] = [];
 
   playbooks.forEach(playbook => {
-    if (playbook.group) {
-      if (!grouped[playbook.group]) {
-        grouped[playbook.group] = [];
-      }
-      grouped[playbook.group].push(playbook);
+    if (playbook.verified) {
+      verified.push(playbook);
     } else {
-      ungrouped.push(playbook);
+      unverified.push(playbook);
     }
   });
 
-  return { grouped, ungrouped };
+  return { verified, unverified };
 }
 
 /** Domain display names */
