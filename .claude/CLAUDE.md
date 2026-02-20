@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working with the Ignition Toolbo
 
 **Ignition Toolbox** is a distributable desktop application for visual acceptance testing of Ignition SCADA systems. It packages the Ignition Automation Toolkit as a standalone Electron app with an embedded Python backend.
 
-**Current Version:** 2.0.17
+**Current Version:** 2.0.18
 **Architecture:** Electron + Python subprocess
 **Target Platform:** Windows (primary), cross-platform possible
 **Key Technologies:** Electron, TypeScript, React 19, FastAPI, Playwright, SQLite
@@ -125,8 +125,8 @@ python run_backend.py
 # 1. Update version in package.json and frontend/package.json
 # 2. Commit changes
 # 3. Create and push a version tag:
-git tag v2.0.17
-git push origin v2.0.17
+git tag v2.0.18
+git push origin v2.0.18
 
 # This triggers GitHub Actions workflow (build-windows.yml) which:
 # - Builds on windows-latest runner
@@ -231,8 +231,8 @@ GitHub Actions workflows in `.github/workflows/`:
 1. Make code changes and test locally (Python backend, frontend)
 2. Update version in `package.json` and `frontend/package.json`
 3. Commit all changes to main branch
-4. Create version tag: `git tag v2.0.17`
-5. Push tag: `git push origin v2.0.17`
+4. Create version tag: `git tag v2.0.18`
+5. Push tag: `git push origin v2.0.18`
 6. GitHub Actions automatically:
    - Builds on Windows runner
    - Packages with PyInstaller + electron-builder
@@ -268,7 +268,7 @@ You can also trigger builds from GitHub Actions UI:
 
 **Last Updated**: 2026-02-20
 **Maintainer**: Nigel G
-**Status**: Production Ready (v2.0.17) - All Development Phases Complete
+**Status**: Production Ready (v2.0.18) - All Development Phases Complete
 
 ## Development Phases
 
