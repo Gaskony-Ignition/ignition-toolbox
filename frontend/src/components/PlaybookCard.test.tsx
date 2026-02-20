@@ -113,7 +113,7 @@ describe('PlaybookCard', () => {
       />
     );
 
-    expect(screen.getByText('v2.0.r3')).toBeInTheDocument();
+    expect(screen.getByText('v2.0')).toBeInTheDocument();
   });
 
   it('shows step count in expanded details', () => {

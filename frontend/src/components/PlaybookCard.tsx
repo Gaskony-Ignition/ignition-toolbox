@@ -52,6 +52,9 @@ import {
   RadioButtonUnchecked as NotConfiguredIcon,
   Code as CodeIcon,
   ExpandMore as ExpandMoreIcon,
+  SystemUpdate as UpdateIcon,
+  Store as StoreIcon,
+  DriveFileMove as MoveIcon,
 } from '@mui/icons-material';
 import type { PlaybookInfo } from '../types/api';
 import { useStore } from '../store';
@@ -66,6 +69,10 @@ interface PlaybookCardProps {
   onExport?: (playbook: PlaybookInfo) => void;
   onViewSteps?: (playbook: PlaybookInfo) => void;
   onEditPlaybook?: (playbook: PlaybookInfo) => void;
+  onSubmitToLibrary?: (playbook: PlaybookInfo) => void;
+  availableUpdate?: { latest_version: string; is_major_update: boolean; release_notes: string | null };
+  sections?: Array<{ id: string; name: string }>;
+  onMoveToSection?: (playbookPath: string, sectionId: string | null) => void;
 }
 
 // Get saved config for preview
@@ -84,7 +91,7 @@ function getSavedConfigPreview(playbookPath: string): SavedConfig | null {
   }
 }
 
-export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook }: PlaybookCardProps) {
+export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook, onSubmitToLibrary, availableUpdate, sections, onMoveToSection }: PlaybookCardProps) {
   const queryClient = useQueryClient();
   const [savedConfig, setSavedConfig] = useState<SavedConfig | null>(getSavedConfigPreview(playbook.path));
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
@@ -106,7 +113,27 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [duplicateName, setDuplicateName] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [sectionMenuAnchor, setSectionMenuAnchor] = useState<null | HTMLElement>(null);
   const selectedCredential = useStore((state) => state.selectedCredential);
+
+  // Mutation for updating playbook to latest version
+  const updatePlaybookMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/${encodeURIComponent(playbook.path)}/update`, { method: 'POST' });
+      if (!response.ok) throw new Error('Update failed');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playbooks'] });
+      queryClient.invalidateQueries({ queryKey: ['playbook-updates'] });
+      setSnackbarMessage('Playbook updated successfully');
+      setSnackbarOpen(true);
+    },
+    onError: (error) => {
+      setSnackbarMessage(`Failed to update: ${(error as Error).message}`);
+      setSnackbarOpen(true);
+    },
+  });
 
   const isDisabled = !playbook.enabled;
 
@@ -306,10 +333,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
     }
   };
 
-  // Format version: show revision only if non-zero
-  const versionText = playbook.revision > 0
-    ? `v${playbook.version}.r${playbook.revision}`
-    : `v${playbook.version}`;
+  const versionText = `v${playbook.version}`;
 
   return (
     <Card
@@ -367,10 +391,33 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           </Box>
         </Box>
 
-        {/* Version */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          {versionText}
-        </Typography>
+        {/* Version + Update indicator */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {versionText}
+          </Typography>
+          {availableUpdate && (
+            <Tooltip title={
+              availableUpdate.release_notes
+                ? `Update to v${availableUpdate.latest_version}: ${availableUpdate.release_notes}`
+                : `Update available: v${availableUpdate.latest_version}`
+            }>
+              <Chip
+                icon={<UpdateIcon sx={{ fontSize: '14px !important' }} />}
+                label={`v${availableUpdate.latest_version}`}
+                size="small"
+                color={availableUpdate.is_major_update ? 'warning' : 'info'}
+                variant="outlined"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updatePlaybookMutation.mutate();
+                }}
+                disabled={updatePlaybookMutation.isPending}
+                sx={{ height: 20, fontSize: '0.7rem', cursor: 'pointer' }}
+              />
+            </Tooltip>
+          )}
+        </Box>
 
         {/* Description - 2 lines max */}
         <Typography
@@ -676,6 +723,29 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           Export Playbook
         </MenuItem>
 
+        {/* Submit to Library */}
+        {onSubmitToLibrary && (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              onSubmitToLibrary(playbook);
+            }}
+          >
+            <StoreIcon fontSize="small" sx={{ mr: 1 }} />
+            Submit to Library
+          </MenuItem>
+        )}
+
+        {/* Move to Section */}
+        {sections && onMoveToSection && (
+          <MenuItem
+            onClick={(e) => setSectionMenuAnchor(e.currentTarget)}
+          >
+            <MoveIcon fontSize="small" sx={{ mr: 1 }} />
+            Move to Section
+          </MenuItem>
+        )}
+
         <Divider />
 
         {/* Delete Playbook */}
@@ -878,6 +948,41 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
         playbook={playbook}
         savedConfig={savedConfig}
       />
+
+      {/* Section submenu */}
+      {sections && onMoveToSection && (
+        <Menu
+          anchorEl={sectionMenuAnchor}
+          open={Boolean(sectionMenuAnchor)}
+          onClose={() => setSectionMenuAnchor(null)}
+        >
+          <MenuItem disabled sx={{ opacity: '0.7 !important', fontSize: '0.8rem', minHeight: 'auto', py: 0.5 }}>
+            Move to section
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              onMoveToSection(playbook.path, null);
+              setSectionMenuAnchor(null);
+              setMenuAnchor(null);
+            }}
+          >
+            Unsorted
+          </MenuItem>
+          <Divider />
+          {sections.map((section) => (
+            <MenuItem
+              key={section.id}
+              onClick={() => {
+                onMoveToSection(playbook.path, section.id);
+                setSectionMenuAnchor(null);
+                setMenuAnchor(null);
+              }}
+            >
+              {section.name}
+            </MenuItem>
+          ))}
+        </Menu>
+      )}
 
       {/* Snackbar for notifications */}
       <Snackbar

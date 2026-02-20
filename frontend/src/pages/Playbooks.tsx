@@ -14,7 +14,6 @@ import {
   Button,
   IconButton,
   Tooltip,
-  Badge,
   Snackbar,
   Alert as MuiAlert,
 } from '@mui/material';
@@ -25,10 +24,11 @@ import {
   DragIndicator as DragIcon,
   Add as AddIcon,
   Store as StoreIcon,
-  SystemUpdate as UpdateIcon,
-  RestartAlt as ResetIcon,
   VerifiedUser as VerifiedIcon,
   Warning as WarningIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  CreateNewFolder as NewSectionIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -56,11 +56,13 @@ const logger = createLogger('Playbooks');
 import { PlaybookExecutionDialog } from '../components/PlaybookExecutionDialog';
 import { PlaybookStepsDialog } from '../components/PlaybookStepsDialog';
 import { PlaybookLibraryDialog } from '../components/PlaybookLibraryDialog';
-import { PlaybookUpdatesDialog } from '../components/PlaybookUpdatesDialog';
+
 import { PlaybookEditorDialog } from '../components/PlaybookEditorDialog';
 import { CreatePlaybookDialog } from '../components/CreatePlaybookDialog';
+import { SubmitToLibraryDialog } from '../components/SubmitToLibraryDialog';
 import { useStore } from '../store';
 import { useCategoryOrder, useCategoryExpanded } from '../hooks/usePlaybookOrder';
+import { usePlaybookSections } from '../hooks/usePlaybookSections';
 import type { PlaybookInfo } from '../types/api';
 
 // Extracted modules
@@ -69,18 +71,21 @@ import { createCategoryDragEndHandler } from './PlaybookDragHandlers';
 import {
   handleExport as doExport,
   handleImport as doImport,
-  handleResetMetadata as doResetMetadata,
 } from './PlaybookImportExport';
 
 // Sortable playbook card wrapper
-function SortablePlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook, dragEnabled }: {
+function SortablePlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook, onSubmitToLibrary, dragEnabled, availableUpdate, sections, onMoveToSection }: {
   playbook: PlaybookInfo;
   onConfigure: (playbook: PlaybookInfo) => void;
   onExecute?: (playbook: PlaybookInfo) => void;
   onExport?: (playbook: PlaybookInfo) => void;
   onViewSteps?: (playbook: PlaybookInfo) => void;
   onEditPlaybook?: (playbook: PlaybookInfo) => void;
+  onSubmitToLibrary?: (playbook: PlaybookInfo) => void;
   dragEnabled: boolean;
+  availableUpdate?: { latest_version: string; is_major_update: boolean; release_notes: string | null };
+  sections?: Array<{ id: string; name: string }>;
+  onMoveToSection?: (playbookPath: string, sectionId: string | null) => void;
 }) {
   const {
     attributes,
@@ -107,6 +112,10 @@ function SortablePlaybookCard({ playbook, onConfigure, onExecute, onExport, onVi
         onExport={onExport}
         onViewSteps={onViewSteps}
         onEditPlaybook={onEditPlaybook}
+        onSubmitToLibrary={onSubmitToLibrary}
+        availableUpdate={availableUpdate}
+        sections={sections}
+        onMoveToSection={onMoveToSection}
       />
     </div>
   );
@@ -119,7 +128,9 @@ function SortableAccordion({
   onChange,
   dragEnabled,
   title,
-  children
+  children,
+  onRename,
+  onDelete,
 }: {
   categoryId: string;
   expanded: boolean;
@@ -127,6 +138,8 @@ function SortableAccordion({
   dragEnabled: boolean;
   title: string;
   children: React.ReactNode;
+  onRename?: () => void;
+  onDelete?: () => void;
 }) {
   const {
     attributes,
@@ -168,7 +181,25 @@ function SortableAccordion({
               <DragIcon fontSize="small" />
             </Box>
           )}
-          <Typography variant="h6" sx={{ fontSize: '1.1rem' }}>{title}</Typography>
+          <Typography variant="h6" sx={{ fontSize: '1.1rem', flexGrow: 1 }}>{title}</Typography>
+          {onRename && (
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); onRename(); }}
+              sx={{ p: 0.25 }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+          {onDelete && (
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              sx={{ p: 0.25, color: 'error.main' }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
         </AccordionSummary>
         <AccordionDetails>
           {children}
@@ -223,7 +254,20 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   const [editorPlaybook, setEditorPlaybook] = useState<PlaybookInfo | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
-  const [updatesDialogOpen, setUpdatesDialogOpen] = useState(false);
+  const [submitPlaybook, setSubmitPlaybook] = useState<PlaybookInfo | null>(null);
+
+  // Section management (per-domain, only used in filtered view)
+  const sectionsDomain = domainFilter || 'gateway';
+  const {
+    sections,
+    createSection,
+    deleteSection,
+    renameSection,
+    toggleSection,
+    movePlaybook,
+    reorderSections,
+    getUnsortedPlaybooks,
+  } = usePlaybookSections(sectionsDomain);
 
   // Category order and expanded state (managed by hooks with localStorage persistence)
   const { order: rawCategoryOrder, updateOrder: updateCategoryOrder } = useCategoryOrder();
@@ -237,13 +281,27 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Fetch update stats for badge
-  const { data: updateStats } = useQuery({
-    queryKey: ['playbook-update-stats'],
+  // Fetch available updates for card-level indicators
+  interface UpdateInfo {
+    latest_version: string;
+    is_major_update: boolean;
+    release_notes: string | null;
+  }
+  const { data: updateMap } = useQuery({
+    queryKey: ['playbook-updates'],
     queryFn: async () => {
-      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/updates/stats`);
-      if (!response.ok) return null;
-      return response.json();
+      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/updates`);
+      if (!response.ok) return new Map<string, UpdateInfo>();
+      const data = await response.json();
+      const map = new Map<string, UpdateInfo>();
+      for (const update of data.updates || []) {
+        map.set(update.playbook_path, {
+          latest_version: update.latest_version,
+          is_major_update: update.is_major_update,
+          release_notes: update.release_notes,
+        });
+      }
+      return map;
     },
     refetchInterval: 300000, // Refetch every 5 minutes
   });
@@ -445,13 +503,24 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
     doImport(showNotification, queryClient);
   };
 
-  const handleResetMetadata = () => {
-    doResetMetadata(showNotification, queryClient);
+  const handleSubmitToLibrary = (playbook: PlaybookInfo) => {
+    setSubmitPlaybook(playbook);
+  };
+
+  const handleMoveToSection = (playbookPath: string, sectionId: string | null) => {
+    movePlaybook(playbookPath, sectionId);
+  };
+
+  const handleNewSection = () => {
+    const name = window.prompt('Section name:');
+    if (name?.trim()) {
+      createSection(name.trim());
+    }
   };
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['playbooks'] });
-    queryClient.invalidateQueries({ queryKey: ['playbook-update-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['playbook-updates'] });
   };
 
   // Get filtered playbooks based on domainFilter prop
@@ -494,24 +563,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
             </Button>
           </Tooltip>
 
-          <Tooltip title="Check for playbook updates">
-            <Badge
-              badgeContent={updateStats?.total_updates_available || 0}
-              color="error"
-              invisible={!updateStats?.has_updates}
-            >
-              <Button
-                variant="outlined"
-                startIcon={<UpdateIcon />}
-                onClick={() => setUpdatesDialogOpen(true)}
-                size="small"
-                color={updateStats?.has_updates ? "warning" : "primary"}
-              >
-                Updates
-              </Button>
-            </Badge>
-          </Tooltip>
-
           <Tooltip title="Create a new playbook from template">
             <Button
               variant="outlined"
@@ -536,6 +587,19 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
             </Button>
           </Tooltip>
 
+          {domainFilter && (
+            <Tooltip title="Create a new section to organize playbooks">
+              <Button
+                variant="outlined"
+                startIcon={<NewSectionIcon />}
+                onClick={handleNewSection}
+                size="small"
+              >
+                New Section
+              </Button>
+            </Tooltip>
+          )}
+
           <Tooltip title="Import playbook from JSON export">
             <Button
               variant="outlined"
@@ -557,15 +621,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Reset all playbook metadata (troubleshooting)">
-            <IconButton
-              onClick={handleResetMetadata}
-              size="small"
-              color="warning"
-            >
-              <ResetIcon />
-            </IconButton>
-          </Tooltip>
         </Box>
       </Box>
 
@@ -597,90 +652,140 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         </Alert>
       )}
 
-      {/* Filtered Domain View (single domain, no accordions) */}
-      {!isLoading && !error && domainFilter && filteredPlaybooks && filteredPlaybooks.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={
+      {/* Filtered Domain View (single domain, with user sections) */}
+      {!isLoading && !error && domainFilter && filteredPlaybooks && filteredPlaybooks.length > 0 && (() => {
+        const { unverified } = splitByVerification(filteredPlaybooks);
+        const allPaths = filteredPlaybooks.map(p => p.path);
+        const unsortedPaths = getUnsortedPlaybooks(allPaths);
+        const unsortedPlaybooks = filteredPlaybooks.filter(p => unsortedPaths.includes(p.path));
+        const sectionMeta = sections.map(s => ({ id: s.id, name: s.name }));
+
+        const domainDragHandler =
           domainFilter === 'gateway' ? handleGatewayDragEnd :
           domainFilter === 'designer' ? handleDesignerDragEnd :
-          handlePerspectiveDragEnd
-        }>
-          <SortableContext items={filteredPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
-            {(() => {
-              const { verified, unverified } = splitByVerification(filteredPlaybooks);
-              return (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
-                  {/* Verified playbooks */}
-                  {verified.length > 0 && (
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                        <VerifiedIcon fontSize="small" color="success" />
-                        <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                          Verified ({verified.length})
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: getGridColumns(),
-                          gap: gridSpacing,
-                        }}
-                      >
-                        {verified.map((playbook) => (
-                          <SortablePlaybookCard
-                            key={playbook.path}
-                            playbook={playbook}
-                            onConfigure={handleConfigure}
-                            onExecute={handleExecute}
-                            onExport={handleExport}
-                            onViewSteps={handleViewSteps}
-                            onEditPlaybook={handleEditPlaybook}
-                            dragEnabled={dragEnabled}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
+          handlePerspectiveDragEnd;
 
-                  {/* Unverified playbooks */}
-                  {unverified.length > 0 && (
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <WarningIcon fontSize="small" color="warning" />
-                        <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                          Unverified ({unverified.length})
-                        </Typography>
-                      </Box>
-                      <Alert severity="warning" sx={{ mb: 1.5 }}>
-                        Unverified playbooks have not been reviewed or tested by the maintainer. Use at your own risk — review the playbook steps before executing.
-                      </Alert>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: getGridColumns(),
-                          gap: gridSpacing,
-                        }}
-                      >
-                        {unverified.map((playbook) => (
-                          <SortablePlaybookCard
-                            key={playbook.path}
-                            playbook={playbook}
-                            onConfigure={handleConfigure}
-                            onExecute={handleExecute}
-                            onExport={handleExport}
-                            onViewSteps={handleViewSteps}
-                            onEditPlaybook={handleEditPlaybook}
-                            dragEnabled={dragEnabled}
-                          />
-                        ))}
-                      </Box>
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
+            {/* Unverified warning banner */}
+            {unverified.length > 0 && (
+              <Alert severity="warning" icon={<WarningIcon />}>
+                {unverified.length} unverified playbook{unverified.length > 1 ? 's' : ''} — review steps before executing.
+              </Alert>
+            )}
+
+            {/* Unsorted playbooks */}
+            {unsortedPlaybooks.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500, mb: 1.5 }}>
+                  Unsorted ({unsortedPlaybooks.length})
+                </Typography>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={domainDragHandler}>
+                  <SortableContext items={unsortedPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: getGridColumns(),
+                        gap: gridSpacing,
+                      }}
+                    >
+                      {unsortedPlaybooks.map((playbook) => (
+                        <SortablePlaybookCard
+                          key={playbook.path}
+                          playbook={playbook}
+                          onConfigure={handleConfigure}
+                          onExecute={handleExecute}
+                          onExport={handleExport}
+                          onViewSteps={handleViewSteps}
+                          onEditPlaybook={handleEditPlaybook}
+                          onSubmitToLibrary={handleSubmitToLibrary}
+                          dragEnabled={dragEnabled}
+                          availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
+                          sections={sectionMeta}
+                          onMoveToSection={handleMoveToSection}
+                        />
+                      ))}
                     </Box>
-                  )}
-                </Box>
-              );
-            })()}
-          </SortableContext>
-        </DndContext>
-      )}
+                  </SortableContext>
+                </DndContext>
+              </Box>
+            )}
+
+            {/* User sections */}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event: DragEndEvent) => {
+              const { active, over } = event;
+              if (over && active.id !== over.id) {
+                const oldIndex = sections.findIndex(s => s.id === active.id);
+                const newIndex = sections.findIndex(s => s.id === over.id);
+                if (oldIndex !== -1 && newIndex !== -1) {
+                  reorderSections(arrayMove(sections, oldIndex, newIndex));
+                }
+              }
+            }}>
+              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {sections.map((section) => {
+                  const sectionPlaybooks = filteredPlaybooks.filter(p => section.playbooks.includes(p.path));
+
+                  return (
+                    <SortableAccordion
+                      key={section.id}
+                      categoryId={section.id}
+                      expanded={section.expanded}
+                      onChange={() => toggleSection(section.id)}
+                      dragEnabled={dragEnabled}
+                      title={`${section.name} (${sectionPlaybooks.length})`}
+                      onRename={() => {
+                        const newName = window.prompt('Rename section:', section.name);
+                        if (newName?.trim()) renameSection(section.id, newName.trim());
+                      }}
+                      onDelete={() => {
+                        if (window.confirm(`Delete section "${section.name}"? Playbooks will move to Unsorted.`)) {
+                          deleteSection(section.id);
+                        }
+                      }}
+                    >
+                      {sectionPlaybooks.length > 0 ? (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={domainDragHandler}>
+                          <SortableContext items={sectionPlaybooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
+                            <Box
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: getGridColumns(),
+                                gap: gridSpacing,
+                              }}
+                            >
+                              {sectionPlaybooks.map((playbook) => (
+                                <SortablePlaybookCard
+                                  key={playbook.path}
+                                  playbook={playbook}
+                                  onConfigure={handleConfigure}
+                                  onExecute={handleExecute}
+                                  onExport={handleExport}
+                                  onViewSteps={handleViewSteps}
+                                  onEditPlaybook={handleEditPlaybook}
+                                  onSubmitToLibrary={handleSubmitToLibrary}
+                                  dragEnabled={dragEnabled}
+                                  availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
+                                  sections={sectionMeta}
+                                  onMoveToSection={handleMoveToSection}
+                                />
+                              ))}
+                            </Box>
+                          </SortableContext>
+                        </DndContext>
+                      ) : (
+                        <Alert severity="info" sx={{ mt: 1 }}>
+                          No playbooks in this section. Use the card menu to move playbooks here.
+                        </Alert>
+                      )}
+                    </SortableAccordion>
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
+          </Box>
+        );
+      })()}
 
       {/* Organized Playbook Sections (all domains, with accordions) */}
       {!isLoading && !error && !domainFilter && (
@@ -753,7 +858,9 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                                           onExport={handleExport}
                                           onViewSteps={handleViewSteps}
                                           onEditPlaybook={handleEditPlaybook}
+                                          onSubmitToLibrary={handleSubmitToLibrary}
                                           dragEnabled={dragEnabled}
+                                          availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
                                         />
                                       ))}
                                     </Box>
@@ -788,7 +895,9 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                                           onExport={handleExport}
                                           onViewSteps={handleViewSteps}
                                           onEditPlaybook={handleEditPlaybook}
+                                          onSubmitToLibrary={handleSubmitToLibrary}
                                           dragEnabled={dragEnabled}
+                                          availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
                                         />
                                       ))}
                                     </Box>
@@ -841,10 +950,11 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         onClose={() => setLibraryDialogOpen(false)}
       />
 
-      {/* Playbook Updates Dialog */}
-      <PlaybookUpdatesDialog
-        open={updatesDialogOpen}
-        onClose={() => setUpdatesDialogOpen(false)}
+      {/* Submit to Library Dialog */}
+      <SubmitToLibraryDialog
+        open={submitPlaybook !== null}
+        onClose={() => setSubmitPlaybook(null)}
+        playbook={submitPlaybook}
       />
 
       {/* Playbook Editor Dialog (Form-based) */}

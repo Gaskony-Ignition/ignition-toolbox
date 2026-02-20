@@ -28,6 +28,20 @@ class PlaybookInstallRequest(BaseModel):
     verify_checksum: bool = True
 
 
+class PlaybookSubmitRequest(BaseModel):
+    """Request to submit a playbook to the library"""
+    playbook_path: str  # Local playbook path (e.g., "gateway/my_playbook.yaml")
+    author: str = "Community"
+    tags: list[str] = []
+    group: str = ""
+    release_notes: str | None = None
+
+
+class GitHubTokenRequest(BaseModel):
+    """Request to save a GitHub token"""
+    token: str
+
+
 # ============================================================================
 # Routes
 # ============================================================================
@@ -342,4 +356,108 @@ async def check_playbook_update(playbook_path: str):
 
     except Exception as e:
         logger.exception(f"Error checking update for {playbook_path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Submit to Library
+# ============================================================================
+
+
+@router.post("/submit")
+async def submit_playbook_to_library(request: PlaybookSubmitRequest):
+    """
+    Submit a playbook to the GitHub library.
+
+    Reads the local playbook YAML, then creates a commit in the repository
+    with the playbook file and updated index.
+    """
+    try:
+        from ignition_toolkit.playbook.submitter import submit_playbook
+        from ignition_toolkit.playbook.playbook_crud import get_playbook_info
+
+        # Get the playbook info and YAML content
+        info = get_playbook_info(request.playbook_path)
+        if not info:
+            raise HTTPException(status_code=404, detail=f"Playbook not found: {request.playbook_path}")
+
+        # Read the YAML file
+        from ignition_toolkit.playbook.core.validation import validate_and_resolve
+        resolved_path = validate_and_resolve(request.playbook_path)
+        yaml_content = resolved_path.read_text(encoding="utf-8")
+
+        metadata = {
+            "name": info.get("name", ""),
+            "version": info.get("version", "1.0"),
+            "description": info.get("description", ""),
+            "domain": info.get("domain", "gateway"),
+            "author": request.author,
+            "tags": request.tags,
+            "group": request.group,
+            "release_notes": request.release_notes,
+        }
+
+        result = await submit_playbook(
+            yaml_content=yaml_content,
+            playbook_path=request.playbook_path,
+            metadata=metadata,
+        )
+
+        return {
+            "status": "success",
+            **result,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Error submitting playbook: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/github-token")
+async def get_github_token_status():
+    """Check if a GitHub token is configured and return a masked preview."""
+    try:
+        from ignition_toolkit.playbook.submitter import get_token_preview
+
+        preview = get_token_preview()
+        return {
+            "configured": preview is not None,
+            "preview": preview,
+        }
+    except Exception as e:
+        logger.exception(f"Error checking GitHub token: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/github-token")
+async def save_github_token_endpoint(request: GitHubTokenRequest):
+    """Save a GitHub Personal Access Token."""
+    try:
+        from ignition_toolkit.playbook.submitter import save_github_token
+
+        save_github_token(request.token)
+        return {
+            "status": "success",
+            "message": "GitHub token saved successfully",
+        }
+    except Exception as e:
+        logger.exception(f"Error saving GitHub token: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/github-token")
+async def delete_github_token_endpoint():
+    """Remove the stored GitHub token."""
+    try:
+        from ignition_toolkit.playbook.submitter import delete_github_token
+
+        delete_github_token()
+        return {
+            "status": "success",
+            "message": "GitHub token removed",
+        }
+    except Exception as e:
+        logger.exception(f"Error deleting GitHub token: {e}")
         raise HTTPException(status_code=500, detail=str(e))

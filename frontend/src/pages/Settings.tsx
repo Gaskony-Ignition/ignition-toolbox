@@ -41,6 +41,7 @@ import {
   MonitorHeart as DiagnosticsIcon,
   Storage as DataIcon,
   Terminal as LogsIcon,
+  GitHub as GitHubIcon,
 } from '@mui/icons-material';
 import { Credentials } from './Credentials';
 import { DiagnosticsSection, DataManagementSection, LogsSection } from '../components/DiagnosticsPanel';
@@ -51,13 +52,14 @@ import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
 import type { UpdateStatus } from '../types/electron';
 
-type SettingsTab = 'credentials' | 'diagnostics' | 'data' | 'logs' | 'updates' | 'appearance' | 'about';
+type SettingsTab = 'credentials' | 'diagnostics' | 'data' | 'logs' | 'integrations' | 'updates' | 'appearance' | 'about';
 
 const settingsTabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'credentials', label: 'Gateway Credentials', icon: <CredentialsIcon /> },
   { id: 'diagnostics', label: 'Diagnostics', icon: <DiagnosticsIcon /> },
   { id: 'data', label: 'Data Management', icon: <DataIcon /> },
   { id: 'logs', label: 'Logs', icon: <LogsIcon /> },
+  { id: 'integrations', label: 'Integrations', icon: <GitHubIcon /> },
   { id: 'updates', label: 'Updates', icon: <DownloadIcon /> },
   { id: 'appearance', label: 'Appearance', icon: <AppearanceIcon /> },
   { id: 'about', label: 'About', icon: <AboutIcon /> },
@@ -78,12 +80,27 @@ export function Settings() {
   const playbookGridColumns = useStore((state) => state.playbookGridColumns);
   const setPlaybookGridColumns = useStore((state) => state.setPlaybookGridColumns);
 
+  // GitHub token state
+  const [githubToken, setGithubToken] = useState('');
+  const [githubTokenPreview, setGithubTokenPreview] = useState<string | null>(null);
+  const [githubTokenConfigured, setGithubTokenConfigured] = useState(false);
+  const [githubTokenSaving, setGithubTokenSaving] = useState(false);
+
   // Get app version and health on mount
   useEffect(() => {
     if (isElectron() && window.electronAPI) {
       window.electronAPI.getVersion().then(setAppVersion).catch(() => {});
     }
     api.health().then(setHealth).catch(() => {});
+
+    // Fetch GitHub token status
+    fetch(`${api.getBaseUrl()}/api/playbooks/github-token`)
+      .then(r => r.json())
+      .then(data => {
+        setGithubTokenConfigured(data.configured);
+        setGithubTokenPreview(data.preview);
+      })
+      .catch(() => {});
   }, []);
 
   // Listen for update events from Electron
@@ -188,6 +205,101 @@ export function Settings() {
       }));
     }
   };
+
+  const handleSaveGithubToken = async () => {
+    if (!githubToken.trim()) return;
+    setGithubTokenSaving(true);
+    try {
+      await fetch(`${api.getBaseUrl()}/api/playbooks/github-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: githubToken.trim() }),
+      });
+      setGithubTokenConfigured(true);
+      setGithubTokenPreview(`${githubToken.trim().slice(0, 4)}...${githubToken.trim().slice(-4)}`);
+      setGithubToken('');
+    } catch {
+      // Error handled silently
+    } finally {
+      setGithubTokenSaving(false);
+    }
+  };
+
+  const handleClearGithubToken = async () => {
+    try {
+      await fetch(`${api.getBaseUrl()}/api/playbooks/github-token`, { method: 'DELETE' });
+      setGithubTokenConfigured(false);
+      setGithubTokenPreview(null);
+    } catch {
+      // Error handled silently
+    }
+  };
+
+  const renderIntegrationsContent = () => (
+    <Box sx={{ width: '100%', maxWidth: '100%' }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Integrations
+      </Typography>
+
+      <Stack spacing={3}>
+        <Paper
+          sx={{
+            p: 3,
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+            GitHub - Submit to Library
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            A GitHub Personal Access Token (PAT) with <strong>repo</strong> scope is required to submit playbooks to the library repository.
+          </Typography>
+
+          {githubTokenConfigured ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Chip
+                label={`Token: ${githubTokenPreview || '****'}`}
+                color="success"
+                variant="outlined"
+              />
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={handleClearGithubToken}
+              >
+                Remove Token
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <TextField
+                label="GitHub Personal Access Token"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                type="password"
+                size="small"
+                fullWidth
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+              <Button
+                variant="contained"
+                onClick={handleSaveGithubToken}
+                disabled={!githubToken.trim() || githubTokenSaving}
+                sx={{ minWidth: 80 }}
+              >
+                {githubTokenSaving ? 'Saving...' : 'Save'}
+              </Button>
+            </Box>
+          )}
+        </Paper>
+      </Stack>
+    </Box>
+  );
 
   const renderUpdatesContent = () => (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
@@ -656,6 +768,7 @@ export function Settings() {
           {activeTab === 'diagnostics' && <DiagnosticsSection />}
           {activeTab === 'data' && <DataManagementSection />}
           {activeTab === 'logs' && <LogsSection />}
+          {activeTab === 'integrations' && renderIntegrationsContent()}
           {activeTab === 'updates' && renderUpdatesContent()}
           {activeTab === 'appearance' && renderAppearanceContent()}
           {activeTab === 'about' && renderAboutContent()}

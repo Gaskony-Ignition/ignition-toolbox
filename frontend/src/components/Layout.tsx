@@ -373,7 +373,7 @@ export function Layout({ children }: LayoutProps) {
             display: 'flex',
             alignItems: 'center',
             px: 2,
-            justifyContent: 'flex-end',
+            justifyContent: 'flex-start',
             gap: 0.5,
             flexShrink: 0,
           }}
