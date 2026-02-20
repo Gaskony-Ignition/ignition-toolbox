@@ -33,7 +33,6 @@ import {
   History as PastExecutionsIcon,
   AutoStories as PlaybooksIcon,
   Apps as ServicesIcon,
-  Tune as TuneIcon,
   Extension as IntegrationsIcon,
   Code as PreviewIcon,
 } from '@mui/icons-material';
@@ -69,6 +68,7 @@ function getBadgeSx(badge: string) {
 
 const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
   { id: 'playbooks', label: 'Playbooks', icon: <PlaybooksIcon fontSize="small" /> },
+  { id: 'designer', label: 'Browser Designer', icon: <DesignerIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Coming Soon' },
   { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Coming Soon' },
@@ -77,14 +77,12 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: 
 
 const stackSubTabs: { id: StackSubTab; label: string; icon: React.ReactNode }[] = [
   { id: 'services', label: 'Services', icon: <ServicesIcon sx={{ fontSize: '1rem' }} /> },
-  { id: 'settings', label: 'Settings', icon: <TuneIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'integrations', label: 'Integrations', icon: <IntegrationsIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'preview', label: 'Preview', icon: <PreviewIcon sx={{ fontSize: '1rem' }} /> },
 ];
 
 const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
-  { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} />, badge: 'Coming Soon' },
   { id: 'active-execution', label: 'Active Execution', icon: <ActiveExecutionIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'past-executions', label: 'Past Executions', icon: <PastExecutionsIcon sx={{ fontSize: '1rem' }} /> },

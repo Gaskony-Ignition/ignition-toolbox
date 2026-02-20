@@ -32,7 +32,6 @@ import {
 import {
   Settings as ConfigureIcon,
   PlayArrow as PlayIcon,
-  Warning as WarningIcon,
   Download as DownloadIcon,
   MoreVert as MoreVertIcon,
   List as ViewStepsIcon,
@@ -367,14 +366,10 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1, flexShrink: 0 }}>
-            {/* Verified/Unverified icon */}
-            {playbook.verified ? (
+            {/* Verified icon (only shown for verified playbooks) */}
+            {playbook.verified && (
               <Tooltip title="Verified">
                 <CheckCircleIcon color="success" sx={{ fontSize: 18 }} />
-              </Tooltip>
-            ) : (
-              <Tooltip title="Unverified - use with caution">
-                <WarningIcon color="warning" sx={{ fontSize: 18 }} />
               </Tooltip>
             )}
 

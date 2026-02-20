@@ -29,8 +29,6 @@ import {
   DragIndicator as DragIcon,
   Add as AddIcon,
   Store as StoreIcon,
-  VerifiedUser as VerifiedIcon,
-  Warning as WarningIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   CreateNewFolder as NewSectionIcon,
@@ -72,7 +70,7 @@ import { usePlaybookSections } from '../hooks/usePlaybookSections';
 import type { PlaybookInfo } from '../types/api';
 
 // Extracted modules
-import { categorizePlaybooks, splitByVerification, domainNames } from './PlaybookCategorySection';
+import { categorizePlaybooks, domainNames } from './PlaybookCategorySection';
 import { createCategoryDragEndHandler } from './PlaybookDragHandlers';
 import {
   handleExport as doExport,
@@ -693,7 +691,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
 
       {/* Filtered Domain View (single domain, with user sections) */}
       {!isLoading && !error && domainFilter && filteredPlaybooks && filteredPlaybooks.length > 0 && (() => {
-        const { unverified } = splitByVerification(filteredPlaybooks);
         const allPaths = filteredPlaybooks.map(p => p.path);
         const unsortedPaths = getUnsortedPlaybooks(allPaths);
         const unsortedPlaybooks = filteredPlaybooks.filter(p => unsortedPaths.includes(p.path));
@@ -755,14 +752,8 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         return (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSectionDragEnd}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
-            {/* Unverified warning banner */}
-            {unverified.length > 0 && (
-              <Alert severity="warning" icon={<WarningIcon />}>
-                {unverified.length} unverified playbook{unverified.length > 1 ? 's' : ''} — review steps before executing.
-              </Alert>
-            )}
-
-            {/* Unsorted playbooks */}
+            {/* Unsorted playbooks - only show when there are unsorted playbooks or in drag mode */}
+            {(unsortedPlaybooks.length > 0 || dragEnabled) && (
             <DroppableZone id="drop-unsorted">
               <Box>
                 <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500, mb: 1.5 }}>
@@ -797,11 +788,12 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                   </SortableContext>
                 ) : (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-                    All playbooks are organized into sections.
+                    Drag playbooks here to unassign from sections.
                   </Typography>
                 )}
               </Box>
             </DroppableZone>
+            )}
 
             {/* User sections */}
             <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
@@ -915,83 +907,28 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                     {categoryConfig.playbooks.length > 0 ? (
                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={categoryConfig.dragHandler}>
                         <SortableContext items={categoryConfig.playbooks.map(p => p.path)} strategy={verticalListSortingStrategy}>
-                          {(() => {
-                            const { verified, unverified } = splitByVerification(categoryConfig.playbooks);
-                            return (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap }}>
-                                {/* Verified playbooks */}
-                                {verified.length > 0 && (
-                                  <Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                                      <VerifiedIcon fontSize="small" color="success" />
-                                      <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                                        Verified ({verified.length})
-                                      </Typography>
-                                    </Box>
-                                    <Box
-                                      sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: getGridColumns(true),
-                                        gap: gridSpacing,
-                                      }}
-                                    >
-                                      {verified.map((playbook) => (
-                                        <SortablePlaybookCard
-                                          key={playbook.path}
-                                          playbook={playbook}
-                                          onConfigure={handleConfigure}
-                                          onExecute={handleExecute}
-                                          onExport={handleExport}
-                                          onViewSteps={handleViewSteps}
-                                          onEditPlaybook={handleEditPlaybook}
-                                          onSubmitToLibrary={handleSubmitToLibrary}
-                                          dragEnabled={dragEnabled}
-                                          availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
-                                        />
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                )}
-
-                                {/* Unverified playbooks */}
-                                {unverified.length > 0 && (
-                                  <Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                      <WarningIcon fontSize="small" color="warning" />
-                                      <Typography variant="subtitle1" sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                                        Unverified ({unverified.length})
-                                      </Typography>
-                                    </Box>
-                                    <Alert severity="warning" sx={{ mb: 1.5 }}>
-                                      Unverified playbooks have not been reviewed or tested by the maintainer. Use at your own risk — review the playbook steps before executing.
-                                    </Alert>
-                                    <Box
-                                      sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: getGridColumns(true),
-                                        gap: gridSpacing,
-                                      }}
-                                    >
-                                      {unverified.map((playbook) => (
-                                        <SortablePlaybookCard
-                                          key={playbook.path}
-                                          playbook={playbook}
-                                          onConfigure={handleConfigure}
-                                          onExecute={handleExecute}
-                                          onExport={handleExport}
-                                          onViewSteps={handleViewSteps}
-                                          onEditPlaybook={handleEditPlaybook}
-                                          onSubmitToLibrary={handleSubmitToLibrary}
-                                          dragEnabled={dragEnabled}
-                                          availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
-                                        />
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                )}
-                              </Box>
-                            );
-                          })()}
+                          <Box
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: getGridColumns(true),
+                              gap: gridSpacing,
+                            }}
+                          >
+                            {categoryConfig.playbooks.map((playbook) => (
+                              <SortablePlaybookCard
+                                key={playbook.path}
+                                playbook={playbook}
+                                onConfigure={handleConfigure}
+                                onExecute={handleExecute}
+                                onExport={handleExport}
+                                onViewSteps={handleViewSteps}
+                                onEditPlaybook={handleEditPlaybook}
+                                onSubmitToLibrary={handleSubmitToLibrary}
+                                dragEnabled={dragEnabled}
+                                availableUpdate={updateMap?.get(playbook.path.replace('.yaml', '').replace('.yml', ''))}
+                              />
+                            ))}
+                          </Box>
                         </SortableContext>
                       </DndContext>
                     ) : (

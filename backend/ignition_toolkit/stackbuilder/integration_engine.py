@@ -523,54 +523,51 @@ class IntegrationEngine:
 
         return labels
 
-    def get_integration_summary(self, detection_result: dict) -> str:
-        """Generate a human-readable summary of detected integrations"""
-        lines = ["# Integration Summary\n"]
+    def get_integration_summary(self, detection_result: dict) -> list[str]:
+        """Generate a list of human-readable summary items for detected integrations"""
+        items: list[str] = []
 
         integrations = detection_result.get("integrations", {})
 
         if "reverse_proxy" in integrations:
             rp = integrations["reverse_proxy"]
-            lines.append(f"## Reverse Proxy: {rp['provider']}")
-            lines.append(f"Configured {len(rp['targets'])} services:")
-            for target in rp["targets"]:
-                lines.append(f"  - {target['instance_name']} -> {target['default_subdomain']}.localhost")
-            lines.append("")
+            target_count = len(rp.get("targets", []))
+            items.append(f"Reverse Proxy: {rp['provider']} \u2014 {target_count} service{'s' if target_count != 1 else ''} configured")
 
         if "oauth_provider" in integrations:
             oauth = integrations["oauth_provider"]
-            provider_names = [p["service_id"] for p in oauth["providers"]]
-            lines.append(f"## OAuth/SSO: {', '.join(provider_names)}")
-            lines.append(f"Configured {len(oauth['clients'])} clients:")
-            for client in oauth["clients"]:
-                lines.append(f"  - {client['instance_name']} -> {client['provider']}")
-            lines.append("")
+            provider_names = [p["service_id"] for p in oauth.get("providers", [])]
+            client_count = len(oauth.get("clients", []))
+            items.append(f"OAuth/SSO: {', '.join(provider_names)} \u2014 {client_count} client{'s' if client_count != 1 else ''} configured")
 
         if "db_provider" in integrations:
             db = integrations["db_provider"]
-            lines.append("## Databases")
-            for provider in db["providers"]:
-                lines.append(f"  Provider: {provider['instance_name']}")
-            for client in db["clients"]:
-                if client.get("auto_register"):
-                    lines.append(f"  - Auto-registered in {client['instance_name']}")
-            lines.append("")
+            for provider in db.get("providers", []):
+                auto_clients = [c for c in db.get("clients", []) if c.get("auto_register")]
+                suffix = " \u2014 auto-registration enabled" if auto_clients else ""
+                items.append(f"Database: {provider['instance_name']}{suffix}")
 
-        conflicts = detection_result.get("conflicts", [])
-        if conflicts:
-            lines.append("## Conflicts")
-            for conflict in conflicts:
-                lines.append(f"  - {conflict['message']}")
-            lines.append("")
+        if "mqtt_broker" in integrations:
+            mqtt = integrations["mqtt_broker"]
+            provider_count = len(mqtt.get("providers", []))
+            client_count = len(mqtt.get("clients", []))
+            if provider_count > 0:
+                provider_name = mqtt["providers"][0].get("instance_name", "mqtt")
+                items.append(f"MQTT Broker: {provider_name} \u2014 {client_count} client{'s' if client_count != 1 else ''}")
 
-        warnings = detection_result.get("warnings", [])
-        if warnings:
-            lines.append("## Warnings")
-            for warning in warnings:
-                lines.append(f"  - {warning['message']}")
-            lines.append("")
+        if "visualization" in integrations:
+            viz = integrations["visualization"]
+            ds_count = len(viz.get("datasources", []))
+            if viz.get("provider"):
+                items.append(f"Visualization: {viz['provider']} \u2014 {ds_count} datasource{'s' if ds_count != 1 else ''}")
 
-        return "\n".join(lines)
+        if "email_testing" in integrations:
+            email = integrations["email_testing"]
+            client_count = len(email.get("clients", []))
+            if email.get("provider"):
+                items.append(f"Email Testing: {email['provider']} \u2014 {client_count} client{'s' if client_count != 1 else ''}")
+
+        return items
 
 
 # Singleton instance

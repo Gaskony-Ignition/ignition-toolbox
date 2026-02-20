@@ -14,7 +14,7 @@ import {
   Alert,
   Chip,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { ParameterInput } from './ParameterInput';
@@ -188,6 +188,13 @@ export function PlaybookExecutionDialog({
             </Typography>
           )}
         </Box>
+
+        {/* Unverified playbook warning */}
+        {!playbook.verified && (
+          <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 2 }}>
+            This playbook has not been verified. Review the steps before executing.
+          </Alert>
+        )}
 
         {/* Show selected credential info if available */}
         {selectedCredential && !savedConfig && (

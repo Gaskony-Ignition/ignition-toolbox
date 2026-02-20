@@ -262,15 +262,25 @@ export function Designer() {
             </Typography>
           </Box>
 
-          {/* Status indicator */}
-          {dockerStatus?.running && (
-            <Chip
-              icon={isRunning ? <RunningIcon /> : <InfoIcon />}
-              label={isRunning ? 'Running' : containerStatus?.status || 'Stopped'}
-              color={isRunning ? 'success' : 'default'}
-              size="small"
-            />
-          )}
+          {/* Status indicator + credential info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {selectedCredential && (
+              <Chip
+                label={`${selectedCredential.name}${selectedCredential.gateway_url ? ` (${new URL(selectedCredential.gateway_url).hostname})` : ''}`}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            )}
+            {dockerStatus?.running && (
+              <Chip
+                icon={isRunning ? <RunningIcon /> : <InfoIcon />}
+                label={isRunning ? 'Running' : containerStatus?.status || 'Stopped'}
+                color={isRunning ? 'success' : 'default'}
+                size="small"
+              />
+            )}
+          </Box>
         </Box>
 
         {/* Loading state */}

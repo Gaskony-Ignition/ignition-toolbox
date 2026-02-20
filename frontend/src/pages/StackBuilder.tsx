@@ -54,6 +54,7 @@ import {
   PlayArrow as DeployIcon,
   Stop as StopIcon,
   Circle as StatusIcon,
+  Tune as TuneIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type StackBuilderApplication } from '../api/client';
@@ -467,6 +468,7 @@ export function StackBuilder() {
       auto_configure_services: true,
     },
   });
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceApplication | null>(null);
   const [editingInstance, setEditingInstance] = useState<ServiceInstance | undefined>();
@@ -750,91 +752,24 @@ export function StackBuilder() {
         </Box>
         )}
 
-        {/* Settings Tab */}
-        {stackSubTab === 'settings' && (
-        <Box sx={{ p: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Global Stack Settings
-            </Typography>
-            <TextField
-              label="Stack Name"
-              value={globalSettings.stack_name}
-              onChange={(e) => setGlobalSettings({ ...globalSettings, stack_name: e.target.value })}
-              fullWidth
-              size="small"
-            />
-            <FormControl fullWidth size="small">
-              <InputLabel>Timezone</InputLabel>
-              <Select
-                value={globalSettings.timezone}
-                onChange={(e) => setGlobalSettings({ ...globalSettings, timezone: e.target.value })}
-                label="Timezone"
-              >
-                <MenuItem value="UTC">UTC</MenuItem>
-                <MenuItem value="America/New_York">America/New_York</MenuItem>
-                <MenuItem value="America/Chicago">America/Chicago</MenuItem>
-                <MenuItem value="America/Denver">America/Denver</MenuItem>
-                <MenuItem value="America/Los_Angeles">America/Los_Angeles</MenuItem>
-                <MenuItem value="Europe/London">Europe/London</MenuItem>
-                <MenuItem value="Europe/Paris">Europe/Paris</MenuItem>
-                <MenuItem value="Asia/Tokyo">Asia/Tokyo</MenuItem>
-                <MenuItem value="Australia/Sydney">Australia/Sydney</MenuItem>
-                <MenuItem value="Australia/Adelaide">Australia/Adelaide</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth size="small">
-              <InputLabel>Restart Policy</InputLabel>
-              <Select
-                value={globalSettings.restart_policy}
-                onChange={(e) => setGlobalSettings({ ...globalSettings, restart_policy: e.target.value })}
-                label="Restart Policy"
-              >
-                <MenuItem value="no">No</MenuItem>
-                <MenuItem value="always">Always</MenuItem>
-                <MenuItem value="on-failure">On Failure</MenuItem>
-                <MenuItem value="unless-stopped">Unless Stopped</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Divider sx={{ my: 1 }} />
-
-            <Typography variant="subtitle2" color="text.secondary">
-              Docker Installation
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CloudDownloadIcon />}
-                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/linux`}
-                download="install-docker-linux.sh"
-              >
-                Linux Script
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<CloudDownloadIcon />}
-                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/windows`}
-                download="install-docker-windows.ps1"
-              >
-                Windows Script
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-        )}
-
         {/* Integrations Tab */}
         {stackSubTab === 'integrations' && (
         <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {/* Info message when no integrations are active */}
+            {!hasTraefik && !hasMqtt && !hasOAuth && !hasDatabase && !hasEmail && (
+              <Alert severity="info" sx={{ mb: 1 }}>
+                Add services like Traefik, Mosquitto, or Keycloak to enable integrations.
+              </Alert>
+            )}
+
             {/* Reverse Proxy Settings */}
-            <Accordion expanded={hasTraefik} disabled={!hasTraefik}>
+            <Accordion disabled={!hasTraefik}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  Reverse Proxy {hasTraefik && <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} />}
+                  {hasTraefik
+                    ? <>Reverse Proxy <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} /></>
+                    : 'Reverse Proxy (add Traefik to enable)'}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -878,10 +813,12 @@ export function StackBuilder() {
             </Accordion>
 
             {/* MQTT Settings */}
-            <Accordion expanded={hasMqtt} disabled={!hasMqtt}>
+            <Accordion disabled={!hasMqtt}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  MQTT Broker {hasMqtt && <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} />}
+                  {hasMqtt
+                    ? <>MQTT Broker <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} /></>
+                    : 'MQTT Broker (add Mosquitto or EMQX to enable)'}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -924,10 +861,12 @@ export function StackBuilder() {
             </Accordion>
 
             {/* OAuth Settings */}
-            <Accordion expanded={hasOAuth} disabled={!hasOAuth}>
+            <Accordion disabled={!hasOAuth}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  OAuth/SSO {hasOAuth && <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} />}
+                  {hasOAuth
+                    ? <>OAuth/SSO <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} /></>
+                    : 'OAuth/SSO (add Keycloak or Authentik to enable)'}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -959,10 +898,12 @@ export function StackBuilder() {
             </Accordion>
 
             {/* Database Settings */}
-            <Accordion expanded={hasDatabase} disabled={!hasDatabase}>
+            <Accordion disabled={!hasDatabase}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  Database {hasDatabase && <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} />}
+                  {hasDatabase
+                    ? <>Database <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} /></>
+                    : 'Database (add PostgreSQL, MariaDB, or MSSQL to enable)'}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -985,10 +926,12 @@ export function StackBuilder() {
             </Accordion>
 
             {/* Email Settings */}
-            <Accordion expanded={hasEmail} disabled={!hasEmail}>
+            <Accordion disabled={!hasEmail}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">
-                  Email {hasEmail && <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} />}
+                  {hasEmail
+                    ? <>Email <Chip label="Active" size="small" color="success" sx={{ ml: 1 }} /></>
+                    : 'Email (add MailHog to enable)'}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -1163,6 +1106,21 @@ export function StackBuilder() {
                 </span>
               </Tooltip>
             )}
+            {/* Settings icon button */}
+            <Tooltip title="Stack Settings">
+              <IconButton
+                onClick={() => setSettingsDialogOpen(true)}
+                size="small"
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  p: 0.75,
+                }}
+              >
+                <TuneIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
           {/* Deployment error/success messages */}
           {deployMutation.isError && (
@@ -1381,6 +1339,86 @@ export function StackBuilder() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLoadDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={settingsDialogOpen} onClose={() => setSettingsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Stack Settings</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Global Stack Settings
+            </Typography>
+            <TextField
+              label="Stack Name"
+              value={globalSettings.stack_name}
+              onChange={(e) => setGlobalSettings({ ...globalSettings, stack_name: e.target.value })}
+              fullWidth
+              size="small"
+            />
+            <FormControl fullWidth size="small">
+              <InputLabel>Timezone</InputLabel>
+              <Select
+                value={globalSettings.timezone}
+                onChange={(e) => setGlobalSettings({ ...globalSettings, timezone: e.target.value })}
+                label="Timezone"
+              >
+                <MenuItem value="UTC">UTC</MenuItem>
+                <MenuItem value="America/New_York">America/New_York</MenuItem>
+                <MenuItem value="America/Chicago">America/Chicago</MenuItem>
+                <MenuItem value="America/Denver">America/Denver</MenuItem>
+                <MenuItem value="America/Los_Angeles">America/Los_Angeles</MenuItem>
+                <MenuItem value="Europe/London">Europe/London</MenuItem>
+                <MenuItem value="Europe/Paris">Europe/Paris</MenuItem>
+                <MenuItem value="Asia/Tokyo">Asia/Tokyo</MenuItem>
+                <MenuItem value="Australia/Sydney">Australia/Sydney</MenuItem>
+                <MenuItem value="Australia/Adelaide">Australia/Adelaide</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth size="small">
+              <InputLabel>Restart Policy</InputLabel>
+              <Select
+                value={globalSettings.restart_policy}
+                onChange={(e) => setGlobalSettings({ ...globalSettings, restart_policy: e.target.value })}
+                label="Restart Policy"
+              >
+                <MenuItem value="no">No</MenuItem>
+                <MenuItem value="always">Always</MenuItem>
+                <MenuItem value="on-failure">On Failure</MenuItem>
+                <MenuItem value="unless-stopped">Unless Stopped</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Typography variant="subtitle2" color="text.secondary">
+              Docker Installation
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<CloudDownloadIcon />}
+                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/linux`}
+                download="install-docker-linux.sh"
+              >
+                Linux Script
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<CloudDownloadIcon />}
+                href={`${api.getBaseUrl()}/api/stackbuilder/download/docker-installer/windows`}
+                download="install-docker-windows.ps1"
+              >
+                Windows Script
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSettingsDialogOpen(false)} variant="contained">Done</Button>
         </DialogActions>
       </Dialog>
     </Box>
