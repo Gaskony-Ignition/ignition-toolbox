@@ -641,16 +641,8 @@ docker info`}
                 >
                   {isStopping ? 'Stopping...' : 'Stop Container'}
                 </Button>
-                <Typography variant="body2" color="text.secondary">
-                  Or open directly:{' '}
-                  <a
-                    href="http://localhost:8080/connect"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'inherit' }}
-                  >
-                    http://localhost:8080/connect
-                  </a>
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                  URL: http://localhost:8080/connect
                 </Typography>
               </Stack>
             )}

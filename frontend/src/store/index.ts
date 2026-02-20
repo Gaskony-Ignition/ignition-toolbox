@@ -8,6 +8,7 @@ import type { ExecutionUpdate, CredentialInfo, ScreenshotFrame } from '../types/
 // Tab navigation types
 export type MainTab = 'playbooks' | 'api' | 'stackbuilder' | 'udtbuilder' | 'settings';
 export type PlaybookSubTab = 'gateway' | 'designer' | 'perspective' | 'active-execution' | 'past-executions';
+export type StackSubTab = 'services' | 'settings' | 'integrations' | 'preview';
 
 // Initialize tab state from localStorage
 const getInitialMainTab = (): MainTab => {
@@ -20,6 +21,12 @@ const getInitialPlaybookSubTab = (): PlaybookSubTab => {
   const stored = localStorage.getItem('playbookSubTab');
   const valid: PlaybookSubTab[] = ['gateway', 'designer', 'perspective', 'active-execution', 'past-executions'];
   return valid.includes(stored as PlaybookSubTab) ? (stored as PlaybookSubTab) : 'gateway';
+};
+
+const getInitialStackSubTab = (): StackSubTab => {
+  const stored = localStorage.getItem('stackSubTab');
+  const valid: StackSubTab[] = ['services', 'settings', 'integrations', 'preview'];
+  return valid.includes(stored as StackSubTab) ? (stored as StackSubTab) : 'services';
 };
 
 // Initialize theme from localStorage or default to 'dark'
@@ -59,6 +66,8 @@ interface AppState {
   setMainTab: (tab: MainTab) => void;
   playbookSubTab: PlaybookSubTab;
   setPlaybookSubTab: (tab: PlaybookSubTab) => void;
+  stackSubTab: StackSubTab;
+  setStackSubTab: (tab: StackSubTab) => void;
   activeExecutionId: string | null;
   setActiveExecutionId: (id: string | null) => void;
 
@@ -113,6 +122,12 @@ export const useStore = create<AppState>((set) => ({
   setPlaybookSubTab: (tab) => {
     localStorage.setItem('playbookSubTab', tab);
     set({ playbookSubTab: tab });
+  },
+
+  stackSubTab: getInitialStackSubTab(),
+  setStackSubTab: (tab) => {
+    localStorage.setItem('stackSubTab', tab);
+    set({ stackSubTab: tab });
   },
 
   activeExecutionId: null,

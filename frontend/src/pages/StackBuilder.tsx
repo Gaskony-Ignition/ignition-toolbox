@@ -13,8 +13,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Tab,
-  Tabs,
   Card,
   CardContent,
   CardActions,
@@ -59,20 +57,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type StackBuilderApplication } from '../api/client';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel({ children, value, index }: TabPanelProps) {
-  return (
-    <Box role="tabpanel" hidden={value !== index} sx={{ p: 2 }}>
-      {value === index && children}
-    </Box>
-  );
-}
+import { useStore } from '../store';
 
 interface ServiceInstance {
   app_id: string;
@@ -451,7 +436,7 @@ function ServiceConfigDialog({
 
 export function StackBuilder() {
   const queryClient = useQueryClient();
-  const [tabValue, setTabValue] = useState(0);
+  const stackSubTab = useStore((state) => state.stackSubTab);
   const [instances, setInstances] = useState<ServiceInstance[]>([]);
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
     stack_name: 'iiot-stack',
@@ -703,39 +688,12 @@ export function StackBuilder() {
   const hasEmail = instances.some((i) => i.app_id === 'mailhog');
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 100px)' }}>
+    <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 140px)' }}>
       {/* Left Panel: Service Catalog & Config */}
-      <Paper sx={{ width: 380, overflow: 'auto', display: 'flex' }}>
-        {/* Vertical Tab Navigation */}
-        <Tabs
-          value={tabValue}
-          onChange={(_, v) => setTabValue(v)}
-          orientation="vertical"
-          sx={{
-            borderRight: 1,
-            borderColor: 'divider',
-            minWidth: 100,
-            '& .MuiTab-root': {
-              minHeight: 48,
-              py: 1.5,
-              px: 1,
-              fontSize: '0.75rem',
-              textTransform: 'none',
-              alignItems: 'flex-start',
-              textAlign: 'left',
-            },
-          }}
-        >
-          <Tab label="Services" />
-          <Tab label="Settings" />
-          <Tab label="Integrations" />
-          <Tab label="Preview" />
-        </Tabs>
-        {/* Tab Content */}
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-
+      <Paper sx={{ width: 380, overflow: 'auto' }}>
         {/* Services Tab */}
-        <TabPanel value={tabValue} index={0}>
+        {stackSubTab === 'services' && (
+        <Box sx={{ p: 2 }}>
           {catalogLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
@@ -781,10 +739,12 @@ export function StackBuilder() {
               ))}
             </Box>
           )}
-        </TabPanel>
+        </Box>
+        )}
 
         {/* Settings Tab */}
-        <TabPanel value={tabValue} index={1}>
+        {stackSubTab === 'settings' && (
+        <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="subtitle2" color="text.secondary">
               Global Stack Settings
@@ -855,10 +815,12 @@ export function StackBuilder() {
               </Button>
             </Box>
           </Box>
-        </TabPanel>
+        </Box>
+        )}
 
         {/* Integrations Tab */}
-        <TabPanel value={tabValue} index={2}>
+        {stackSubTab === 'integrations' && (
+        <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {/* Reverse Proxy Settings */}
             <Accordion expanded={hasTraefik} disabled={!hasTraefik}>
@@ -1049,10 +1011,12 @@ export function StackBuilder() {
               </AccordionDetails>
             </Accordion>
           </Box>
-        </TabPanel>
+        </Box>
+        )}
 
         {/* Preview Tab */}
-        <TabPanel value={tabValue} index={3}>
+        {stackSubTab === 'preview' && (
+        <Box sx={{ p: 2 }}>
           {previewContent ? (
             <Box
               component="pre"
@@ -1073,8 +1037,8 @@ export function StackBuilder() {
               Click "Preview" to generate docker-compose.yml
             </Typography>
           )}
-        </TabPanel>
         </Box>
+        )}
       </Paper>
 
       {/* Right Panel: Stack Configuration */}

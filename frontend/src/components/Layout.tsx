@@ -32,8 +32,12 @@ import {
   PlayArrow as ActiveExecutionIcon,
   History as PastExecutionsIcon,
   AutoStories as PlaybooksIcon,
+  Apps as ServicesIcon,
+  Tune as TuneIcon,
+  Extension as IntegrationsIcon,
+  Code as PreviewIcon,
 } from '@mui/icons-material';
-import { useStore, type MainTab, type PlaybookSubTab } from '../store';
+import { useStore, type MainTab, type PlaybookSubTab, type StackSubTab } from '../store';
 import { api } from '../api/client';
 import type { CredentialInfo } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
@@ -71,6 +75,13 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: 
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
 ];
 
+const stackSubTabs: { id: StackSubTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'services', label: 'Services', icon: <ServicesIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'settings', label: 'Settings', icon: <TuneIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'integrations', label: 'Integrations', icon: <IntegrationsIcon sx={{ fontSize: '1rem' }} /> },
+  { id: 'preview', label: 'Preview', icon: <PreviewIcon sx={{ fontSize: '1rem' }} /> },
+];
+
 const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
@@ -88,6 +99,8 @@ export function Layout({ children }: LayoutProps) {
   const setMainTab = useStore((state) => state.setMainTab);
   const playbookSubTab = useStore((state) => state.playbookSubTab);
   const setPlaybookSubTab = useStore((state) => state.setPlaybookSubTab);
+  const stackSubTab = useStore((state) => state.stackSubTab);
+  const setStackSubTab = useStore((state) => state.setStackSubTab);
   const globalCredential = useStore((state) => state.globalCredential);
   const setGlobalCredential = useStore((state) => state.setGlobalCredential);
   const setSelectedCredential = useStore((state) => state.setSelectedCredential);
@@ -362,8 +375,8 @@ export function Layout({ children }: LayoutProps) {
         </Box>
       </Box>
 
-      {/* Row 2: Sub-tabs (only when Playbooks main tab is active) */}
-      {mainTab === 'playbooks' && (
+      {/* Row 2: Sub-tabs (Playbooks or Stacks) */}
+      {(mainTab === 'playbooks' || mainTab === 'stackbuilder') && (
         <Box
           sx={{
             height: 40,
@@ -378,7 +391,7 @@ export function Layout({ children }: LayoutProps) {
             flexShrink: 0,
           }}
         >
-          {playbookSubTabs.map((tab) => (
+          {mainTab === 'playbooks' && playbookSubTabs.map((tab) => (
             <Button
               key={tab.id}
               onClick={() => setPlaybookSubTab(tab.id)}
@@ -404,6 +417,31 @@ export function Layout({ children }: LayoutProps) {
               {tab.badge && (
                 <Chip label={tab.badge} size="small" sx={getBadgeSx(tab.badge)} />
               )}
+            </Button>
+          ))}
+          {mainTab === 'stackbuilder' && stackSubTabs.map((tab) => (
+            <Button
+              key={tab.id}
+              onClick={() => setStackSubTab(tab.id)}
+              startIcon={tab.icon}
+              size="small"
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.8rem',
+                minHeight: 32,
+                color: stackSubTab === tab.id ? 'primary.main' : 'text.secondary',
+                bgcolor: stackSubTab === tab.id ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                '&:hover': {
+                  bgcolor: stackSubTab === tab.id ? 'rgba(59, 130, 246, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                  color: stackSubTab === tab.id ? 'primary.main' : 'text.primary',
+                },
+              }}
+            >
+              {tab.label}
             </Button>
           ))}
         </Box>
