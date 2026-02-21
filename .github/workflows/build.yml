@@ -28,7 +28,7 @@ jobs:
             platform: linux
             arch: x64
             artifact: linux-x64
-          - os: macos-13
+          - os: macos-latest
             platform: mac
             arch: x64
             artifact: macos-x64

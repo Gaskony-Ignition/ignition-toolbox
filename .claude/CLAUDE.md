@@ -234,7 +234,7 @@ GitHub Actions workflows in `.github/workflows/`:
 4. Create version tag: `git tag v2.0.21`
 5. Push tag: `git push origin v2.0.21`
 6. GitHub Actions automatically:
-   - Builds on 4 runners: `windows-latest`, `ubuntu-latest`, `macos-13` (x64), `macos-latest` (arm64)
+   - Builds on 4 runners: `windows-latest`, `ubuntu-latest`, `macos-latest` (x64), `macos-latest` (arm64)
    - Packages with PyInstaller + electron-builder per platform
    - Creates GitHub Release with all installers (`.exe`, `.AppImage`, `.dmg` x2)
    - Uploads auto-update manifests (`latest.yml`, `latest-mac.yml`, `latest-linux.yml`)
