@@ -44,7 +44,7 @@ nsis:
   installerIcon: resources/icon.ico
   uninstallerIcon: resources/icon.ico
 
-# macOS configuration (for future use)
+# macOS configuration
 mac:
   target:
     - target: dmg
@@ -53,8 +53,14 @@ mac:
         - arm64
   icon: resources/icon.icns
   category: public.app-category.developer-tools
+  identity: null
+  entitlementsInherit: resources/entitlements.mac.plist
+  artifactName: ${productName}-${version}-${arch}.${ext}
 
-# Linux configuration (for future use)
+dmg:
+  sign: false
+
+# Linux configuration
 linux:
   target:
     - target: AppImage
@@ -62,6 +68,7 @@ linux:
         - x64
   icon: resources/icon.png
   category: Development
+  artifactName: ${productName}-${version}-${arch}.${ext}
 
 # Auto-update configuration
 publish:

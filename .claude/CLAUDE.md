@@ -10,7 +10,7 @@ This file provides guidance to Claude Code when working with the Ignition Toolbo
 
 **Current Version:** 2.0.20
 **Architecture:** Electron + Python subprocess
-**Target Platform:** Windows (primary), cross-platform possible
+**Target Platform:** Windows, macOS, Linux
 **Key Technologies:** Electron, TypeScript, React 19, FastAPI, Playwright, SQLite
 
 ## Architecture
@@ -128,16 +128,16 @@ python run_backend.py
 git tag v2.0.20
 git push origin v2.0.20
 
-# This triggers GitHub Actions workflow (build-windows.yml) which:
-# - Builds on windows-latest runner
-# - Creates the Windows installer with PyInstaller
-# - Publishes to GitHub Releases
+# This triggers GitHub Actions workflow (build.yml) which:
+# - Builds on 4 runners (Windows, Linux, macOS x64, macOS arm64)
+# - Creates platform-specific installers with PyInstaller + electron-builder
+# - Publishes to GitHub Releases with all installers
 # - Users receive auto-update notification
 
 # You can also manually trigger from GitHub Actions UI using workflow_dispatch
 ```
 
-**DO NOT use `npm run dist:win` for production releases** - this only works on a local Windows machine and is not the standard release process.
+**DO NOT use `npm run dist:*` for production releases** - these only work on local machines and are not the standard release process.
 
 ## Key Components
 
@@ -218,14 +218,14 @@ git push origin v1.0.1  # Triggers GitHub Actions build
 
 ## CI/CD - GitHub Actions (CRITICAL)
 
-**All production builds happen via GitHub Actions on `windows-latest` runners.**
+**All production builds happen via GitHub Actions on platform-specific runners.**
 
 GitHub Actions workflows in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push to main, PRs | Build verification (Windows + Ubuntu) |
-| `build-windows.yml` | Tag push (`v*`) or manual | **Production Windows installer build** |
+| `build.yml` | Tag push (`v*`) or manual | **Production multi-platform build** (Windows, Linux, macOS x64/arm64) |
 
 ### Release Process
 1. Make code changes and test locally (Python backend, frontend)
@@ -234,14 +234,15 @@ GitHub Actions workflows in `.github/workflows/`:
 4. Create version tag: `git tag v2.0.20`
 5. Push tag: `git push origin v2.0.20`
 6. GitHub Actions automatically:
-   - Builds on Windows runner
-   - Packages with PyInstaller + electron-builder
-   - Creates GitHub Release with installer
+   - Builds on 4 runners: `windows-latest`, `ubuntu-latest`, `macos-13` (x64), `macos-latest` (arm64)
+   - Packages with PyInstaller + electron-builder per platform
+   - Creates GitHub Release with all installers (`.exe`, `.AppImage`, `.dmg` x2)
+   - Uploads auto-update manifests (`latest.yml`, `latest-mac.yml`, `latest-linux.yml`)
    - Users get auto-update notification
 
 ### Manual Build Trigger
 You can also trigger builds from GitHub Actions UI:
-1. Go to Actions → Build Windows
+1. Go to Actions → Build
 2. Click "Run workflow"
 3. Optionally specify version
 

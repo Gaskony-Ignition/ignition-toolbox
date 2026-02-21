@@ -1,0 +1,263 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g., 1.0.0)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            arch: x64
+            artifact: windows-x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact: linux-x64
+          - os: macos-13
+            platform: mac
+            arch: x64
+            artifact: macos-x64
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+            artifact: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Pull LFS files
+        run: git lfs pull
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install -r requirements-build.txt
+
+      - name: Install Playwright system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          cd backend
+          python -m playwright install-deps chromium
+
+      - name: Install Playwright browsers (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: |
+          $browserPath = Join-Path ${{ github.workspace }} "playwright-browsers"
+          $env:PLAYWRIGHT_BROWSERS_PATH = $browserPath
+          Write-Host "Installing Playwright browsers to: $browserPath"
+          cd backend
+          python -m playwright install chromium
+          if (Test-Path $browserPath) {
+            Write-Host "Browser directory exists at: $browserPath"
+            Get-ChildItem $browserPath | ForEach-Object { Write-Host "  - $($_.Name)" }
+          } else {
+            Write-Host "ERROR: Browser directory not found!"
+            exit 1
+          }
+
+      - name: Install Playwright browsers (macOS/Linux)
+        if: matrix.platform != 'win'
+        run: |
+          export PLAYWRIGHT_BROWSERS_PATH="${{ github.workspace }}/playwright-browsers"
+          echo "Installing Playwright browsers to: $PLAYWRIGHT_BROWSERS_PATH"
+          cd backend
+          python -m playwright install chromium
+          if [ -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
+            echo "Browser directory exists"
+            ls "$PLAYWRIGHT_BROWSERS_PATH"
+          else
+            echo "ERROR: Browser directory not found!"
+            exit 1
+          fi
+
+      - name: Verify playwright-browsers (Windows)
+        if: matrix.platform == 'win'
+        shell: pwsh
+        run: |
+          $browserPath = Join-Path ${{ github.workspace }} "playwright-browsers"
+          if (Test-Path $browserPath) {
+            Write-Host "Found: $browserPath"
+            $size = (Get-ChildItem -Recurse $browserPath | Measure-Object -Property Length -Sum).Sum / 1MB
+            Write-Host "Total size: $([math]::Round($size, 2)) MB"
+            Get-ChildItem $browserPath | ForEach-Object { Write-Host "  - $($_.Name)" }
+          } else {
+            Write-Host "playwright-browsers directory NOT FOUND"
+            exit 1
+          }
+
+      - name: Verify playwright-browsers (macOS/Linux)
+        if: matrix.platform != 'win'
+        run: |
+          BROWSER_PATH="${{ github.workspace }}/playwright-browsers"
+          if [ -d "$BROWSER_PATH" ]; then
+            echo "Found: $BROWSER_PATH"
+            du -sh "$BROWSER_PATH"
+            ls "$BROWSER_PATH"
+          else
+            echo "playwright-browsers directory NOT FOUND"
+            exit 1
+          fi
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Python backend with PyInstaller
+        run: |
+          cd backend
+          pyinstaller backend.spec --clean --noconfirm
+
+      - name: Generate macOS icon
+        if: matrix.platform == 'mac'
+        run: |
+          mkdir -p /tmp/icon.iconset
+          for size in 16 32 128 256 512; do
+            sips -z $size $size resources/icon.png --out /tmp/icon.iconset/icon_${size}x${size}.png 2>/dev/null
+            double=$((size * 2))
+            sips -z $double $double resources/icon.png --out /tmp/icon.iconset/icon_${size}x${size}@2x.png 2>/dev/null
+          done
+          iconutil -c icns /tmp/icon.iconset -o resources/icon.icns
+          echo "Generated resources/icon.icns"
+
+      - name: Verify build outputs
+        shell: bash
+        run: |
+          echo "Checking critical directories for electron-builder..."
+          for dir in backend/dist/backend playwright-browsers frontend/dist dist-electron; do
+            if [ -d "$dir" ]; then echo "  OK: $dir"; else echo "  MISSING: $dir"; fi
+          done
+
+      - name: Build Windows installer
+        if: matrix.platform == 'win'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --x64
+
+      - name: Build macOS installer
+        if: matrix.platform == 'mac'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx electron-builder --mac --${{ matrix.arch }}
+
+      - name: Build Linux installer
+        if: matrix.platform == 'linux'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --linux --x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/*.AppImage
+            release/latest*.yml
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Merge macOS auto-update manifests
+        run: |
+          pip install pyyaml
+          python3 << 'PYEOF'
+          import yaml, os, glob, shutil
+
+          mac_files = sorted(glob.glob('artifacts/macos-*/latest-mac.yml'))
+          if len(mac_files) >= 2:
+              merged = None
+              for f in mac_files:
+                  with open(f) as fp:
+                      data = yaml.safe_load(fp)
+                  if merged is None:
+                      merged = data
+                  else:
+                      merged['files'].extend(data['files'])
+              os.makedirs('artifacts/merged', exist_ok=True)
+              with open('artifacts/merged/latest-mac.yml', 'w') as fp:
+                  yaml.dump(merged, fp, default_flow_style=False)
+              for f in mac_files:
+                  os.remove(f)
+              print(f"Merged {len(mac_files)} latest-mac.yml files into artifacts/merged/latest-mac.yml")
+          elif len(mac_files) == 1:
+              os.makedirs('artifacts/merged', exist_ok=True)
+              shutil.copy(mac_files[0], 'artifacts/merged/latest-mac.yml')
+              os.remove(mac_files[0])
+              print("Copied single latest-mac.yml to artifacts/merged/")
+          else:
+              print("No latest-mac.yml files found")
+          PYEOF
+
+      - name: List all release artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.exe.blockmap
+            artifacts/**/*.dmg
+            artifacts/**/*.dmg.blockmap
+            artifacts/**/*.AppImage
+            artifacts/**/latest*.yml
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -6,7 +6,7 @@ import { initAutoUpdater } from './services/auto-updater';
 import { openExternalUrl } from './utils/platform';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (require('electron-squirrel-startup')) {
+if (process.platform === 'win32' && require('electron-squirrel-startup')) {
   app.quit();
 }
 
@@ -80,7 +80,7 @@ async function startPythonBackend(): Promise<void> {
     errorDetails += `• Check if antivirus is blocking the application\n`;
     errorDetails += `• Try running as Administrator\n`;
     errorDetails += `• Reinstall the application\n`;
-    errorDetails += `• Check %APPDATA%\\ignition-toolbox\\logs\\ for details`;
+    errorDetails += `• Check ${path.join(app.getPath('userData'), 'logs')} for details`;
 
     dialog.showMessageBox(mainWindow!, {
       type: 'error',
@@ -109,7 +109,7 @@ async function startPythonBackend(): Promise<void> {
     console.error('Failed to start Python backend:', error);
     dialog.showErrorBox(
       'Backend Error',
-      `Failed to start the backend.\n\nError: ${errorMessage}\n\nCheck the log file at:\n%APPDATA%\\ignition-toolbox\\logs\\`
+      `Failed to start the backend.\n\nError: ${errorMessage}\n\nCheck the log file at:\n${path.join(app.getPath('userData'), 'logs')}`
     );
     app.quit();
   }
