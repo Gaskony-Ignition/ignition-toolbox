@@ -83,7 +83,7 @@ class ExecutionManager:
         """
         return self._active_tasks.get(execution_id)
 
-    async def cancel_execution(self, execution_id: str) -> bool:
+    async def cancel_execution(self, execution_id: str) -> dict | None:
         """
         Cancel active execution
 
@@ -91,23 +91,25 @@ class ExecutionManager:
             execution_id: Execution UUID
 
         Returns:
-            True if execution was cancelled, False if not found
+            Dict with cancellation details if found, None if not found.
+            Dict keys: 'task_was_done' (bool) - whether the asyncio task had already completed
         """
         engine = self._active_engines.get(execution_id)
         task = self._active_tasks.get(execution_id)
 
         if not engine or not task:
             logger.warning(f"Cannot cancel {execution_id} - not found in active executions")
-            return False
+            return None
 
-        logger.info(f"Cancelling execution {execution_id} (task done: {task.done()})")
+        task_was_done = task.done()
+        logger.info(f"Cancelling execution {execution_id} (task done: {task_was_done})")
 
         # Cancel engine first (graceful shutdown + closes browser)
         await engine.cancel()
         logger.info(f"Engine cancellation complete for {execution_id}")
 
         # Then cancel the asyncio task to interrupt execution
-        if not task.done():
+        if not task_was_done:
             task.cancel()
             logger.info(f"Task cancelled for {execution_id}")
         else:
@@ -117,7 +119,7 @@ class ExecutionManager:
         self._mark_completed(execution_id)
 
         logger.info(f"✅ Cancellation complete for {execution_id}")
-        return True
+        return {"task_was_done": task_was_done}
 
     def _mark_completed(self, execution_id: str) -> None:
         """

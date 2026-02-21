@@ -230,6 +230,45 @@ async def skip_back_step(execution_id: str, engine: PlaybookEngine = Depends(get
     return {"message": "Skipped back to previous step", "execution_id": execution_id}
 
 
+async def _force_cancel_status(execution_id: str, execution_manager, app) -> None:
+    """
+    Force-update execution status to 'cancelled' in DB and broadcast via WebSocket.
+
+    Called when the asyncio task had already completed before cancel was requested,
+    meaning the CancelledError handler in run_execution() never fired.
+    """
+    from ignition_toolkit.playbook.models import ExecutionStatus
+
+    # Update database
+    db = get_database()
+    if db:
+        with db.session_scope() as session:
+            from ignition_toolkit.storage import ExecutionModel
+
+            execution = (
+                session.query(ExecutionModel)
+                .filter_by(execution_id=execution_id)
+                .first()
+            )
+            if execution and execution.status in ("running", "paused"):
+                execution.status = "cancelled"
+                execution.completed_at = datetime.now()
+                session.commit()
+                logger.info(f"Force-updated execution {execution_id} status to 'cancelled' in database")
+
+    # Broadcast cancellation via WebSocket so frontend updates
+    engine = execution_manager.get_engine(execution_id)
+    if engine:
+        execution_state = engine.get_current_execution()
+        if execution_state:
+            execution_state.status = ExecutionStatus.CANCELLED
+            execution_state.completed_at = datetime.now()
+
+            websocket_manager = app.state.services.websocket_manager
+            await websocket_manager.broadcast_execution_state(execution_state)
+            logger.info(f"Broadcasted forced cancellation via WebSocket for {execution_id}")
+
+
 @router.post("/{execution_id}/cancel")
 async def cancel_execution(execution_id: str):
     """Cancel execution"""
@@ -245,9 +284,16 @@ async def cancel_execution(execution_id: str):
     execution_manager = app.state.services.execution_manager
 
     # Try to cancel active execution using ExecutionManager
-    cancelled = await execution_manager.cancel_execution(execution_id)
+    cancel_result = await execution_manager.cancel_execution(execution_id)
 
-    if cancelled:
+    if cancel_result is not None:
+        # When the asyncio task was already done (completed/failed before cancel was requested),
+        # the CancelledError handler in run_execution() never fires, so we must
+        # update the database and broadcast the WebSocket update directly here.
+        if cancel_result.get("task_was_done"):
+            logger.info(f"Task was already done for {execution_id}, forcing status update")
+            await _force_cancel_status(execution_id, execution_manager, app)
+
         logger.info(f"✅ Successfully cancelled execution {execution_id}")
         return {"message": "Execution cancelled", "execution_id": execution_id}
 

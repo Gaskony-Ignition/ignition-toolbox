@@ -298,6 +298,43 @@ def create_execution_runner(
             # Mark completion time for failed executions
             engine_completion_times = get_engine_completion_times()
             engine_completion_times[execution_id] = datetime.now()
+
+            # Update database to mark execution as failed
+            db = get_database()
+            if db:
+                with db.session_scope() as session:
+                    from ignition_toolkit.storage import ExecutionModel
+
+                    execution = (
+                        session.query(ExecutionModel)
+                        .filter_by(execution_id=execution_id)
+                        .first()
+                    )
+                    if execution and execution.status in ("running", "paused"):
+                        execution.status = "failed"
+                        execution.completed_at = datetime.now()
+                        execution.error_message = str(e)[:500]
+                        session.commit()
+                        logger.info(
+                            f"Updated execution {execution_id} status to 'failed' in database"
+                        )
+
+                        # Broadcast failure to WebSocket clients
+                        from ignition_toolkit.playbook.models import ExecutionStatus
+
+                        execution_state = engine.get_current_execution()
+                        if execution_state:
+                            execution_state.status = ExecutionStatus.FAILED
+                            execution_state.completed_at = datetime.now()
+                            execution_state.error = str(e)[:500]
+
+                            websocket_manager = app.state.services.websocket_manager
+                            await websocket_manager.broadcast_execution_state(
+                                execution_state
+                            )
+                            logger.info(
+                                f"Broadcasted failure status via WebSocket for {execution_id}"
+                            )
         finally:
             if gateway_client:
                 await gateway_client.__aexit__(None, None, None)
