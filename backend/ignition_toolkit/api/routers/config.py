@@ -32,9 +32,9 @@ async def get_config():
     Returns:
         dict: Configuration including version, paths, and feature flags
     """
-    # Read version from environment or default
-    # TODO: Read from pyproject.toml in future
-    version = os.getenv("APP_VERSION", "4.0.0-dev")
+    # Version comes from the package itself; env var allows override for dev/CI
+    from ignition_toolkit import __version__
+    version = os.getenv("APP_VERSION", __version__)
 
     # Check if AI is enabled
     ai_enabled = bool(os.getenv("ANTHROPIC_API_KEY"))
@@ -57,5 +57,7 @@ async def get_config():
             "port": int(os.getenv("API_PORT", "5000")),
             "host": os.getenv("API_HOST", "0.0.0.0"),
         },
-        "websocket_api_key": settings.websocket_api_key,  # TODO: migrate to Electron IPC
+        # WebSocket API key: frontend fetches this once at startup via /api/config
+        # Electron apps also receive it via IPC (electron/ipc/handlers.ts)
+        "websocket_api_key": settings.websocket_api_key,
     }

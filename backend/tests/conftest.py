@@ -1,10 +1,19 @@
 """
-Pytest configuration and shared fixtures for Stack Builder tests.
+Pytest configuration and shared fixtures.
+
+Global fixtures (available to all test modules):
+  - mock_db          : mock database with working session_scope context manager
+  - mock_app_services: mock app.state.services (execution manager, websocket manager)
+  - sample_playbook_yaml: minimal valid playbook YAML string
+
+Stack Builder fixtures:
+  - catalog_path, integrations_path, sample_*_instance, basic/full_stack_instances
 """
 
 import pytest
+from contextlib import contextmanager
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 # Add the backend directory to the path
 import sys
@@ -160,3 +169,91 @@ def mock_database():
     db.session_scope.return_value.__enter__ = MagicMock()
     db.session_scope.return_value.__exit__ = MagicMock()
     return db
+
+
+# ============================================================================
+# Global shared fixtures (used across test_api/, test_playbook/, etc.)
+# ============================================================================
+
+
+@pytest.fixture
+def mock_db():
+    """
+    Mock database with a working contextmanager-based session_scope.
+
+    The session returns None for all .first() queries by default (simulates
+    empty database). Override specific queries in individual tests as needed.
+
+    Usage::
+
+        def test_something(mock_db):
+            with patch("my.module.get_database", return_value=mock_db):
+                result = asyncio.run(my_endpoint())
+    """
+    db = MagicMock()
+    session = MagicMock()
+    session.query.return_value.filter.return_value.first.return_value = None
+    session.query.return_value.filter_by.return_value.first.return_value = None
+    session.query.return_value.order_by.return_value.limit.return_value.all.return_value = []
+    session.query.return_value.all.return_value = []
+
+    @contextmanager
+    def session_scope():
+        yield session
+
+    db.session_scope = session_scope
+    db._session = session  # expose for per-test customisation
+    return db
+
+
+@pytest.fixture
+def mock_app_services():
+    """
+    Mock app.state.services and install it on the FastAPI app.
+
+    Provides:
+      - execution_manager.get_engine()      → None (not found)
+      - execution_manager.cancel_execution() → None (not in memory)
+      - websocket_manager.broadcast_*()     → no-op async
+
+    Cleans up after the test.
+
+    Usage::
+
+        def test_something(mock_app_services):
+            # app.state.services is set automatically
+            result = asyncio.run(some_endpoint("id"))
+    """
+    from ignition_toolkit.api.app import app
+
+    svc = MagicMock()
+    svc.execution_manager.get_engine.return_value = None
+    svc.execution_manager.cancel_execution = AsyncMock(return_value=None)
+    svc.websocket_manager.broadcast_execution_state = AsyncMock()
+    svc.websocket_manager.broadcast_json = AsyncMock()
+
+    app.state.services = svc
+    yield svc
+
+    try:
+        del app.state.services
+    except AttributeError:
+        pass
+
+
+@pytest.fixture
+def sample_playbook_yaml() -> str:
+    """Minimal valid playbook YAML for use in API and schema tests."""
+    return """\
+name: Test Playbook
+version: "1.0"
+description: A minimal playbook for testing
+domain: gateway
+steps:
+  - id: step1
+    name: Log a message
+    type: utility.log
+    parameters:
+      message: "hello"
+      level: info
+"""

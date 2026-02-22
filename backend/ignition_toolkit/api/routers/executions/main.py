@@ -75,7 +75,7 @@ async def start_execution(request: ExecutionRequest, background_tasks: Backgroun
             timeout_overrides=request.timeout_overrides,
         )
 
-        # Load playbook for response (TODO: return from service)
+        # Load playbook to get name for response
         _, playbook_path = PathValidator.validate_and_resolve(request.playbook_path)
         playbook = PlaybookLoader.load_from_file(playbook_path)
 

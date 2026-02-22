@@ -79,6 +79,12 @@ import {
   handleImport as doImport,
 } from './PlaybookImportExport';
 
+// Stable empty array used as the default value for the playbooks query result.
+// Using a module-level constant avoids creating a new [] reference on every
+// render during the loading phase, which would cause useEffect([playbooks]) to
+// fire on every render and produce an infinite setState → re-render loop.
+const EMPTY_PLAYBOOKS: PlaybookInfo[] = [];
+
 // Sortable playbook card wrapper
 function SortablePlaybookCard({ playbook, onConfigure, onExecute, onExport, onViewSteps, onEditPlaybook, onSubmitToLibrary, dragEnabled, availableUpdate, sections, onMoveToSection }: {
   playbook: PlaybookInfo;
@@ -310,7 +316,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   const { expanded: categoryExpanded, setExpanded: setCategoryExpanded } = useCategoryExpanded();
 
   // Fetch playbooks
-  const { data: playbooks = [], isLoading, error } = useQuery<PlaybookInfo[]>({
+  const { data: playbooks = EMPTY_PLAYBOOKS, isLoading, error } = useQuery<PlaybookInfo[]>({
     queryKey: ['playbooks'],
     queryFn: api.playbooks.list,
     refetchInterval: TIMING.POLLING.PLAYBOOKS, // Refetch every 30 seconds

@@ -43,9 +43,9 @@ def get_websocket_connections() -> list[WebSocket]:
 
 def get_active_engines() -> dict[str, "PlaybookEngine"]:
     """Get shared active engines dict from app"""
-    from ignition_toolkit.api.app import active_engines
+    from ignition_toolkit.api.routers.executions.helpers import get_active_engines as _get_active_engines
 
-    return active_engines
+    return _get_active_engines()
 
 
 def get_claude_code_processes() -> dict[str, subprocess.Popen]:

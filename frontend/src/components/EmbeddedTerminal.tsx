@@ -28,7 +28,7 @@ export function EmbeddedTerminal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initializeTerminal = () => {
+    const initializeTerminal = async () => {
       if (!terminalRef.current) return;
 
       try {
@@ -88,9 +88,20 @@ export function EmbeddedTerminal({
         };
         window.addEventListener('resize', handleResize);
 
-        // Connect WebSocket
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:${DEFAULT_BACKEND_PORT}/ws/claude-code/${executionId}`;
+        // Connect WebSocket - get URL from Electron IPC if available (matches useWebSocket.ts pattern)
+        let baseWsUrl: string;
+        if (window.electronAPI?.getWebSocketUrl) {
+          try {
+            baseWsUrl = await window.electronAPI.getWebSocketUrl();
+          } catch {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            baseWsUrl = `${protocol}//${window.location.hostname}:${DEFAULT_BACKEND_PORT}`;
+          }
+        } else {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          baseWsUrl = `${protocol}//${window.location.hostname}:${DEFAULT_BACKEND_PORT}`;
+        }
+        const wsUrl = `${baseWsUrl}/ws/claude-code/${executionId}`;
 
         terminal.current.writeln('\x1b[1;36mConnecting to Claude Code...\x1b[0m');
 

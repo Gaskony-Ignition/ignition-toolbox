@@ -54,7 +54,10 @@ jobs:
       - name: Run backend tests
         run: |
           cd backend
-          python -m pytest tests/ -v --ignore=tests/test_integration
+          python -m pytest tests/ -v
+
+      - name: Validate playbook schemas
+        run: python scripts/validate-playbooks.py
 
       - name: Run frontend tests
         run: |

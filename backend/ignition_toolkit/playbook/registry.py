@@ -385,16 +385,13 @@ class PlaybookRegistry:
             if not available_pb:
                 continue
 
-            # Simple version comparison (works for "4.0", "4.1", etc.)
-            # TODO: Use proper semver comparison for complex versions
             if available_pb.version != installed_pb.version:
                 try:
-                    installed_ver = float(installed_pb.version)
-                    available_ver = float(available_pb.version)
-                    if available_ver > installed_ver:
+                    from packaging.version import Version
+                    if Version(available_pb.version) > Version(installed_pb.version):
                         updates[path] = (installed_pb.version, available_pb.version)
-                except ValueError:
-                    # Fall back to string comparison if not numeric
+                except Exception:
+                    # Fall back to string comparison for non-standard version strings
                     if available_pb.version > installed_pb.version:
                         updates[path] = (installed_pb.version, available_pb.version)
 

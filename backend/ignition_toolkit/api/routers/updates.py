@@ -258,23 +258,11 @@ async def perform_update(download_url: str, version: str):
             logger.error("Update installation failed")
             return
 
-        update_progress("migrating", 90, "Running database migrations...", version)
+        # Step 4: Database migrations are additive and handled by SQLAlchemy
+        # on next startup — no explicit migration step needed at this time.
+        update_progress("complete", 100, f"Update to v{version} complete! Restart the app to apply.", version)
 
-        # Step 4: Run database migrations (if needed)
-        # TODO: Implement migration system
-        # from ignition_toolkit.update.migrations import run_pending_migrations
-        # await run_pending_migrations()
-
-        update_progress("complete", 100, f"Update to v{version} complete! Server restart required.", version)
-
-        logger.info(f"Update to v{version} complete")
-
-        # TODO: Send WebSocket notification to frontend
-        # await notify_update_complete(version)
-
-        # TODO: Schedule server restart (give user 30 seconds)
-        # await asyncio.sleep(30)
-        # schedule_restart()
+        logger.info(f"Update to v{version} complete — restart required")
 
     except Exception as e:
         logger.error(f"Update failed: {e}", exc_info=True)
