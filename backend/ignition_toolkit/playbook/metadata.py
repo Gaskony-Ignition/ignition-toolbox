@@ -216,6 +216,24 @@ class PlaybookMetadataStore:
         self.update_metadata(normalized_path, metadata)
         logger.info(f"Set {normalized_path} enabled={enabled}")
 
+    def delete_metadata(self, playbook_path: str) -> bool:
+        """
+        Delete metadata for a playbook
+
+        Args:
+            playbook_path: Relative path from playbooks directory
+
+        Returns:
+            True if metadata was deleted, False if not found
+        """
+        normalized_path = self._normalize_path(playbook_path)
+        if normalized_path in self._metadata:
+            del self._metadata[normalized_path]
+            self._save()
+            logger.info(f"Deleted metadata for {normalized_path}")
+            return True
+        return False
+
     def list_all(self) -> dict[str, PlaybookMetadata]:
         """
         Get all playbook metadata
