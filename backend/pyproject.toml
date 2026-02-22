@@ -45,6 +45,8 @@ dependencies = [
     "apscheduler>=3.10.4,<4.0",
     "psutil>=6.1.0",
     "pillow>=10.0.0",  # WebP screenshot compression
+    "beautifulsoup4>=4.12.0",  # Ignition Exchange scraper
+    "lxml>=5.0.0",             # HTML parser for BeautifulSoup
     "mcp>=1.0.0,<2.0",  # MCP server for Claude Code integration
 ]
 

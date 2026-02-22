@@ -1010,6 +1010,53 @@ export const api = {
   },
 
   /**
+   * Ignition Exchange Scraper
+   */
+  exchange: {
+    getStatus: () =>
+      fetchJSON<import('../types/api').ExchangeStatus>('/api/exchange/status'),
+
+    run: (maxResources?: number) =>
+      fetchJSON<{ started: boolean; reason?: string }>('/api/exchange/run', {
+        method: 'POST',
+        body: JSON.stringify({ max_resources: maxResources ?? null }),
+      }),
+
+    stop: () =>
+      fetchJSON<{ stopped: boolean; reason?: string }>('/api/exchange/stop', {
+        method: 'POST',
+      }),
+
+    getResults: (search?: string, category?: string) => {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (category) params.set('category', category);
+      const qs = params.toString();
+      return fetchJSON<{ items: import('../types/api').ExchangeItem[]; count: number }>(
+        `/api/exchange/results${qs ? `?${qs}` : ''}`
+      );
+    },
+
+    getChanges: () =>
+      fetchJSON<import('../types/api').ExchangeChanges>('/api/exchange/changes'),
+
+    getHistory: () =>
+      fetchJSON<import('../types/api').ExchangeHistoryEntry[]>('/api/exchange/history'),
+
+    getLogs: (lines?: number) =>
+      fetchJSON<string[]>(`/api/exchange/logs${lines ? `?lines=${lines}` : ''}`),
+
+    getConfig: () =>
+      fetchJSON<import('../types/api').ExchangeConfig>('/api/exchange/config'),
+
+    saveConfig: (config: import('../types/api').ExchangeConfig) =>
+      fetchJSON<import('../types/api').ExchangeConfig>('/api/exchange/config', {
+        method: 'PUT',
+        body: JSON.stringify(config),
+      }),
+  },
+
+  /**
    * Get the base URL for API calls
    */
   getBaseUrl: () => API_BASE_URL,

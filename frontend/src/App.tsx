@@ -26,6 +26,7 @@ const Designer = lazy(() => import('./pages/Designer').then(m => ({ default: m.D
 const ExecutionDetail = lazy(() => import('./pages/ExecutionDetail').then(m => ({ default: m.ExecutionDetail })));
 const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ default: m.APIExplorer })));
 const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
+const Exchange = lazy(() => import('./pages/Exchange').then(m => ({ default: m.Exchange })));
 
 // Loading fallback for lazy-loaded components
 function PageLoader() {
@@ -199,6 +200,12 @@ function AppContent() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', opacity: 0.5 }}>
             <Typography variant="h5" color="text.secondary">UDT Builder — Coming Soon</Typography>
           </Box>
+        );
+      case 'exchange':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <Exchange />
+          </Suspense>
         );
       case 'settings':
         return <Settings />;
