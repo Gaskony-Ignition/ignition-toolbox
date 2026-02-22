@@ -8,7 +8,7 @@
  * - Verified badges
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { formatBytes } from '../utils/format';
 import {
   Dialog,
@@ -80,13 +80,16 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
   const [installing, setInstalling] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const forceRefreshRef = useRef(false);
   const queryClient = useQueryClient();
 
   // Fetch available playbooks
   const { data, isLoading, error, refetch } = useQuery<BrowseResponse>({
     queryKey: ['playbook-library'],
     queryFn: async () => {
-      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/browse`);
+      const force = forceRefreshRef.current;
+      forceRefreshRef.current = false;
+      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/browse?force_refresh=${force}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Failed to fetch playbook library');
@@ -134,6 +137,7 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
   };
 
   const handleRefresh = () => {
+    forceRefreshRef.current = true;
     refetch();
   };
 
