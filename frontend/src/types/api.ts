@@ -119,7 +119,7 @@ export interface ExecutionUpdate {
   execution_id: string;
   playbook_name: string;
   status: string;
-  current_step_index: number;
+  current_step_index: number | null;
   total_steps: number;
   error: string | null;
   debug_mode?: boolean;

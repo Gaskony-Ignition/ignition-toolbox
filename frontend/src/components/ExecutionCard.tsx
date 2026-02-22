@@ -43,7 +43,7 @@ export function ExecutionCard({
 }: ExecutionCardProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const progress = execution.total_steps > 0
+  const progress = execution.total_steps > 0 && execution.current_step_index != null
     ? (execution.current_step_index / execution.total_steps) * 100
     : 0;
 

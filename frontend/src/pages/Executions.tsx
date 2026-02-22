@@ -472,7 +472,7 @@ export function Executions() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {execution.current_step_index !== undefined
+                      {execution.current_step_index != null
                         ? `${execution.current_step_index + 1} / ${execution.step_results?.length || 0}`
                         : '-'}
                     </Typography>

@@ -562,7 +562,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
               </Box>
             </Box>
             <Typography variant="caption" color="text.secondary">
-              {execution.current_step_index !== undefined
+              {execution.current_step_index != null
                 ? `Current step: ${execution.current_step_index + 1} of ${execution.total_steps}`
                 : 'Initializing...'}
             </Typography>
@@ -573,7 +573,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
             <Box sx={{ p: 1 }}>
               <ExecutionTimeline
                 steps={deduplicatedStepResults}
-                currentStepIndex={execution.current_step_index}
+                currentStepIndex={execution.current_step_index ?? undefined}
               />
             </Box>
           ) : (

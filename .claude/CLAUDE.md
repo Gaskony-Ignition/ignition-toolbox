@@ -212,8 +212,8 @@ Detailed explanation:
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 
 # Create release
-git tag v1.0.1
-git push origin v1.0.1  # Triggers GitHub Actions build
+git tag v3.0.2
+git push origin v3.0.2  # Triggers GitHub Actions build
 ```
 
 ## CI/CD - GitHub Actions (CRITICAL)
