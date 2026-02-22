@@ -175,6 +175,7 @@ The Python backend is the full Ignition Automation Toolkit:
 | `ignition_toolkit/update/` | Version update checking |
 | `ignition_toolkit/designer/` | Designer integration |
 | `ignition_toolkit/modules/` | Ignition module management |
+| `ignition_toolkit/exchange/` | Ignition Exchange scraper (Playwright + BeautifulSoup) |
 
 ### Frontend (`frontend/`)
 
@@ -182,7 +183,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/pages/` | 9 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Settings |
+| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Exchange, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
 | `src/data/` | Static data (ignitionApiDocs.ts) |
@@ -209,7 +210,7 @@ Detailed explanation:
 - What changed
 - Why it changed
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 # Create release
 git tag v3.0.5
