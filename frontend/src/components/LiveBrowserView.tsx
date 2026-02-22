@@ -10,6 +10,7 @@ import { Computer as BrowserIcon, Pause as PausedIcon, TouchApp as ClickIcon } f
 import { useStore } from '../store';
 import { api } from '../api/client';
 import { createLogger } from '../utils/logger';
+import { TIMING } from '../config/timing';
 
 const logger = createLogger('LiveBrowserView');
 
@@ -268,7 +269,7 @@ export function LiveBrowserView({ executionId }: LiveBrowserViewProps) {
       {/* Snackbar for click feedback */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={TIMING.UI.SNACKBAR}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >

@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, field_validator
 
+from ignition_toolkit.core.validation_limits import ValidationLimits
+
 # ============================================================================
 # Playbook Models
 # ============================================================================
@@ -80,18 +82,18 @@ class ExecutionRequest(BaseModel):
     def validate_parameters(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Validate parameters to prevent injection attacks and DoS"""
         # Limit number of parameters
-        if len(v) > 50:
-            raise ValueError("Too many parameters (max 50)")
+        if len(v) > ValidationLimits.PARAMETER_COUNT_MAX:
+            raise ValueError(f"Too many parameters (max {ValidationLimits.PARAMETER_COUNT_MAX})")
 
         # Limit value length to prevent DoS
         for key, value in v.items():
-            if len(key) > 255:
-                raise ValueError("Parameter name too long (max 255 chars)")
+            if len(key) > ValidationLimits.PARAMETER_NAME_MAX:
+                raise ValueError(f"Parameter name too long (max {ValidationLimits.PARAMETER_NAME_MAX} chars)")
 
             # Only validate string values for length and dangerous characters
             if isinstance(value, str):
-                if len(value) > 10000:
-                    raise ValueError(f'Parameter "{key}" value too long (max 10000 chars)')
+                if len(value) > ValidationLimits.PARAMETER_VALUE_MAX:
+                    raise ValueError(f'Parameter "{key}" value too long (max {ValidationLimits.PARAMETER_VALUE_MAX} chars)')
 
                 # Check for potentially dangerous characters
                 import logging
@@ -111,8 +113,8 @@ class ExecutionRequest(BaseModel):
         if v is not None:
             if not v.startswith(("http://", "https://")):
                 raise ValueError("Gateway URL must start with http:// or https://")
-            if len(v) > 500:
-                raise ValueError("Gateway URL too long (max 500 chars)")
+            if len(v) > ValidationLimits.GATEWAY_URL_MAX:
+                raise ValueError(f"Gateway URL too long (max {ValidationLimits.GATEWAY_URL_MAX} chars)")
         return v
 
 

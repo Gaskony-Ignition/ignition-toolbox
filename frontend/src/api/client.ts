@@ -235,10 +235,14 @@ export interface StackBuilderConfig {
 
 const logger = createLogger('API');
 
+// Port fallback constants - must match electron/config.ts BACKEND_PORT_RANGE.START
+const DEFAULT_BACKEND_PORT = 5000;
+const DEFAULT_API_BASE_URL = `http://127.0.0.1:${DEFAULT_BACKEND_PORT}`;
+
 // API Base URL - supports both web and Electron modes
 // In Electron: get from IPC (dynamic port)
 // In browser: use window.location.origin
-let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+let API_BASE_URL = import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL;
 let _initialized = false;
 let _initPromise: Promise<void> | null = null;
 
@@ -253,7 +257,7 @@ export async function initializeBackendUrl(): Promise<void> {
     } catch (error) {
       logger.error('Failed to get Electron backend URL:', error);
       // Fallback to default
-      API_BASE_URL = 'http://127.0.0.1:5000';
+      API_BASE_URL = DEFAULT_API_BASE_URL;
     }
   } else if (window.location.protocol !== 'file:') {
     // Web mode - use current origin

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from ignition_toolkit.browser import BrowserManager
+from ignition_toolkit.core.timeouts import TimeoutDefaults, TimeoutKeys
 from ignition_toolkit.credentials import CredentialVault
 from ignition_toolkit.designer import DesignerManager
 from ignition_toolkit.gateway import GatewayClient
@@ -95,19 +96,19 @@ class PlaybookEngine:
 
     def get_gateway_restart_timeout(self) -> int:
         """Get gateway restart timeout in seconds (default: 120)"""
-        return self.timeout_overrides.get("gateway_restart", 120)
+        return self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART)
 
     def get_module_install_timeout(self) -> int:
         """Get module installation timeout in seconds (default: 300)"""
-        return self.timeout_overrides.get("module_install", 300)
+        return self.timeout_overrides.get(TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL)
 
     def get_browser_operation_timeout(self) -> int:
         """Get browser operation timeout in milliseconds (default: 30000)"""
-        return self.timeout_overrides.get("browser_operation", 30000)
+        return self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION)
 
     def get_designer_launch_timeout(self) -> int:
         """Get designer launch timeout in seconds (default: 60)"""
-        return self.timeout_overrides.get("designer_launch", 60)
+        return self.timeout_overrides.get(TimeoutKeys.DESIGNER_LAUNCH, TimeoutDefaults.DESIGNER_LAUNCH)
 
     def set_update_callback(self, callback: Callable[[ExecutionState], None]) -> None:
         """
@@ -215,7 +216,7 @@ class PlaybookEngine:
 
         # Set up browser manager if needed
         has_browser_steps = any(
-            step.type.value.startswith("browser.") or step.type.value.startswith("perspective.")
+            step.type.domain in ("browser", "perspective")
             for step in playbook.steps
         )
         playbook_domain = playbook.metadata.get('domain')
@@ -245,7 +246,7 @@ class PlaybookEngine:
             logger.debug(f"Skipping browser initialization (not needed for domain={playbook_domain})")
 
         # Set up designer manager if needed
-        has_designer_steps = any(step.type.value.startswith("designer.") for step in playbook.steps)
+        has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
         if has_designer_steps:
             designer_install_path = parameters.get("designer_install_path")
             install_path = Path(designer_install_path) if designer_install_path else None
@@ -367,7 +368,7 @@ class PlaybookEngine:
 
             # Create browser manager for Perspective/browser playbooks (NOT for Designer)
             has_browser_steps = any(
-                step.type.value.startswith("browser.") or step.type.value.startswith("perspective.")
+                step.type.domain in ("browser", "perspective")
                 for step in playbook.steps
             )
             playbook_domain = playbook.metadata.get('domain')
@@ -405,7 +406,7 @@ class PlaybookEngine:
                 logger.debug(f"Skipping browser initialization (not needed for domain={playbook_domain})")
 
             # Create designer manager if playbook has designer steps
-            has_designer_steps = any(step.type.value.startswith("designer.") for step in playbook.steps)
+            has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
             if has_designer_steps:
                 # Extract designer_install_path parameter if present
                 designer_install_path = parameters.get("designer_install_path")

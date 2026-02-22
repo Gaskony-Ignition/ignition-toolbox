@@ -53,6 +53,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useStore } from '../store';
 import type { ExecutionStatusResponse } from '../types/api';
+import { getStatusChipColor } from '../constants/executionStatus';
 
 type StatusFilter = 'all' | 'running' | 'paused' | 'completed' | 'failed';
 
@@ -79,24 +80,6 @@ export function Executions() {
       }
       return newSet;
     });
-  };
-
-  // Helper function to get status color
-  const getStatusColor = (status: string): 'default' | 'primary' | 'warning' | 'success' | 'error' => {
-    switch (status) {
-      case 'running':
-        return 'primary';
-      case 'paused':
-        return 'warning';
-      case 'completed':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'cancelled':
-        return 'default';
-      default:
-        return 'default';
-    }
   };
 
   // Helper function to get step status icon
@@ -484,7 +467,7 @@ export function Executions() {
                     <Chip
                       label={execution.status.toUpperCase()}
                       size="small"
-                      color={getStatusColor(execution.status)}
+                      color={getStatusChipColor(execution.status)}
                     />
                   </TableCell>
                   <TableCell>
@@ -631,7 +614,7 @@ export function Executions() {
                                   <Chip
                                     label={step.status}
                                     size="small"
-                                    color={getStatusColor(step.status)}
+                                    color={getStatusChipColor(step.status)}
                                   />
                                 </ListItem>
                               ))}

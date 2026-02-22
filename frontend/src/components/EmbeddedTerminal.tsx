@@ -8,6 +8,9 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('EmbeddedTerminal');
 
+// Port fallback constant - must match electron/config.ts BACKEND_PORT_RANGE.START
+const DEFAULT_BACKEND_PORT = 5000;
+
 interface EmbeddedTerminalProps {
   executionId: string;
   onClose?: () => void;
@@ -87,7 +90,7 @@ export function EmbeddedTerminal({
 
         // Connect WebSocket
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:5000/ws/claude-code/${executionId}`;
+        const wsUrl = `${protocol}//${window.location.hostname}:${DEFAULT_BACKEND_PORT}/ws/claude-code/${executionId}`;
 
         terminal.current.writeln('\x1b[1;36mConnecting to Claude Code...\x1b[0m');
 

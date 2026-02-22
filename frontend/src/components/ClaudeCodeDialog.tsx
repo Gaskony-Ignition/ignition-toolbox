@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import api from '../api/client';
+import { TIMING } from '../config/timing';
 import { EmbeddedTerminal } from './EmbeddedTerminal';
 import { createLogger } from '../utils/logger';
 
@@ -75,7 +76,7 @@ export function ClaudeCodeDialog({
       try {
         await navigator.clipboard.writeText(sessionMutation.data.command);
         setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
+        setTimeout(() => setCopied(false), TIMING.UI.COPY_RESET);
       } catch (err) {
         logger.error('Failed to copy:', err);
       }

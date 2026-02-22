@@ -23,6 +23,9 @@ from ignition_toolkit.core.paths import (
     get_data_dir,
     is_frozen,
 )
+from ignition_toolkit.core.timeouts import TimeoutKeys
+from ignition_toolkit.playbook.step_type_registry import get_step_definition_by_value
+from ignition_toolkit.core.validation_limits import ValidationLimits
 from ignition_toolkit.playbook.loader import PlaybookLoader
 from datetime import datetime
 from typing import Any
@@ -96,8 +99,8 @@ class PlaybookMetadataUpdateRequest(BaseModel):
         """Validate playbook path field"""
         if not v or not v.strip():
             raise ValueError("Playbook path cannot be empty")
-        if len(v) > 500:
-            raise ValueError("Playbook path too long (max 500 characters)")
+        if len(v) > ValidationLimits.PLAYBOOK_PATH_MAX:
+            raise ValueError(f"Playbook path too long (max {ValidationLimits.PLAYBOOK_PATH_MAX} characters)")
         return v.strip()
 
     @field_validator('name')
@@ -111,8 +114,8 @@ class PlaybookMetadataUpdateRequest(BaseModel):
         if not v:
             raise ValueError("Name cannot be empty or whitespace")
 
-        if len(v) > 200:
-            raise ValueError("Name too long (max 200 characters)")
+        if len(v) > ValidationLimits.PLAYBOOK_NAME_MAX:
+            raise ValueError(f"Name too long (max {ValidationLimits.PLAYBOOK_NAME_MAX} characters)")
 
         dangerous_chars = ['<', '>', '"', "'", '`', '{', '}', '$', '|', '&', ';']
         for char in dangerous_chars:
@@ -133,8 +136,8 @@ class PlaybookMetadataUpdateRequest(BaseModel):
 
         v = v.strip()
 
-        if len(v) > 2000:
-            raise ValueError("Description too long (max 2000 characters)")
+        if len(v) > ValidationLimits.PLAYBOOK_DESCRIPTION_MAX:
+            raise ValueError(f"Description too long (max {ValidationLimits.PLAYBOOK_DESCRIPTION_MAX} characters)")
 
         dangerous_patterns = ['<script', 'javascript:', 'onerror=', 'onload=', '<?php']
         v_lower = v.lower()
@@ -217,24 +220,19 @@ def _compute_relevant_timeouts(steps, playbook_dirs, domain=None) -> list[str]:
     """
     Analyze playbook step types to determine which timeout categories are relevant.
 
-    Inspects each step's type and, for playbook.run steps, resolves the nested
-    playbook one level deep to union its timeout categories too.
+    Inspects each step's type via the unified step type registry, and for
+    playbook.run steps resolves the nested playbook one level deep to union
+    its timeout categories too.
 
     Returns a sorted list of applicable timeout category strings:
-        "browser_operation", "gateway_restart", "module_install"
+        "browser_operation", "designer_launch", "gateway_restart", "module_install"
     """
     result = set()
 
     for step in steps:
-        step_type = step.type.value  # e.g. "browser.click", "gateway.restart"
+        step_type_value = step.type.value  # e.g. "browser.click", "gateway.restart"
 
-        if step_type.startswith("browser.") or step_type.startswith("perspective."):
-            result.add("browser_operation")
-        elif step_type in ("gateway.restart", "gateway.wait_for_ready"):
-            result.add("gateway_restart")
-        elif step_type in ("gateway.wait_for_module_installation", "gateway.upload_module"):
-            result.add("module_install")
-        elif step_type == "playbook.run":
+        if step_type_value == "playbook.run":
             # Resolve nested playbook one level deep
             nested_path = step.parameters.get("playbook")
             if nested_path:
@@ -249,19 +247,19 @@ def _compute_relevant_timeouts(steps, playbook_dirs, domain=None) -> list[str]:
                         nested_loader = PlaybookLoader()
                         nested_playbook = nested_loader.load_from_file(nested_file)
                         for nested_step in nested_playbook.steps:
-                            nested_type = nested_step.type.value
-                            if nested_type.startswith("browser.") or nested_type.startswith("perspective."):
-                                result.add("browser_operation")
-                            elif nested_type in ("gateway.restart", "gateway.wait_for_ready"):
-                                result.add("gateway_restart")
-                            elif nested_type in ("gateway.wait_for_module_installation", "gateway.upload_module"):
-                                result.add("module_install")
+                            defn = get_step_definition_by_value(nested_step.type.value)
+                            if defn and defn.timeout_category:
+                                result.add(defn.timeout_category)
                 except Exception:
                     pass  # Skip silently on any error (missing file, parse error, etc.)
+        else:
+            defn = get_step_definition_by_value(step_type_value)
+            if defn and defn.timeout_category:
+                result.add(defn.timeout_category)
 
     # Designer domain playbooks use designer_launch timeout
     if domain == "designer":
-        result.add("designer_launch")
+        result.add(TimeoutKeys.DESIGNER_LAUNCH)
 
     return sorted(result)
 

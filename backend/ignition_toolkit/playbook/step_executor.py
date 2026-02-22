@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from ignition_toolkit.browser import BrowserManager
+from ignition_toolkit.core.timeouts import TimeoutDefaults, TimeoutKeys
 from ignition_toolkit.designer import DesignerManager
 from ignition_toolkit.gateway import GatewayClient
 from ignition_toolkit.playbook.exceptions import StepExecutionError
@@ -141,23 +142,23 @@ class StepExecutor:
             )
             handlers[StepType.GATEWAY_WAIT_MODULE] = GatewayWaitModuleHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get("module_install", 300),
+                default_timeout=self.timeout_overrides.get(TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL),
             )
             handlers[StepType.GATEWAY_LIST_PROJECTS] = GatewayListProjectsHandler(self.gateway_client)
             handlers[StepType.GATEWAY_GET_PROJECT] = GatewayGetProjectHandler(self.gateway_client)
             handlers[StepType.GATEWAY_RESTART] = GatewayRestartHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get("gateway_restart", 120),
+                default_timeout=self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART),
             )
             handlers[StepType.GATEWAY_WAIT_READY] = GatewayWaitReadyHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get("gateway_restart", 120),
+                default_timeout=self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART),
             )
 
         # Browser handlers
         if self.browser_manager:
-            browser_timeout = self.timeout_overrides.get("browser_operation", 30000)
-            verify_timeout = self.timeout_overrides.get("browser_operation", 5000)
+            browser_timeout = self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION)
+            verify_timeout = self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_VERIFY)
             handlers[StepType.BROWSER_NAVIGATE] = BrowserNavigateHandler(self.browser_manager)
             handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(self.browser_manager, default_timeout=browser_timeout)
             handlers[StepType.BROWSER_FILL] = BrowserFillHandler(self.browser_manager, default_timeout=browser_timeout)
@@ -297,7 +298,7 @@ class StepExecutor:
         }
 
         # Capture screenshot and HTML if browser step
-        if self.browser_manager and step.type.value.startswith("browser."):
+        if self.browser_manager and step.type.domain == "browser":
             try:
                 context["screenshot_base64"] = await self.browser_manager.get_screenshot_base64()
                 context["page_html"] = await self.browser_manager.get_page_html()
@@ -342,5 +343,4 @@ class StepExecutor:
             raise
         except Exception as e:
             # Wrap other exceptions
-            domain = step.type.value.split(".")[0]
-            raise StepExecutionError(domain, f"{step.type.value} operation failed: {e}")
+            raise StepExecutionError(step.type.domain, f"{step.type.value} operation failed: {e}")

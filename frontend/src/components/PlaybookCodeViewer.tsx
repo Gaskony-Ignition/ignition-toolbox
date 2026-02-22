@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { TIMING } from '../config/timing';
 
 // Lazy load Monaco Editor to avoid large initial bundle
 const MonacoEditor = lazy(() => import('@monaco-editor/react'));
@@ -231,12 +232,12 @@ export function PlaybookCodeViewer({
                     } else {
                       const errorData = await response.json();
                       saveBtn.textContent = 'Error: ' + (errorData.detail || 'Unknown error');
-                      setTimeout(() => { saveBtn.textContent = 'Save'; }, 3000);
+                      setTimeout(() => { saveBtn.textContent = 'Save'; }, ${TIMING.UI.SAVE_RESET});
                       saveBtn.disabled = false;
                     }
                   } catch (error: unknown) {
                     saveBtn.textContent = 'Error: ' + (error instanceof Error ? error.message : String(error));
-                    setTimeout(() => { saveBtn.textContent = 'Save'; }, 3000);
+                    setTimeout(() => { saveBtn.textContent = 'Save'; }, ${TIMING.UI.SAVE_RESET});
                     saveBtn.disabled = false;
                   }
                 });

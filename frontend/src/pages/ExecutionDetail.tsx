@@ -29,11 +29,6 @@ import {
   Alert as MuiAlert,
 } from '@mui/material';
 import {
-  CheckCircle as CompletedIcon,
-  Error as ErrorIcon,
-  PlayArrow as RunningIcon,
-  Pending as PendingIcon,
-  Cancel as SkippedIcon,
   BugReport as DebugIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
@@ -41,6 +36,8 @@ import {
   ViewList as ListViewIcon,
   Timeline as TimelineViewIcon,
 } from '@mui/icons-material';
+import { getStatusChipColor, getStatusIcon } from '../constants/executionStatus';
+import { TIMING } from '../config/timing';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { createLogger } from '../utils/logger';
@@ -79,7 +76,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
     queryKey: ['execution', executionId],
     queryFn: () => api.executions.get(executionId!),
     enabled: !!executionId,
-    refetchInterval: 2000, // Refetch every 2 seconds as fallback
+    refetchInterval: TIMING.POLLING.EXECUTION_ACTIVE, // Refetch every 2 seconds as fallback
   });
 
   // Fetch logs for this execution
@@ -87,7 +84,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
     queryKey: ['logs', executionId],
     queryFn: () => api.logs.getForExecution(executionId!, 500),
     enabled: !!executionId && showLogs,
-    refetchInterval: showLogs ? 3000 : false, // Refetch every 3 seconds when visible
+    refetchInterval: showLogs ? TIMING.POLLING.EXECUTION_LOGS : false, // Refetch every 3 seconds when visible
   });
 
   // Use WebSocket update if available, otherwise use API data
@@ -209,40 +206,6 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CompletedIcon color="success" />;
-      case 'failed':
-        return <ErrorIcon color="error" />;
-      case 'running':
-        return <RunningIcon color="primary" />;
-      case 'cancelled':
-        return <SkippedIcon color="disabled" />;
-      case 'skipped':
-        return <SkippedIcon color="warning" />;
-      default:
-        return <PendingIcon color="disabled" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'running':
-        return 'primary';
-      case 'cancelled':
-        return 'default';
-      case 'skipped':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
   const progress = deduplicatedStepResults.length > 0
     ? (deduplicatedStepResults.filter((s) => s.status === 'completed').length /
         deduplicatedStepResults.length) *
@@ -280,7 +243,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
 
         <Chip
           label={execution.status}
-          color={getStatusColor(execution.status) as any}
+          color={getStatusChipColor(execution.status)}
           size="small"
           sx={{ height: '24px', fontSize: '0.7rem' }}
         />
@@ -678,7 +641,7 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
                       <Chip
                         label={step.status}
                         size="small"
-                        color={getStatusColor(step.status) as any}
+                        color={getStatusChipColor(step.status)}
                         sx={{ height: '20px', fontSize: '0.65rem', '& .MuiChip-label': { px: 1, py: 0 } }}
                       />
                     </ListItem>

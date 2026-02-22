@@ -53,7 +53,7 @@ export interface TimeoutOverrides {
 
 export interface ExecutionRequest {
   playbook_path: string;
-  parameters: Record<string, string>;
+  parameters: Record<string, string | number | boolean>;
   gateway_url?: string;
   credential_name?: string;
   debug_mode?: boolean;
@@ -72,11 +72,11 @@ export interface ExecutionStatusResponse {
   status: string;
   started_at: string;
   completed_at: string | null;
-  current_step_index: number;
+  current_step_index: number | null;
   total_steps: number;
   error: string | null;
   debug_mode?: boolean;
-  step_results?: StepResult[];
+  step_results?: StepResult[] | null;
   domain?: string | null;  // Playbook domain (gateway, designer, perspective)
 }
 
@@ -147,6 +147,7 @@ export interface WebSocketMessage {
 // Enums
 export type ExecutionStatus =
   | 'pending'
+  | 'started'
   | 'running'
   | 'paused'
   | 'completed'
@@ -168,7 +169,8 @@ export type ParameterType =
   | 'file'
   | 'credential'
   | 'list'
-  | 'dict';
+  | 'dict'
+  | 'selector';
 
 // CloudDesigner types
 export interface DockerStatus {

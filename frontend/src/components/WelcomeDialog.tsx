@@ -26,22 +26,21 @@ import {
   Code as CodeIcon,
   BugReport as DebugIcon,
 } from '@mui/icons-material';
-
-const STORAGE_KEY = 'ignition-toolbox-welcome-dismissed';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 export function WelcomeDialog() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     // Check if user has already dismissed the welcome dialog
-    const dismissed = localStorage.getItem(STORAGE_KEY);
+    const dismissed = localStorage.getItem(STORAGE_KEYS.WELCOME_DIALOG_DISMISSED);
     if (!dismissed) {
       setOpen(true);
     }
   }, []);
 
   const handleClose = () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    localStorage.setItem(STORAGE_KEYS.WELCOME_DIALOG_DISMISSED, 'true');
     setOpen(false);
   };
 
@@ -147,5 +146,5 @@ export function WelcomeDialog() {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function resetWelcomeDialog() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEYS.WELCOME_DIALOG_DISMISSED);
 }

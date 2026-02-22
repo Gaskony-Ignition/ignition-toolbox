@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { TIMING } from '../config/timing';
 import { useStore } from '../store';
 import { Playbooks } from './Playbooks';
 import type { DockerStatus, CloudDesignerStatus } from '../types/api';
@@ -72,7 +73,7 @@ export function Designer({ hidePlaybooks }: { hidePlaybooks?: boolean } = {}) {
   } = useQuery<DockerStatus>({
     queryKey: ['clouddesigner-docker'],
     queryFn: api.cloudDesigner.getDockerStatus,
-    refetchInterval: 30000, // Check every 30s
+    refetchInterval: TIMING.POLLING.DESIGNER_SLOW, // Check every 30s
   });
 
   // Query container status
@@ -82,7 +83,7 @@ export function Designer({ hidePlaybooks }: { hidePlaybooks?: boolean } = {}) {
   } = useQuery<CloudDesignerStatus>({
     queryKey: ['clouddesigner-status'],
     queryFn: api.cloudDesigner.getStatus,
-    refetchInterval: 5000, // Poll every 5s when running
+    refetchInterval: TIMING.POLLING.DESIGNER_FAST, // Poll every 5s when running
     enabled: dockerStatus?.running === true,
   });
 
@@ -152,7 +153,7 @@ export function Designer({ hidePlaybooks }: { hidePlaybooks?: boolean } = {}) {
     queryKey: ['clouddesigner-all-statuses'],
     queryFn: api.cloudDesigner.getAllStatuses,
     enabled: showDebug && dockerStatus?.running === true,
-    refetchInterval: showDebug ? 5000 : false,
+    refetchInterval: showDebug ? TIMING.POLLING.DESIGNER_FAST : false,
   });
 
   // Query recent logs for debugging - also poll while starting or preparing (must be after mutations)
@@ -160,7 +161,7 @@ export function Designer({ hidePlaybooks }: { hidePlaybooks?: boolean } = {}) {
     queryKey: ['docker-detection-logs'],
     queryFn: () => api.logs.get({ limit: 500 }),
     enabled: showDebug || startMutation.isPending || prepareMutation.isPending,
-    refetchInterval: (startMutation.isPending || prepareMutation.isPending) ? 1500 : false,
+    refetchInterval: (startMutation.isPending || prepareMutation.isPending) ? TIMING.POLLING.DESIGNER_LOGS_PENDING : false,
   });
 
   // Stop mutation

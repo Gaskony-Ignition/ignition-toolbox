@@ -6,13 +6,18 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { WebSocketMessage, ExecutionUpdate, ScreenshotFrame } from '../types/api';
 import { createLogger } from '../utils/logger';
+import { TIMING } from '../config/timing';
 
 const logger = createLogger('WebSocket');
+
+// Port fallback constants - must match electron/config.ts BACKEND_PORT_RANGE.START
+const DEFAULT_BACKEND_PORT = 5000;
+const DEFAULT_WS_BASE_URL = `ws://127.0.0.1:${DEFAULT_BACKEND_PORT}`;
 
 // WebSocket URL - supports both web and Electron modes
 // In Electron: constructed from IPC-provided backend URL
 // In browser: use window.location
-let WS_URL = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:5000/ws/executions';
+let WS_URL = import.meta.env.VITE_WS_URL || `${DEFAULT_WS_BASE_URL}/ws/executions`;
 let WS_API_KEY = import.meta.env.VITE_WS_API_KEY || '';
 let _wsInitialized = false;
 let _wsInitPromise: Promise<void> | null = null;
@@ -28,7 +33,7 @@ export async function initializeWebSocketUrl(): Promise<void> {
       logger.info('Using Electron WebSocket URL:', WS_URL);
     } catch (error) {
       logger.error('Failed to get Electron WebSocket URL:', error);
-      WS_URL = 'ws://127.0.0.1:5000/ws/executions';
+      WS_URL = `${DEFAULT_WS_BASE_URL}/ws/executions`;
     }
 
     // Fetch API key from Electron
@@ -74,9 +79,6 @@ export function getWsInitPromise(): Promise<void> {
 // Initialize on module load
 _wsInitPromise = initializeWebSocketUrl();
 
-const INITIAL_RECONNECT_DELAY = 1000; // 1 second
-const MAX_RECONNECT_DELAY = 30000; // 30 seconds
-const RECONNECT_BACKOFF_MULTIPLIER = 1.5;
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 
@@ -91,7 +93,7 @@ interface UseWebSocketOptions {
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | undefined>(undefined);
-  const reconnectDelayRef = useRef<number>(INITIAL_RECONNECT_DELAY);
+  const reconnectDelayRef = useRef<number>(TIMING.WEBSOCKET.RECONNECT_INITIAL);
   const reconnectAttemptsRef = useRef<number>(0);
   const intentionalCloseRef = useRef<boolean>(false);
   const heartbeatIntervalRef = useRef<number | undefined>(undefined);
@@ -130,7 +132,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         setConnectionStatus('connected');
 
         // Reset reconnect state on successful connection
-        reconnectDelayRef.current = INITIAL_RECONNECT_DELAY;
+        reconnectDelayRef.current = TIMING.WEBSOCKET.RECONNECT_INITIAL;
         reconnectAttemptsRef.current = 0;
 
         callbacksRef.current.onOpen?.();
@@ -143,7 +145,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
           }
-        }, 15000); // Send ping every 15 seconds (matches server keepalive)
+        }, TIMING.WEBSOCKET.HEARTBEAT_INTERVAL); // Send ping every 15 seconds (matches server keepalive)
       };
 
       ws.onmessage = (event) => {
@@ -201,8 +203,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
           // Calculate next reconnect delay with exponential backoff
           const nextDelay = Math.min(
-            reconnectDelayRef.current * RECONNECT_BACKOFF_MULTIPLIER,
-            MAX_RECONNECT_DELAY
+            reconnectDelayRef.current * TIMING.WEBSOCKET.RECONNECT_BACKOFF,
+            TIMING.WEBSOCKET.RECONNECT_MAX
           );
           reconnectDelayRef.current = nextDelay;
 

@@ -2,6 +2,7 @@ import { autoUpdater } from 'electron-updater';
 import { BrowserWindow } from 'electron';
 import { getSetting, getGithubToken, setGithubToken as saveGithubToken } from './settings';
 import log from 'electron-log';
+import { EVENT_CHANNELS } from '../ipc/channels';
 
 // Configure logging for auto-updater
 autoUpdater.logger = log;
@@ -56,7 +57,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
   // Event handlers
   autoUpdater.on('checking-for-update', () => {
     updateStatus = { ...updateStatus, checking: true };
-    sendStatusToRenderer('update:checking', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_CHECKING, updateStatus);
   });
 
   autoUpdater.on('update-available', (info) => {
@@ -70,7 +71,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
         releaseNotes: info.releaseNotes as string | undefined,
       },
     };
-    sendStatusToRenderer('update:available', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_AVAILABLE, updateStatus);
 
     // Check if user has skipped this version
     const skippedVersion = getSetting('skippedVersion');
@@ -89,7 +90,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
       checking: false,
       available: false,
     };
-    sendStatusToRenderer('update:not-available', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_NOT_AVAILABLE, updateStatus);
   });
 
   autoUpdater.on('download-progress', (progress) => {
@@ -98,7 +99,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
       downloading: true,
       progress: progress.percent,
     };
-    sendStatusToRenderer('update:progress', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_PROGRESS, updateStatus);
   });
 
   autoUpdater.on('update-downloaded', (info) => {
@@ -108,7 +109,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
       downloaded: true,
       progress: 100,
     };
-    sendStatusToRenderer('update:downloaded', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_DOWNLOADED, updateStatus);
 
     // Don't show popup - user will install from Settings > Updates
     console.log(`Update downloaded: ${info.version}`);
@@ -121,7 +122,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
       downloading: false,
       error: error.message,
     };
-    sendStatusToRenderer('update:error', updateStatus);
+    sendStatusToRenderer(EVENT_CHANNELS.UPDATE_ERROR, updateStatus);
     console.error('Auto-updater error:', error);
   });
 

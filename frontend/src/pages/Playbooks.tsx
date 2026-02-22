@@ -54,6 +54,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api/client';
 import { createLogger } from '../utils/logger';
+import { TIMING } from '../config/timing';
+import { STORAGE_KEYS, STORAGE_PREFIXES } from '../utils/localStorage';
 import { PlaybookCard } from '../components/PlaybookCard';
 
 const logger = createLogger('Playbooks');
@@ -311,7 +313,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   const { data: playbooks = [], isLoading, error } = useQuery<PlaybookInfo[]>({
     queryKey: ['playbooks'],
     queryFn: api.playbooks.list,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: TIMING.POLLING.PLAYBOOKS, // Refetch every 30 seconds
   });
 
   // Fetch available updates for card-level indicators
@@ -336,7 +338,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
       }
       return map;
     },
-    refetchInterval: 300000, // Refetch every 5 minutes
+    refetchInterval: TIMING.POLLING.PLAYBOOK_UPDATES, // Refetch every 5 minutes
   });
 
   // Categorize playbooks
@@ -361,14 +363,14 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
       // Find all localStorage keys for playbook configurations
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith('playbook_config_') || key?.startsWith('playbook_debug_') || key?.startsWith('playbook_order_')) {
+        if (key?.startsWith(STORAGE_PREFIXES.PLAYBOOK_CONFIG) || key?.startsWith(STORAGE_PREFIXES.PLAYBOOK_DEBUG) || key?.startsWith(STORAGE_PREFIXES.PLAYBOOK_ORDER)) {
           // Extract playbook path from key
-          if (key.startsWith('playbook_config_')) {
-            const playbookPath = key.replace('playbook_config_', '');
+          if (key.startsWith(STORAGE_PREFIXES.PLAYBOOK_CONFIG)) {
+            const playbookPath = key.replace(STORAGE_PREFIXES.PLAYBOOK_CONFIG, '');
             if (!validPaths.has(playbookPath)) {
               keysToRemove.push(key);
               // Also remove associated debug mode setting
-              keysToRemove.push(`playbook_debug_${playbookPath}`);
+              keysToRemove.push(STORAGE_KEYS.PLAYBOOK_DEBUG(playbookPath));
             }
           }
         }
@@ -406,11 +408,10 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
     const selectedCredential = useStore.getState().selectedCredential;
 
     // Get saved configuration from localStorage
-    const savedConfigKey = `playbook_config_${playbook.path}`;
-    const savedConfigStr = localStorage.getItem(savedConfigKey);
+    const savedConfigStr = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_CONFIG(playbook.path));
 
     // Get debug mode preference
-    const debugModeStr = localStorage.getItem(`playbook_debug_${playbook.path}`);
+    const debugModeStr = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_DEBUG(playbook.path));
     const debug_mode = debugModeStr === 'true';
 
     // If global credential is selected, execute directly with it

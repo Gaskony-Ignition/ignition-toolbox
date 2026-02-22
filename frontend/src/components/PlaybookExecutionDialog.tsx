@@ -21,6 +21,7 @@ import { ParameterInput } from './ParameterInput';
 import { TimeoutSettings } from './TimeoutSettings';
 import type { PlaybookInfo, CredentialInfo, TimeoutOverrides } from '../types/api';
 import { useStore, type SessionCredential } from '../store';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 interface PlaybookExecutionDialogProps {
   open: boolean;
@@ -36,13 +37,13 @@ interface SavedConfig {
 
 // Get saved config for a playbook
 function getSavedConfig(playbookPath: string): SavedConfig | null {
-  const stored = localStorage.getItem(`playbook_config_${playbookPath}`);
+  const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_CONFIG(playbookPath));
   return stored ? JSON.parse(stored) : null;
 }
 
 // Save config for a playbook (only parameters, NOT gateway_url/username/password)
 function saveConfig(playbookPath: string, config: SavedConfig) {
-  localStorage.setItem(`playbook_config_${playbookPath}`, JSON.stringify(config));
+  localStorage.setItem(STORAGE_KEYS.PLAYBOOK_CONFIG(playbookPath), JSON.stringify(config));
 }
 
 export function PlaybookExecutionDialog({

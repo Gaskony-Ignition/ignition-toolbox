@@ -8,15 +8,16 @@
 import { arrayMove } from '@dnd-kit/sortable';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { PlaybookInfo } from '../types/api';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 // Save custom order to localStorage
 export function savePlaybookOrder(category: string, order: string[]) {
-  localStorage.setItem(`playbook_order_${category}`, JSON.stringify(order));
+  localStorage.setItem(STORAGE_KEYS.PLAYBOOK_ORDER(category), JSON.stringify(order));
 }
 
 // Load custom order from localStorage
 export function getPlaybookOrder(category: string): string[] {
-  const stored = localStorage.getItem(`playbook_order_${category}`);
+  const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_ORDER(category));
   return stored ? JSON.parse(stored) : [];
 }
 

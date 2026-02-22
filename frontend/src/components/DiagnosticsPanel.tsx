@@ -47,6 +47,7 @@ import {
   Clear as ClearIcon,
 } from '@mui/icons-material';
 import { api } from '../api/client';
+import { TIMING } from '../config/timing';
 import type {
   LogEntry,
   LogStats,
@@ -491,7 +492,7 @@ export function LogsSection() {
     if (autoRefresh) {
       autoRefreshRef.current = setInterval(() => {
         fetchLogs();
-      }, 3000);
+      }, TIMING.UI.NOTIFICATION);
     } else {
       if (autoRefreshRef.current) {
         clearInterval(autoRefreshRef.current);

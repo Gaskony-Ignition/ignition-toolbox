@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Awaitable, Callable
 from fastapi import HTTPException
 
 from ignition_toolkit.playbook.engine import PlaybookEngine
+from ignition_toolkit.playbook.models import ExecutionStatus
 from ignition_toolkit.storage import get_database
 
 if TYPE_CHECKING:
@@ -269,7 +270,7 @@ def create_execution_runner(
                         .first()
                     )
                     if execution:
-                        execution.status = "cancelled"
+                        execution.status = ExecutionStatus.CANCELLED.value
                         execution.completed_at = datetime.now()
                         session.commit()
                         logger.info(
@@ -277,8 +278,6 @@ def create_execution_runner(
                         )
 
                         # Broadcast cancellation to WebSocket clients
-                        from ignition_toolkit.playbook.models import ExecutionStatus
-
                         # Get current execution state and update status
                         execution_state = engine.get_current_execution()
                         if execution_state:
@@ -310,8 +309,8 @@ def create_execution_runner(
                         .filter_by(execution_id=execution_id)
                         .first()
                     )
-                    if execution and execution.status in ("running", "paused"):
-                        execution.status = "failed"
+                    if execution and execution.status in (ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value):
+                        execution.status = ExecutionStatus.FAILED.value
                         execution.completed_at = datetime.now()
                         execution.error_message = str(e)[:500]
                         session.commit()
@@ -320,8 +319,6 @@ def create_execution_runner(
                         )
 
                         # Broadcast failure to WebSocket clients
-                        from ignition_toolkit.playbook.models import ExecutionStatus
-
                         execution_state = engine.get_current_execution()
                         if execution_state:
                             execution_state.status = ExecutionStatus.FAILED

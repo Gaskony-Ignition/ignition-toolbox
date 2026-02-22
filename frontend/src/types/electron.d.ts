@@ -60,11 +60,6 @@ interface ElectronAPI {
   on: (channel: string, callback: (data: unknown) => void) => () => void;
   off: (channel: string, callback: (data: unknown) => void) => void;
 
-  // CloudDesigner
-  cloudDesigner?: {
-    openWindow: () => Promise<boolean>;
-  };
-
 }
 
 declare global {

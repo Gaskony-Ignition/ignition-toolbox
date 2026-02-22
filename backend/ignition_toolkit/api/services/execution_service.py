@@ -21,7 +21,7 @@ from ignition_toolkit.gateway import GatewayClient
 from ignition_toolkit.playbook.engine import PlaybookEngine
 from ignition_toolkit.playbook.execution_manager import ExecutionManager
 from ignition_toolkit.playbook.loader import PlaybookLoader
-from ignition_toolkit.playbook.models import ExecutionState, ExecutionStatus, Playbook
+from ignition_toolkit.playbook.models import ExecutionState, ExecutionStatus, Playbook, StepStatus
 from ignition_toolkit.storage import Database
 
 logger = logging.getLogger(__name__)
@@ -248,7 +248,7 @@ class ExecutionService:
             return
 
         # Create initial step results with all steps as "pending"
-        from ignition_toolkit.playbook.models import StepResult, StepStatus
+        from ignition_toolkit.playbook.models import StepResult
 
         initial_step_results = [
             StepResult(
@@ -378,7 +378,7 @@ class ExecutionService:
                 .first()
             )
             if execution:
-                execution.status = "cancelled"
+                execution.status = ExecutionStatus.CANCELLED.value
                 execution.completed_at = datetime.now()
                 session.commit()
                 logger.info(f"Updated execution {execution_id} status to 'cancelled'")
@@ -413,7 +413,7 @@ class ExecutionService:
                 .first()
             )
             if execution:
-                execution.status = "failed"
+                execution.status = ExecutionStatus.FAILED.value
                 execution.completed_at = datetime.now()
                 execution.error_message = error_message
                 session.commit()
@@ -430,7 +430,6 @@ class ExecutionService:
                 logger.info(f"Broadcasted failure for {execution_id}")
             else:
                 # No execution state yet - create a minimal one
-                from ignition_toolkit.playbook.models import ExecutionState
                 minimal_state = ExecutionState(
                     execution_id=execution_id,
                     playbook_name="Unknown",

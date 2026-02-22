@@ -57,6 +57,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type StackBuilderApplication } from '../api/client';
+import { TIMING } from '../config/timing';
 import { useStore } from '../store';
 
 interface ServiceInstance {
@@ -597,7 +598,7 @@ export function StackBuilder() {
   const { data: dockerStatus } = useQuery({
     queryKey: ['docker-status'],
     queryFn: () => api.stackBuilder.getDockerStatus(),
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: TIMING.POLLING.STACKBUILDER_SLOW, // Check every 30 seconds
   });
 
   // Deployment status check
@@ -609,7 +610,7 @@ export function StackBuilder() {
       return status;
     },
     enabled: !!globalSettings.stack_name,
-    refetchInterval: 5000, // Check every 5 seconds when deployed
+    refetchInterval: TIMING.POLLING.STACKBUILDER_FAST, // Check every 5 seconds when deployed
   });
 
   // Deploy stack mutation

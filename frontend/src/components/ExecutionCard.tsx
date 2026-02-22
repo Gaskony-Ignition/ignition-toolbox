@@ -22,11 +22,9 @@ import {
   PlayArrow as ResumeIcon,
   SkipNext as SkipIcon,
   Cancel as CancelIcon,
-  CheckCircle as CompletedIcon,
-  Error as ErrorIcon,
-  PendingActions as PendingIcon,
 } from '@mui/icons-material';
 import type { ExecutionStatusResponse } from '../types/api';
+import { getStatusChipColor, getStatusIcon } from '../constants/executionStatus';
 
 interface ExecutionCardProps {
   execution: ExecutionStatusResponse;
@@ -35,24 +33,6 @@ interface ExecutionCardProps {
   onSkip?: (executionId: string) => void;
   onCancel?: (executionId: string) => void;
 }
-
-const STATUS_COLORS: Record<string, 'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'> = {
-  pending: 'default',
-  running: 'primary',
-  paused: 'warning',
-  completed: 'success',
-  failed: 'error',
-  cancelled: 'default',
-};
-
-const STATUS_ICONS: Record<string, React.ReactElement> = {
-  pending: <PendingIcon />,
-  running: <ResumeIcon />,
-  paused: <PauseIcon />,
-  completed: <CompletedIcon />,
-  failed: <ErrorIcon />,
-  cancelled: <CancelIcon />,
-};
 
 export function ExecutionCard({
   execution,
@@ -98,9 +78,9 @@ export function ExecutionCard({
             <Typography variant="h6">{execution.playbook_name}</Typography>
             <Chip
               label={execution.status}
-              color={STATUS_COLORS[execution.status] || 'default'}
+              color={getStatusChipColor(execution.status)}
               size="small"
-              icon={STATUS_ICONS[execution.status]}
+              icon={getStatusIcon(execution.status)}
             />
           </Box>
           <IconButton
@@ -184,7 +164,7 @@ export function ExecutionCard({
                       <Chip
                         label={step.status}
                         size="small"
-                        color={STATUS_COLORS[step.status] || 'default'}
+                        color={getStatusChipColor(step.status)}
                       />
                     </Box>
                     {step.error && (

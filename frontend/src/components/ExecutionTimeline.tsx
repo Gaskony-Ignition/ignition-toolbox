@@ -20,15 +20,12 @@ import {
   Paper,
 } from '@mui/material';
 import {
-  CheckCircle as CompletedIcon,
-  Error as ErrorIcon,
-  PlayArrow as RunningIcon,
   Pending as PendingIcon,
-  Cancel as SkippedIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Schedule as DurationIcon,
 } from '@mui/icons-material';
+import { getStatusTimelineColor, getStatusIcon } from '../constants/executionStatus';
 import type { StepResult } from '../types/api';
 
 interface ExecutionTimelineProps {
@@ -54,37 +51,6 @@ export function ExecutionTimeline({
       }
       return next;
     });
-  };
-
-  const getStatusIcon = (status: string, size: 'small' | 'medium' = 'small') => {
-    const fontSize = size === 'small' ? '1rem' : '1.25rem';
-    switch (status) {
-      case 'completed':
-        return <CompletedIcon sx={{ fontSize, color: 'success.main' }} />;
-      case 'failed':
-        return <ErrorIcon sx={{ fontSize, color: 'error.main' }} />;
-      case 'running':
-        return <RunningIcon sx={{ fontSize, color: 'primary.main' }} />;
-      case 'skipped':
-        return <SkippedIcon sx={{ fontSize, color: 'warning.main' }} />;
-      default:
-        return <PendingIcon sx={{ fontSize, color: 'text.disabled' }} />;
-    }
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'completed':
-        return '#4caf50';
-      case 'failed':
-        return '#f44336';
-      case 'running':
-        return '#2196f3';
-      case 'skipped':
-        return '#ff9800';
-      default:
-        return '#666';
-    }
   };
 
   const formatDuration = (startedAt?: string | null, completedAt?: string | null): string => {
@@ -202,11 +168,11 @@ export function ExecutionTimeline({
                   height: compact ? 24 : 32,
                   borderRadius: '50%',
                   bgcolor: 'background.paper',
-                  border: `2px solid ${getStatusColor(step.status)}`,
+                  border: `2px solid ${getStatusTimelineColor(step.status)}`,
                   flexShrink: 0,
                 }}
               >
-                {getStatusIcon(step.status, compact ? 'small' : 'medium')}
+                {getStatusIcon(step.status, { size: compact ? 'small' : 'medium' })}
               </Box>
 
               {/* Step content */}
@@ -281,7 +247,7 @@ export function ExecutionTimeline({
                         sx={{
                           width: `${durationPercent}%`,
                           height: '100%',
-                          bgcolor: getStatusColor(step.status),
+                          bgcolor: getStatusTimelineColor(step.status),
                           borderRadius: 2,
                           transition: 'width 0.3s ease-out',
                         }}

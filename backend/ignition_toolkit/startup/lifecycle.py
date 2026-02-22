@@ -96,6 +96,21 @@ async def lifespan(app: FastAPI):
             logger.warning(f"[WARN]  Playbook validation failed: {e}")
             set_component_degraded("playbooks", str(e))
 
+        # Step type registry completeness check (NON-FATAL)
+        try:
+            from ignition_toolkit.playbook.step_type_registry import validate_registry_completeness
+
+            missing = validate_registry_completeness()
+            if missing:
+                logger.warning(
+                    f"[WARN]  Step type registry is incomplete. "
+                    f"Missing entries for: {missing}"
+                )
+            else:
+                logger.info("[OK] Step type registry complete")
+        except Exception as e:
+            logger.warning(f"[WARN]  Step type registry check failed: {e}")
+
         # Phase 5: Playwright Browser (NON-FATAL but required for playbook execution)
         # Browsers should be bundled with the installer - just verify they exist
         logger.info("Phase 5/8: Playwright Browser Check")

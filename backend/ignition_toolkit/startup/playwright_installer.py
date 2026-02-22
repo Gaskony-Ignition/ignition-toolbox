@@ -14,6 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ignition_toolkit.core.timeouts import TimeoutDefaults
+
 logger = logging.getLogger(__name__)
 
 # Browser to install (chromium is sufficient for this application)
@@ -144,7 +146,7 @@ async def install_browser(progress_callback=None) -> bool:
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=300)
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL)
         except asyncio.TimeoutError:
             logger.error("Browser installation timed out after 5 minutes")
             process.kill()
@@ -212,7 +214,7 @@ async def _install_browser_via_driver(progress_callback=None) -> bool:
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=300)
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL)
         except asyncio.TimeoutError:
             logger.error("Driver browser installation timed out after 5 minutes")
             process.kill()

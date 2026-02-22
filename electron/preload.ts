@@ -1,65 +1,55 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { UpdateStatus } from './services/auto-updater';
+import { IPC_CHANNELS, EVENT_CHANNELS } from './ipc/channels';
+import type { ValidEventChannel } from './ipc/channels';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 
 // Define valid event channels for security
-const validEventChannels = [
-  'backend:status',
-  'backend:error',
-  'backend:log',
-  'update:checking',
-  'update:available',
-  'update:not-available',
-  'update:progress',
-  'update:downloaded',
-  'update:error',
-] as const;
-
-type ValidEventChannel = typeof validEventChannels[number];
+const validEventChannels = Object.values(EVENT_CHANNELS);
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // App info
-  getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+  getVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),
   getPlatform: (): string => process.platform,
 
   // Backend communication
-  getBackendUrl: (): Promise<string> => ipcRenderer.invoke('app:getBackendUrl'),
-  getWebSocketUrl: (): Promise<string> => ipcRenderer.invoke('app:getWebSocketUrl'),
-  getWebSocketApiKey: (): Promise<string> => ipcRenderer.invoke('app:getWebSocketApiKey'),
+  getBackendUrl: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_BACKEND_URL),
+  getWebSocketUrl: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_WS_URL),
+  getWebSocketApiKey: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_WS_API_KEY),
   getBackendStatus: (): Promise<{ running: boolean; port: number | null }> =>
-    ipcRenderer.invoke('app:getBackendStatus'),
-  restartBackend: (): Promise<void> => ipcRenderer.invoke('app:restartBackend'),
+    ipcRenderer.invoke(IPC_CHANNELS.APP_GET_BACKEND_STATUS),
+  restartBackend: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.APP_RESTART_BACKEND),
 
   // Native dialogs
   openFileDialog: (options: {
     title?: string;
     filters?: { name: string; extensions: string[] }[];
     properties?: ('openFile' | 'openDirectory' | 'multiSelections')[];
-  }): Promise<string[] | null> => ipcRenderer.invoke('dialog:openFile', options),
+  }): Promise<string[] | null> => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
 
   saveFileDialog: (options: {
     title?: string;
     defaultPath?: string;
     filters?: { name: string; extensions: string[] }[];
-  }): Promise<string | null> => ipcRenderer.invoke('dialog:saveFile', options),
+  }): Promise<string | null> => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
 
   // Shell operations
-  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
-  openPath: (path: string): Promise<string> => ipcRenderer.invoke('shell:openPath', path),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_EXTERNAL, url),
+  openPath: (path: string): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, path),
 
   // Settings
-  getSetting: (key: string): Promise<unknown> => ipcRenderer.invoke('settings:get', key),
+  getSetting: (key: string): Promise<unknown> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET, key),
   setSetting: (key: string, value: unknown): Promise<void> =>
-    ipcRenderer.invoke('settings:set', key, value),
-  getAllSettings: (): Promise<Record<string, unknown>> => ipcRenderer.invoke('settings:getAll'),
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, key, value),
+  getAllSettings: (): Promise<Record<string, unknown>> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_ALL),
 
   // Updates
-  checkForUpdates: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:check'),
-  downloadUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:download'),
-  installUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke('updates:install'),
-  getUpdateStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke('updates:getStatus'),
+  checkForUpdates: (): Promise<UpdateStatus> => ipcRenderer.invoke(IPC_CHANNELS.UPDATES_CHECK),
+  downloadUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke(IPC_CHANNELS.UPDATES_DOWNLOAD),
+  installUpdate: (): Promise<{ success: boolean }> => ipcRenderer.invoke(IPC_CHANNELS.UPDATES_INSTALL),
+  getUpdateStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke(IPC_CHANNELS.UPDATES_GET_STATUS),
 
   // Event listeners (for backend status updates)
   on: (channel: ValidEventChannel, callback: (data: unknown) => void): (() => void) => {

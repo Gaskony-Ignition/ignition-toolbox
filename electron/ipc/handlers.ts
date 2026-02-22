@@ -12,36 +12,37 @@ import {
 } from '../services/auto-updater';
 
 import { openExternalUrl } from '../utils/platform';
+import { IPC_CHANNELS } from './channels';
 
 export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   // App info handlers
-  ipcMain.handle('app:getVersion', () => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_VERSION, () => {
     return app.getVersion();
   });
 
-  ipcMain.handle('app:getBackendUrl', () => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_BACKEND_URL, () => {
     return pythonBackend.getBaseUrl();
   });
 
-  ipcMain.handle('app:getWebSocketUrl', () => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_WS_URL, () => {
     return pythonBackend.getWebSocketUrl();
   });
 
-  ipcMain.handle('app:getWebSocketApiKey', () => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_WS_API_KEY, () => {
     return pythonBackend.getWebSocketApiKey();
   });
 
-  ipcMain.handle('app:getBackendStatus', () => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_BACKEND_STATUS, () => {
     return pythonBackend.getStatus();
   });
 
-  ipcMain.handle('app:restartBackend', async () => {
+  ipcMain.handle(IPC_CHANNELS.APP_RESTART_BACKEND, async () => {
     await pythonBackend.restart();
   });
 
   // Dialog handlers
   ipcMain.handle(
-    'dialog:openFile',
+    IPC_CHANNELS.DIALOG_OPEN_FILE,
     async (
       event,
       options: {
@@ -66,7 +67,7 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   );
 
   ipcMain.handle(
-    'dialog:saveFile',
+    IPC_CHANNELS.DIALOG_SAVE_FILE,
     async (
       event,
       options: {
@@ -91,7 +92,7 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   );
 
   // Shell handlers
-  ipcMain.handle('shell:openExternal', async (_, url: string) => {
+  ipcMain.handle(IPC_CHANNELS.SHELL_OPEN_EXTERNAL, async (_, url: string) => {
     // Validate URL for security
     try {
       const parsed = new URL(url);
@@ -105,7 +106,7 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
     }
   });
 
-  ipcMain.handle('shell:openPath', async (_, filePath: string) => {
+  ipcMain.handle(IPC_CHANNELS.SHELL_OPEN_PATH, async (_, filePath: string) => {
     const resolved = path.resolve(filePath);
 
     // Block executable files
@@ -139,34 +140,34 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   });
 
   // Settings handlers
-  ipcMain.handle('settings:get', (_, key: string) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, (_, key: string) => {
     return getSetting(key as keyof ReturnType<typeof getAllSettings>);
   });
 
-  ipcMain.handle('settings:set', (_, key: string, value: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET, (_, key: string, value: unknown) => {
     setSetting(key as keyof ReturnType<typeof getAllSettings>, value as never);
   });
 
-  ipcMain.handle('settings:getAll', () => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_ALL, () => {
     return getAllSettings();
   });
 
   // Update handlers
-  ipcMain.handle('updates:check', async () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATES_CHECK, async () => {
     return checkForUpdates();
   });
 
-  ipcMain.handle('updates:download', async () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATES_DOWNLOAD, async () => {
     downloadUpdate();
     return { success: true };
   });
 
-  ipcMain.handle('updates:install', async () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATES_INSTALL, async () => {
     quitAndInstall();
     return { success: true };
   });
 
-  ipcMain.handle('updates:getStatus', () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATES_GET_STATUS, () => {
     return getUpdateStatus();
   });
 

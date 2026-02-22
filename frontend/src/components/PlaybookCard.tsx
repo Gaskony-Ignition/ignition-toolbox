@@ -58,6 +58,8 @@ import {
 import type { PlaybookInfo } from '../types/api';
 import { useStore } from '../store';
 import { api } from '../api/client';
+import { TIMING } from '../config/timing';
+import { STORAGE_KEYS } from '../utils/localStorage';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ScheduleDialog from './ScheduleDialog';
 
@@ -81,7 +83,7 @@ interface SavedConfig {
 }
 
 function getSavedConfigPreview(playbookPath: string): SavedConfig | null {
-  const stored = localStorage.getItem(`playbook_config_${playbookPath}`);
+  const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_CONFIG(playbookPath));
   if (!stored) return null;
   try {
     return JSON.parse(stored);
@@ -98,11 +100,11 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [debugMode, setDebugMode] = useState(() => {
-    const stored = localStorage.getItem(`playbook_debug_${playbook.path}`);
+    const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_DEBUG(playbook.path));
     return stored === 'true';
   });
   const [scheduleMode, setScheduleMode] = useState(() => {
-    const stored = localStorage.getItem(`playbook_schedule_mode_${playbook.path}`);
+    const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_SCHEDULE_MODE(playbook.path));
     return stored === 'true';
   });
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
@@ -176,7 +178,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
   useEffect(() => {
     const interval = setInterval(() => {
       setSavedConfig(getSavedConfigPreview(playbook.path));
-    }, 5000);
+    }, TIMING.POLLING.PLAYBOOK_CONFIG_CHECK);
     return () => clearInterval(interval);
   }, [playbook.path]);
 
@@ -315,13 +317,13 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
   const handleDebugModeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newDebugMode = event.target.checked;
     setDebugMode(newDebugMode);
-    localStorage.setItem(`playbook_debug_${playbook.path}`, newDebugMode.toString());
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_DEBUG(playbook.path), newDebugMode.toString());
   };
 
   const handleScheduleModeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newScheduleMode = event.target.checked;
     setScheduleMode(newScheduleMode);
-    localStorage.setItem(`playbook_schedule_mode_${playbook.path}`, newScheduleMode.toString());
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_SCHEDULE_MODE(playbook.path), newScheduleMode.toString());
   };
 
   const handleExecuteClick = () => {
@@ -610,7 +612,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
         {savedConfig && Object.keys(savedConfig.parameters).length > 0 && (
           <MenuItem
             onClick={() => {
-              localStorage.removeItem(`playbook_config_${playbook.path}`);
+              localStorage.removeItem(STORAGE_KEYS.PLAYBOOK_CONFIG(playbook.path));
               setSavedConfig(null);
               setMenuAnchor(null);
               setSnackbarMessage('Saved configuration cleared');
@@ -982,7 +984,7 @@ export function PlaybookCard({ playbook, onConfigure, onExecute, onExport, onVie
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={4000}
+        autoHideDuration={TIMING.UI.SNACKBAR_CARD}
         onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}

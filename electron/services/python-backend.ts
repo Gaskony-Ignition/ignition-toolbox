@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { app } from 'electron';
 import * as http from 'http';
+import { BACKEND_HOST, BACKEND_PORT_RANGE, getBackendHttpUrl, getBackendWsUrl } from '../config';
 
 export interface BackendStatus {
   running: boolean;
@@ -55,8 +56,8 @@ export class PythonBackend {
    */
   private async findFreePort(): Promise<number> {
     const net = require('net');
-    const startPort = 5000;
-    const endPort = 5099;
+    const startPort = BACKEND_PORT_RANGE.START;
+    const endPort = BACKEND_PORT_RANGE.END;
 
     for (let port = startPort; port <= endPort; port++) {
       const available = await new Promise<boolean>((resolve) => {
@@ -246,7 +247,7 @@ export class PythonBackend {
     const env = {
       ...process.env,
       IGNITION_TOOLKIT_PORT: String(this.port),
-      IGNITION_TOOLKIT_HOST: '127.0.0.1',
+      IGNITION_TOOLKIT_HOST: BACKEND_HOST,
       WEBSOCKET_API_KEY: this.wsApiKey,
       PYTHONUNBUFFERED: '1',
       // Use app data directory for toolkit data
@@ -485,14 +486,14 @@ export class PythonBackend {
    * Get the base URL for the backend
    */
   getBaseUrl(): string {
-    return `http://127.0.0.1:${this.port}`;
+    return getBackendHttpUrl(this.port ?? undefined);
   }
 
   /**
    * Get the WebSocket URL for the backend
    */
   getWebSocketUrl(): string {
-    return `ws://127.0.0.1:${this.port}`;
+    return getBackendWsUrl(this.port ?? undefined);
   }
 
   /**

@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 export interface PlaybookSection {
   id: string;
@@ -23,10 +24,6 @@ interface PlaybookSectionsState {
   getUnsortedPlaybooks: (allPaths: string[]) => string[];
 }
 
-function getStorageKey(domain: string): string {
-  return `playbook_sections_${domain}`;
-}
-
 /**
  * Hook for managing user-created sections for playbook organization
  *
@@ -35,19 +32,19 @@ function getStorageKey(domain: string): string {
  */
 export function usePlaybookSections(domain: string): PlaybookSectionsState {
   const [sections, setSections] = useState<PlaybookSection[]>(() => {
-    const stored = localStorage.getItem(getStorageKey(domain));
+    const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_SECTIONS(domain));
     return stored ? JSON.parse(stored) : [];
   });
 
   // Re-read from localStorage when domain changes (component is reused across sub-tabs)
   useEffect(() => {
-    const stored = localStorage.getItem(getStorageKey(domain));
+    const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_SECTIONS(domain));
     setSections(stored ? JSON.parse(stored) : []);
   }, [domain]);
 
   const persist = useCallback((newSections: PlaybookSection[]) => {
     setSections(newSections);
-    localStorage.setItem(getStorageKey(domain), JSON.stringify(newSections));
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_SECTIONS(domain), JSON.stringify(newSections));
   }, [domain]);
 
   const createSection = useCallback((name: string) => {

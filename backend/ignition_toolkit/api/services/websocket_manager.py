@@ -12,6 +12,8 @@ from typing import Any
 
 from fastapi import WebSocket
 
+from ignition_toolkit.playbook.models import ExecutionStatus
+
 logger = logging.getLogger(__name__)
 
 # Batching configuration
@@ -131,7 +133,7 @@ class WebSocketManager:
 
         # Warn if broadcasting critical state with no connections
         status_value = state.status.value if hasattr(state.status, 'value') else state.status
-        if len(self._connections) == 0 and status_value in ["cancelled", "failed"]:
+        if len(self._connections) == 0 and status_value in [ExecutionStatus.CANCELLED.value, ExecutionStatus.FAILED.value]:
             logger.warning(
                 f"[WARN]  CRITICAL: Broadcasting {status_value} status but NO WebSocket "
                 f"connections active! Frontend will miss real-time update for execution {state.execution_id}"

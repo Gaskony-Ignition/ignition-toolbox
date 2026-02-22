@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 interface PlaybookOrderState {
   order: string[];
@@ -17,13 +18,13 @@ interface PlaybookOrderState {
  */
 export function usePlaybookOrder(category: string): PlaybookOrderState {
   const [order, setOrder] = useState<string[]>(() => {
-    const stored = localStorage.getItem(`playbook_order_${category}`);
+    const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_ORDER(category));
     return stored ? JSON.parse(stored) : [];
   });
 
   const updateOrder = useCallback((newOrder: string[]) => {
     setOrder(newOrder);
-    localStorage.setItem(`playbook_order_${category}`, JSON.stringify(newOrder));
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_ORDER(category), JSON.stringify(newOrder));
   }, [category]);
 
   return { order, updateOrder };
@@ -36,13 +37,13 @@ export function usePlaybookOrder(category: string): PlaybookOrderState {
  */
 export function useCategoryOrder(): PlaybookOrderState {
   const [order, setOrder] = useState<string[]>(() => {
-    const stored = localStorage.getItem('category_order');
+    const stored = localStorage.getItem(STORAGE_KEYS.CATEGORY_ORDER);
     return stored ? JSON.parse(stored) : [];
   });
 
   const updateOrder = useCallback((newOrder: string[]) => {
     setOrder(newOrder);
-    localStorage.setItem('category_order', JSON.stringify(newOrder));
+    localStorage.setItem(STORAGE_KEYS.CATEGORY_ORDER, JSON.stringify(newOrder));
   }, []);
 
   return { order, updateOrder };
@@ -65,14 +66,14 @@ interface ExpandedStateHook {
  */
 export function useCategoryExpanded(): ExpandedStateHook {
   const [expanded, setExpandedState] = useState<ExpandedState>(() => {
-    const stored = localStorage.getItem('category_expanded');
+    const stored = localStorage.getItem(STORAGE_KEYS.CATEGORY_EXPANDED);
     return stored ? JSON.parse(stored) : {};
   });
 
   const setExpanded = useCallback((key: string, isExpanded: boolean) => {
     setExpandedState(prev => {
       const newState = { ...prev, [key]: isExpanded };
-      localStorage.setItem('category_expanded', JSON.stringify(newState));
+      localStorage.setItem(STORAGE_KEYS.CATEGORY_EXPANDED, JSON.stringify(newState));
       return newState;
     });
   }, []);
@@ -80,7 +81,7 @@ export function useCategoryExpanded(): ExpandedStateHook {
   const toggleExpanded = useCallback((key: string) => {
     setExpandedState(prev => {
       const newState = { ...prev, [key]: !prev[key] };
-      localStorage.setItem('category_expanded', JSON.stringify(newState));
+      localStorage.setItem(STORAGE_KEYS.CATEGORY_EXPANDED, JSON.stringify(newState));
       return newState;
     });
   }, []);
@@ -95,14 +96,14 @@ export function useCategoryExpanded(): ExpandedStateHook {
  */
 export function useGroupExpanded(): ExpandedStateHook {
   const [expanded, setExpandedState] = useState<ExpandedState>(() => {
-    const stored = localStorage.getItem('group_expanded');
+    const stored = localStorage.getItem(STORAGE_KEYS.GROUP_EXPANDED);
     return stored ? JSON.parse(stored) : {};
   });
 
   const setExpanded = useCallback((key: string, isExpanded: boolean) => {
     setExpandedState(prev => {
       const newState = { ...prev, [key]: isExpanded };
-      localStorage.setItem('group_expanded', JSON.stringify(newState));
+      localStorage.setItem(STORAGE_KEYS.GROUP_EXPANDED, JSON.stringify(newState));
       return newState;
     });
   }, []);
@@ -110,7 +111,7 @@ export function useGroupExpanded(): ExpandedStateHook {
   const toggleExpanded = useCallback((key: string) => {
     setExpandedState(prev => {
       const newState = { ...prev, [key]: !prev[key] };
-      localStorage.setItem('group_expanded', JSON.stringify(newState));
+      localStorage.setItem(STORAGE_KEYS.GROUP_EXPANDED, JSON.stringify(newState));
       return newState;
     });
   }, []);

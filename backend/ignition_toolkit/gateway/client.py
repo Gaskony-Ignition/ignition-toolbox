@@ -8,6 +8,7 @@ from pathlib import Path
 
 import httpx
 
+from ignition_toolkit.core.timeouts import TimeoutDefaults
 from ignition_toolkit.gateway.endpoints import GatewayEndpoints
 from ignition_toolkit.gateway.exceptions import (
     AuthenticationError,
@@ -271,7 +272,7 @@ class GatewayClient:
     async def wait_for_module_installation(
         self,
         module_name: str,
-        timeout: int = 300,
+        timeout: int = TimeoutDefaults.MODULE_INSTALL,
         poll_interval: int = 5,
     ) -> bool:
         """
@@ -381,7 +382,7 @@ class GatewayClient:
 
     # System Operations
 
-    async def restart(self, wait_for_ready: bool = True, timeout: int = 120) -> bool:
+    async def restart(self, wait_for_ready: bool = True, timeout: int = TimeoutDefaults.GATEWAY_RESTART) -> bool:
         """
         Restart Gateway
 
@@ -411,7 +412,7 @@ class GatewayClient:
 
         return True
 
-    async def wait_for_ready(self, timeout: int = 120, poll_interval: int = 5) -> bool:
+    async def wait_for_ready(self, timeout: int = TimeoutDefaults.GATEWAY_RESTART, poll_interval: int = 5) -> bool:
         """
         Wait for Gateway to be ready (after restart or startup)
 

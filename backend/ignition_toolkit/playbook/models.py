@@ -84,11 +84,17 @@ class StepType(str, Enum):
     FAT_GENERATE_REPORT = "fat.generate_report"
     FAT_EXPORT_REPORT = "fat.export_report"
 
+    @property
+    def domain(self) -> str:
+        """Extract the domain prefix from the step type value (e.g. 'gateway' from 'gateway.login')."""
+        return self.value.split(".")[0]
+
 
 class ExecutionStatus(str, Enum):
     """Status of playbook execution"""
 
     PENDING = "pending"
+    STARTED = "started"
     RUNNING = "running"
     PAUSED = "paused"
     COMPLETED = "completed"

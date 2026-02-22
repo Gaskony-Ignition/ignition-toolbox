@@ -29,6 +29,7 @@ from ignition_toolkit.api.routers.models import (
 )
 from ignition_toolkit.api.services.execution_response_builder import ExecutionResponseBuilder
 from ignition_toolkit.playbook.engine import PlaybookEngine
+from ignition_toolkit.playbook.models import ExecutionStatus
 from ignition_toolkit.storage import get_database
 
 logger = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ async def start_execution(request: ExecutionRequest, background_tasks: Backgroun
         return ExecutionResponse(
             execution_id=execution_id,
             playbook_name=playbook.name,
-            status="started",
+            status=ExecutionStatus.STARTED.value,
             message=f"Execution started with ID: {execution_id}",
         )
 
@@ -237,8 +238,6 @@ async def _force_cancel_status(execution_id: str, execution_manager, app) -> Non
     Called when the asyncio task had already completed before cancel was requested,
     meaning the CancelledError handler in run_execution() never fired.
     """
-    from ignition_toolkit.playbook.models import ExecutionStatus
-
     # Update database
     db = get_database()
     if db:
@@ -250,8 +249,8 @@ async def _force_cancel_status(execution_id: str, execution_manager, app) -> Non
                 .filter_by(execution_id=execution_id)
                 .first()
             )
-            if execution and execution.status in ("running", "paused"):
-                execution.status = "cancelled"
+            if execution and execution.status in (ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value):
+                execution.status = ExecutionStatus.CANCELLED.value
                 execution.completed_at = datetime.now()
                 session.commit()
                 logger.info(f"Force-updated execution {execution_id} status to 'cancelled' in database")
@@ -315,9 +314,9 @@ async def cancel_execution(execution_id: str):
             raise HTTPException(status_code=404, detail=f"Execution {execution_id} not found")
 
         # Mark old execution as cancelled in database
-        if execution.status in ["running", "paused"]:
+        if execution.status in [ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value]:
             logger.info(f"Cancelling database-only execution {execution_id} (started {execution.started_at})")
-            execution.status = "cancelled"
+            execution.status = ExecutionStatus.CANCELLED.value
             execution.completed_at = datetime.now()
             execution.error_message = "Cancelled by user (execution was from before server restart)"
             session.commit()
@@ -409,7 +408,7 @@ async def delete_execution(execution_id: str):
     if execution_id in active_engines:
         engine = active_engines[execution_id]
         state = engine.get_current_execution()
-        if state and state.status in ["running", "paused"]:
+        if state and state.status in [ExecutionStatus.RUNNING, ExecutionStatus.PAUSED]:
             raise HTTPException(
                 status_code=400,
                 detail="Cannot delete active execution. Cancel or wait for completion first.",

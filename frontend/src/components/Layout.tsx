@@ -44,6 +44,7 @@ import type { CredentialInfo } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import packageJson from '../../package.json';
 import { isElectron } from '../utils/platform';
+import { STORAGE_KEYS } from '../utils/localStorage';
 
 // Custom icon: wrench + flame accent (Ignition Toolbox branding)
 function IgnitionToolboxIcon(props: React.ComponentProps<typeof SvgIcon>) {
@@ -156,7 +157,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Restore credential from localStorage when credentials are fetched
   useEffect(() => {
-    const savedCredentialName = localStorage.getItem('selectedCredentialName');
+    const savedCredentialName = localStorage.getItem(STORAGE_KEYS.SELECTED_CREDENTIAL_NAME);
     if (savedCredentialName && credentials.length > 0) {
       const fullCredential = credentials.find((c) => c.name === savedCredentialName);
       if (fullCredential) {
@@ -195,10 +196,10 @@ export function Layout({ children }: LayoutProps) {
     if (credentialName) {
       const fullCredential = credentials.find((c) => c.name === credentialName);
       setSelectedCredential(fullCredential || null);
-      localStorage.setItem('selectedCredentialName', credentialName);
+      localStorage.setItem(STORAGE_KEYS.SELECTED_CREDENTIAL_NAME, credentialName);
     } else {
       setSelectedCredential(null);
-      localStorage.removeItem('selectedCredentialName');
+      localStorage.removeItem(STORAGE_KEYS.SELECTED_CREDENTIAL_NAME);
     }
     handleCredentialClose();
   };

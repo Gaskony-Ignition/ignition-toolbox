@@ -4,41 +4,40 @@
 
 import { create } from 'zustand';
 import type { ExecutionUpdate, CredentialInfo, ScreenshotFrame } from '../types/api';
+import { STORAGE_KEYS } from '../utils/localStorage';
+import { MAIN_TABS, PLAYBOOK_SUB_TABS, STACK_SUB_TABS, type MainTab, type PlaybookSubTab, type StackSubTab } from '../constants/navigation';
 
-// Tab navigation types
-export type MainTab = 'playbooks' | 'designer' | 'api' | 'stackbuilder' | 'udtbuilder' | 'settings';
-export type PlaybookSubTab = 'gateway' | 'designer' | 'perspective' | 'active-execution' | 'past-executions';
-export type StackSubTab = 'services' | 'integrations' | 'preview';
+export type { MainTab, PlaybookSubTab, StackSubTab } from '../constants/navigation';
 
 // Initialize tab state from localStorage
 const getInitialMainTab = (): MainTab => {
-  const stored = localStorage.getItem('mainTab');
-  const valid: MainTab[] = ['playbooks', 'designer', 'api', 'stackbuilder', 'udtbuilder', 'settings'];
+  const stored = localStorage.getItem(STORAGE_KEYS.MAIN_TAB);
+  const valid = MAIN_TABS;
   return valid.includes(stored as MainTab) ? (stored as MainTab) : 'playbooks';
 };
 
 const getInitialPlaybookSubTab = (): PlaybookSubTab => {
-  const stored = localStorage.getItem('playbookSubTab');
-  const valid: PlaybookSubTab[] = ['gateway', 'designer', 'perspective', 'active-execution', 'past-executions'];
+  const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_SUB_TAB);
+  const valid = PLAYBOOK_SUB_TABS;
   return valid.includes(stored as PlaybookSubTab) ? (stored as PlaybookSubTab) : 'gateway';
 };
 
 const getInitialStackSubTab = (): StackSubTab => {
-  const stored = localStorage.getItem('stackSubTab');
-  const valid: StackSubTab[] = ['services', 'integrations', 'preview'];
+  const stored = localStorage.getItem(STORAGE_KEYS.STACK_SUB_TAB);
+  const valid = STACK_SUB_TABS;
   return valid.includes(stored as StackSubTab) ? (stored as StackSubTab) : 'services';
 };
 
 // Initialize theme from localStorage or default to 'dark'
 const getInitialTheme = (): 'dark' | 'light' => {
-  const stored = localStorage.getItem('theme');
+  const stored = localStorage.getItem(STORAGE_KEYS.THEME);
   return (stored === 'light' || stored === 'dark') ? stored : 'dark';
 };
 
 // Initialize playbook grid columns from localStorage or default to 5
 export type PlaybookGridColumns = 3 | 4 | 5 | 6;
 const getInitialPlaybookGridColumns = (): PlaybookGridColumns => {
-  const stored = localStorage.getItem('playbookGridColumns');
+  const stored = localStorage.getItem(STORAGE_KEYS.PLAYBOOK_GRID_COLUMNS);
   const parsed = stored ? parseInt(stored, 10) : 5;
   return (parsed === 3 || parsed === 4 || parsed === 5 || parsed === 6) ? parsed : 5;
 };
@@ -114,19 +113,19 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   mainTab: getInitialMainTab(),
   setMainTab: (tab) => {
-    localStorage.setItem('mainTab', tab);
+    localStorage.setItem(STORAGE_KEYS.MAIN_TAB, tab);
     set({ mainTab: tab });
   },
 
   playbookSubTab: getInitialPlaybookSubTab(),
   setPlaybookSubTab: (tab) => {
-    localStorage.setItem('playbookSubTab', tab);
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_SUB_TAB, tab);
     set({ playbookSubTab: tab });
   },
 
   stackSubTab: getInitialStackSubTab(),
   setStackSubTab: (tab) => {
-    localStorage.setItem('stackSubTab', tab);
+    localStorage.setItem(STORAGE_KEYS.STACK_SUB_TAB, tab);
     set({ stackSubTab: tab });
   },
 
@@ -160,13 +159,13 @@ export const useStore = create<AppState>((set) => ({
 
   theme: getInitialTheme(),
   setTheme: (theme) => {
-    localStorage.setItem('theme', theme);
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
     set({ theme });
   },
 
   playbookGridColumns: getInitialPlaybookGridColumns(),
   setPlaybookGridColumns: (columns) => {
-    localStorage.setItem('playbookGridColumns', columns.toString());
+    localStorage.setItem(STORAGE_KEYS.PLAYBOOK_GRID_COLUMNS, columns.toString());
     set({ playbookGridColumns: columns });
   },
 
