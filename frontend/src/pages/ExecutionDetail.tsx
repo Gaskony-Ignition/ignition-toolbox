@@ -57,6 +57,8 @@ interface ExecutionDetailProps {
 
 export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
   const executionUpdates = useStore((state) => state.executionUpdates);
+  const setPlaybookSubTab = useStore((state) => state.setPlaybookSubTab);
+  const setActiveExecutionId = useStore((state) => state.setActiveExecutionId);
   const [debugMode, setDebugMode] = useState(false);
   const [debugModeUserOverride, setDebugModeUserOverride] = useState(false);
   const [debugModeToggling, setDebugModeToggling] = useState(false);
@@ -108,6 +110,14 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
         }, new Map()).values()
       )
     : [];
+
+  // Navigate back to playbook list when execution is cancelled
+  useEffect(() => {
+    if (execution?.status === 'cancelled') {
+      setActiveExecutionId(null);
+      setPlaybookSubTab('gateway');
+    }
+  }, [execution?.status, setActiveExecutionId, setPlaybookSubTab]);
 
   // Sync debug mode from execution data (only if user hasn't manually overridden it)
   useEffect(() => {
