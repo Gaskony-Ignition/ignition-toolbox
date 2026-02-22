@@ -5,16 +5,14 @@ Handles Designer window detection, interaction, and automation on Linux.
 """
 
 import logging
-import os
 import subprocess
 import time
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Try to import X11 libraries
 try:
-    from Xlib import X, display, error
+    from Xlib import X, display, error  # noqa: F401
     from Xlib.protocol import event
     XLIB_AVAILABLE = True
 except ImportError:

@@ -13,9 +13,9 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from ignition_toolkit.api.services.log_capture import get_log_capture
 from ignition_toolkit.credentials import CredentialVault
 from ignition_toolkit.storage import get_database
-from ignition_toolkit.api.services.log_capture import get_log_capture
 
 logger = logging.getLogger(__name__)
 

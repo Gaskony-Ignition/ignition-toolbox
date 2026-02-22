@@ -41,7 +41,7 @@ async def validate_environment() -> None:
         EnvironmentError: If environment validation fails
     """
     # Check Python version
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 10):  # noqa: UP036
         raise EnvironmentError(
             f"Python 3.10+ required, found {sys.version}",
             recovery_hint="Upgrade Python: https://www.python.org/downloads/",

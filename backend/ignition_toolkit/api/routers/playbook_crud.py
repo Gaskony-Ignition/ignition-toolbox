@@ -6,29 +6,28 @@ update metadata (name/description), and edit steps.
 """
 
 import logging
+import shutil
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 
 from ignition_toolkit.api.routers.models import ParameterInfo, PlaybookInfo, StepInfo
-import shutil
-
 from ignition_toolkit.core.paths import (
-    get_playbooks_dir,
     get_all_playbook_dirs,
     get_builtin_playbooks_dir,
-    get_user_playbooks_dir,
     get_data_dir,
+    get_playbooks_dir,
+    get_user_playbooks_dir,
     is_frozen,
 )
 from ignition_toolkit.core.timeouts import TimeoutKeys
-from ignition_toolkit.playbook.step_type_registry import get_step_definition_by_value
 from ignition_toolkit.core.validation_limits import ValidationLimits
 from ignition_toolkit.playbook.loader import PlaybookLoader
-from datetime import datetime
-from typing import Any
+from ignition_toolkit.playbook.step_type_registry import get_step_definition_by_value
 
 logger = logging.getLogger(__name__)
 

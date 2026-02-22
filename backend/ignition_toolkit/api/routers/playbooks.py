@@ -14,34 +14,34 @@ from fastapi import APIRouter
 
 # Import individual route functions
 from ignition_toolkit.api.routers.playbook_crud import (
-    list_playbooks,
+    edit_step,
     get_playbook,
+    list_playbooks,
     update_playbook,
     update_playbook_metadata,
-    edit_step,
 )
 from ignition_toolkit.api.routers.playbook_library import (
     browse_available_playbooks,
+    check_for_updates,
+    check_playbook_update,
+    get_update_stats,
     install_playbook,
     uninstall_playbook,
     update_playbook_to_latest,
-    check_for_updates,
-    get_update_stats,
-    check_playbook_update,
-)
-from ignition_toolkit.api.routers.playbook_metadata import (
-    mark_playbook_verified,
-    unmark_playbook_verified,
-    enable_playbook,
-    disable_playbook,
-    reset_all_metadata,
 )
 from ignition_toolkit.api.routers.playbook_lifecycle import (
+    create_playbook,
     delete_playbook,
     duplicate_playbook,
     export_playbook,
     import_playbook,
-    create_playbook,
+)
+from ignition_toolkit.api.routers.playbook_metadata import (
+    disable_playbook,
+    enable_playbook,
+    mark_playbook_verified,
+    reset_all_metadata,
+    unmark_playbook_verified,
 )
 
 logger = logging.getLogger(__name__)

@@ -44,7 +44,7 @@ def is_wsl() -> bool:
         return False
 
     try:
-        with open("/proc/version", "r", encoding="utf-8", errors="replace") as f:
+        with open("/proc/version", encoding="utf-8", errors="replace") as f:
             version_info = f.read().lower()
             return "microsoft" in version_info or "wsl" in version_info
     except OSError:
@@ -162,7 +162,7 @@ def check_wsl_docker_running() -> bool:
     if _wsl_docker_command:
         try:
             cmd = _wsl_docker_command + ["info"]
-            logger.debug(f"Checking WSL Docker daemon with cached command")
+            logger.debug("Checking WSL Docker daemon with cached command")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -173,10 +173,10 @@ def check_wsl_docker_running() -> bool:
                 creationflags=CREATION_FLAGS,
             )
             if result.returncode == 0:
-                logger.debug(f"WSL Docker daemon running via cached command")
+                logger.debug("WSL Docker daemon running via cached command")
                 return True
             else:
-                logger.debug(f"WSL Docker daemon not running")
+                logger.debug("WSL Docker daemon not running")
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
             logger.debug(f"WSL Docker daemon check failed: {e}")
         except Exception as e:

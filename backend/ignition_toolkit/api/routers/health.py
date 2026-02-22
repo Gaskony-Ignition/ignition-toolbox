@@ -151,8 +151,9 @@ async def database_health() -> dict[str, Any]:
         # Get execution statistics
         if db:
             with db.session_scope() as session:
-                from ignition_toolkit.storage.models import ExecutionModel, StepResultModel
                 from sqlalchemy import func
+
+                from ignition_toolkit.storage.models import ExecutionModel, StepResultModel
 
                 # Count executions
                 execution_count = session.query(func.count(ExecutionModel.id)).scalar()
@@ -288,9 +289,10 @@ async def cleanup_old_data(request: CleanupRequest) -> dict[str, Any]:
         Summary of deleted (or would-be-deleted) items
     """
     from datetime import datetime, timedelta
+
     from ignition_toolkit.api.routers.executions.helpers import (
-        extract_screenshot_paths,
         delete_screenshot_files,
+        extract_screenshot_paths,
     )
 
     db = get_database()

@@ -12,7 +12,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ignition_toolkit.clouddesigner.manager import (
-    CloudDesignerManager,
     get_clouddesigner_manager,
 )
 

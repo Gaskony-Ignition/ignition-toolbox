@@ -5,7 +5,6 @@ Checks GitHub Releases API for new versions of Ignition Automation Toolkit.
 """
 
 import logging
-from typing import Optional
 
 import httpx
 from packaging.version import parse as parse_version
@@ -29,7 +28,7 @@ def get_current_version() -> str:
     return __version__
 
 
-async def check_for_updates() -> Optional[dict]:
+async def check_for_updates() -> dict | None:
     """
     Check GitHub Releases for newer version
 
@@ -100,7 +99,7 @@ async def check_for_updates() -> Optional[dict]:
         return None
 
 
-def check_for_updates_sync() -> Optional[dict]:
+def check_for_updates_sync() -> dict | None:
     """
     Synchronous version of check_for_updates (for CLI use)
 

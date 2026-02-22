@@ -5,14 +5,19 @@ Manages WebSocket connections and broadcasts execution updates.
 Supports message batching for high-frequency updates (screenshots).
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections import deque
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import WebSocket
 
 from ignition_toolkit.playbook.models import ExecutionStatus
+
+if TYPE_CHECKING:
+    from ignition_toolkit.playbook.models import ExecutionState
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +125,7 @@ class WebSocketManager:
         except Exception as e:
             logger.exception(f"Error in keepalive loop for {websocket.client}: {e}")
 
-    async def broadcast_execution_state(self, state: "ExecutionState") -> None:
+    async def broadcast_execution_state(self, state: ExecutionState) -> None:
         """
         Broadcast execution state to all connected clients
 
@@ -185,7 +190,7 @@ class WebSocketManager:
         }
 
         await self._broadcast(message)
-        print(f"[WS] Broadcast complete", flush=True)
+        print("[WS] Broadcast complete", flush=True)
 
     async def broadcast_screenshot(self, execution_id: str, screenshot_b64: str) -> None:
         """

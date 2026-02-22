@@ -8,16 +8,19 @@ Provides endpoints for:
 """
 
 import logging
-from datetime import datetime
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ignition_toolkit.auth.api_keys import get_api_key_manager
-from ignition_toolkit.auth.rbac import Permission, get_rbac_manager
 from ignition_toolkit.auth.audit import AuditEventType, get_audit_logger
-from ignition_toolkit.auth.middleware import CurrentUser, require_auth, require_permission, require_role
+from ignition_toolkit.auth.middleware import (
+    CurrentUser,
+    require_auth,
+    require_permission,
+    require_role,
+)
+from ignition_toolkit.auth.rbac import Permission, get_rbac_manager
 
 logger = logging.getLogger(__name__)
 

@@ -5,8 +5,8 @@ Uses GitHub Git Trees/Commits API to create commits that add playbooks
 to the central repository.
 """
 
-import json
 import hashlib
+import json
 import logging
 from pathlib import Path
 from typing import Any

@@ -9,12 +9,12 @@ Import from ignition_toolkit.core.config directly for new code.
 
 # Re-export everything from the consolidated config module
 from ignition_toolkit.core.config import (
+    Settings,
+    get_settings,
     get_toolkit_data_dir,
+    is_dev_mode,
     migrate_credentials_if_needed,
     setup_environment,
-    get_settings,
-    is_dev_mode,
-    Settings,
 )
 
 __all__ = [

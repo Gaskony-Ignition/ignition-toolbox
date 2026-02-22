@@ -3,11 +3,10 @@ Module metadata parser for extracting information from .modl files
 """
 
 import logging
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +18,12 @@ class ModuleMetadata:
     name: str
     version: str
     id: str
-    description: Optional[str] = None
-    vendor: Optional[str] = None
+    description: str | None = None
+    vendor: str | None = None
     file_path: str = ""
 
 
-def parse_module_metadata(file_path: str) -> Optional[ModuleMetadata]:
+def parse_module_metadata(file_path: str) -> ModuleMetadata | None:
     """
     Parse module metadata from a .modl file
 
@@ -43,7 +42,7 @@ def parse_module_metadata(file_path: str) -> Optional[ModuleMetadata]:
             logger.error(f"Module file not found: {file_path}")
             return None
 
-        if not path.suffix in [".modl", ".mod"]:
+        if path.suffix not in [".modl", ".mod"]:
             # Handle .unsigned.modl files
             if not file_path.endswith(".unsigned.modl"):
                 logger.error(f"Invalid module file extension: {file_path}")

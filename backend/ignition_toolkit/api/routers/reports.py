@@ -10,14 +10,13 @@ Provides endpoints for:
 
 import logging
 from datetime import datetime
-from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from ignition_toolkit.reporting.analytics import get_execution_analytics
-from ignition_toolkit.reporting.reports import get_report_generator
 from ignition_toolkit.reporting.export import get_report_exporter
+from ignition_toolkit.reporting.reports import get_report_generator
 
 logger = logging.getLogger(__name__)
 

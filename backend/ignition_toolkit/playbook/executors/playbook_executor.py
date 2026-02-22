@@ -93,7 +93,7 @@ class PlaybookRunHandler(StepHandler):
         self.parent_executor._execution_stack.append(playbook_path)
 
         # Check nesting depth
-        MAX_NESTING_DEPTH = 3
+        MAX_NESTING_DEPTH = 3  # noqa: N806
         if len(self.parent_executor._execution_stack) > MAX_NESTING_DEPTH:
             self.parent_executor._execution_stack.pop()
             raise StepExecutionError(

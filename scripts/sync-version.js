@@ -67,7 +67,7 @@ if (frontendPkg.version !== newVersion) {
 
 // ── backend/__init__.py ───────────────────────────────────────────────────────
 replaceInFile(initPyPath, [
-  [/__version__ = "[^"]+"/, `__version__ = "${newVersion}"  # Updated: ${today}`],
+  [/__version__ = "[^"]+".*$/m, `__version__ = "${newVersion}"  # Updated: ${today}`],
 ]);
 
 // ── backend/pyproject.toml ────────────────────────────────────────────────────

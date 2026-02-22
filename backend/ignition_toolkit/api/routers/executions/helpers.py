@@ -10,10 +10,11 @@ Contains:
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
 
@@ -228,7 +229,6 @@ def create_execution_runner(
     async def run_execution():
         """Execute playbook in background"""
         logger.debug("Starting background execution for {execution_id}")
-        start_time = datetime.now()
         try:
             logger.debug("Entering gateway client context")
             if gateway_client:

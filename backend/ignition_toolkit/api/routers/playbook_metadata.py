@@ -38,8 +38,9 @@ def get_relative_playbook_path(path_str: str) -> str:
         Relative path string from playbooks directory (e.g., "gateway/reset_gateway_trial.yaml")
     """
     from pathlib import Path
-    from ignition_toolkit.core.validation import PathValidator
+
     from ignition_toolkit.core.paths import get_all_playbook_dirs
+    from ignition_toolkit.core.validation import PathValidator
 
     # Search all playbook directories (user first, then built-in)
     for playbook_dir in get_all_playbook_dirs():

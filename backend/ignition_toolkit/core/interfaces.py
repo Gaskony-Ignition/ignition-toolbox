@@ -5,9 +5,9 @@ Defines abstract base classes and protocols for dependency injection
 and loose coupling between modules.
 """
 
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from typing import Any, ContextManager, Protocol
+from typing import Any, Protocol
 
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ class IDatabase(Protocol):
         ...
 
     @contextmanager
-    def session_scope(self) -> ContextManager[Session]:
+    def session_scope(self) -> AbstractContextManager[Session]:
         """Provide a transactional scope for database operations"""
         ...
 

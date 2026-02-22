@@ -101,9 +101,7 @@ def init() -> None:
 def verify(verbose: bool) -> None:
     """Verify installation and configuration"""
     import os
-    import subprocess
     import sys
-    from pathlib import Path
 
     from rich.table import Table
 
@@ -168,7 +166,7 @@ def verify(verbose: bool) -> None:
         key_exists = (vault.vault_path / "encryption.key").exists()
         checks.append(("Credential Vault", str(vault.vault_path), "✅" if vault_ok else "⚠️"))
         if not vault_ok:
-            warnings.append(f"Credential vault not initialized (run 'init')")
+            warnings.append("Credential vault not initialized (run 'init')")
         elif not key_exists:
             warnings.append("Encryption key not found")
     except Exception as e:
@@ -208,7 +206,7 @@ def verify(verbose: bool) -> None:
         playwright_ok = Path(playwright_path).exists()
         checks.append(("Playwright Browsers", playwright_path, "✅" if playwright_ok else "⚠️"))
         if not playwright_ok:
-            warnings.append(f"Playwright browsers not installed (run 'playwright install chromium')")
+            warnings.append("Playwright browsers not installed (run 'playwright install chromium')")
     except Exception as e:
         checks.append(("Playwright Browsers", "ERROR", "❌"))
         errors.append(f"Playwright check failed: {e}")
@@ -362,6 +360,7 @@ def playbook() -> None:
 def playbook_list() -> None:
     """List available playbooks"""
     from rich.table import Table
+
     from ignition_toolkit.core.paths import get_playbooks_dir
 
     playbooks_dir = get_playbooks_dir()
@@ -405,7 +404,6 @@ def playbook_run(
 ) -> None:
     """Run a playbook"""
     import asyncio
-    from pathlib import Path
 
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -550,7 +548,6 @@ def playbook_run(
 @click.option("--output", "-o", help="Output JSON file path")
 def playbook_export(playbook_path: str, output: str | None) -> None:
     """Export playbook to JSON for sharing"""
-    from pathlib import Path
 
     from ignition_toolkit.playbook.exporter import PlaybookExporter
     from ignition_toolkit.playbook.loader import PlaybookLoader
@@ -578,7 +575,6 @@ def playbook_export(playbook_path: str, output: str | None) -> None:
 @click.option("--output-dir", default="./playbooks/imported", help="Output directory")
 def playbook_import(json_path: str, output_dir: str) -> None:
     """Import playbook from JSON"""
-    from pathlib import Path
 
     from ignition_toolkit.playbook.exporter import PlaybookExporter
 

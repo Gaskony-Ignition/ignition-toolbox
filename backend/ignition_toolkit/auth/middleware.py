@@ -6,14 +6,13 @@ FastAPI middleware and dependencies for API key authentication.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader
 
 from ignition_toolkit.auth.api_keys import APIKey, get_api_key_manager
-from ignition_toolkit.auth.rbac import Permission, get_rbac_manager
 from ignition_toolkit.auth.audit import AuditEventType, get_audit_logger
+from ignition_toolkit.auth.rbac import Permission, get_rbac_manager
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,8 @@ FastAPI application - Main API server
 Provides REST endpoints for playbook management and execution control.
 """
 
+import asyncio
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -22,22 +22,22 @@ from ignition_toolkit import __version__
 from ignition_toolkit.api.middleware import RateLimitMiddleware
 from ignition_toolkit.api.routers import health_router
 from ignition_toolkit.api.routers.api_explorer import router as api_explorer_router
+from ignition_toolkit.api.routers.auth import router as auth_router
+from ignition_toolkit.api.routers.clouddesigner import router as clouddesigner_router
 from ignition_toolkit.api.routers.config import router as config_router
+from ignition_toolkit.api.routers.context import router as context_router
 from ignition_toolkit.api.routers.credentials import router as credentials_router
+from ignition_toolkit.api.routers.execution_queue import router as execution_queue_router
 from ignition_toolkit.api.routers.executions import router as executions_router
 from ignition_toolkit.api.routers.filesystem import router as filesystem_router
+from ignition_toolkit.api.routers.logs import router as logs_router
 from ignition_toolkit.api.routers.playbooks import router as playbooks_router
+from ignition_toolkit.api.routers.reports import router as reports_router
 from ignition_toolkit.api.routers.schedules import router as schedules_router
 from ignition_toolkit.api.routers.stackbuilder import router as stackbuilder_router
-from ignition_toolkit.api.routers.clouddesigner import router as clouddesigner_router
-from ignition_toolkit.api.routers.context import router as context_router
+from ignition_toolkit.api.routers.step_types import router as step_types_router
 from ignition_toolkit.api.routers.updates import router as updates_router
 from ignition_toolkit.api.routers.websockets import router as websockets_router
-from ignition_toolkit.api.routers.logs import router as logs_router
-from ignition_toolkit.api.routers.step_types import router as step_types_router
-from ignition_toolkit.api.routers.execution_queue import router as execution_queue_router
-from ignition_toolkit.api.routers.auth import router as auth_router
-from ignition_toolkit.api.routers.reports import router as reports_router
 from ignition_toolkit.api.services.log_capture import setup_log_capture
 from ignition_toolkit.playbook.engine import PlaybookEngine
 from ignition_toolkit.playbook.metadata import PlaybookMetadataStore

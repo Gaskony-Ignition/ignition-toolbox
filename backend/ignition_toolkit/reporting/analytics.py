@@ -6,7 +6,7 @@ Provides statistical analysis of playbook execution history.
 
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 

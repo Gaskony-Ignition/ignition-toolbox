@@ -6,11 +6,10 @@ Provides a circular buffer of recent log entries.
 """
 
 import logging
-from collections import deque
-from datetime import datetime
-from dataclasses import dataclass, asdict
-from typing import Deque
 import threading
+from collections import deque
+from dataclasses import asdict, dataclass
+from datetime import datetime
 
 
 @dataclass
@@ -32,7 +31,7 @@ class LogCaptureHandler(logging.Handler):
     def __init__(self, max_entries: int = 1000):
         super().__init__()
         self.max_entries = max_entries
-        self.logs: Deque[LogEntry] = deque(maxlen=max_entries)
+        self.logs: deque[LogEntry] = deque(maxlen=max_entries)
         self._lock = threading.Lock()
 
         # Set format
@@ -92,18 +91,18 @@ class LogCaptureHandler(logging.Handler):
 
         # Apply filters
         if level:
-            logs = [l for l in logs if l.level == level.upper()]
+            logs = [entry for entry in logs if entry.level == level.upper()]
 
         if logger_filter:
-            logs = [l for l in logs if logger_filter.lower() in l.logger.lower()]
+            logs = [entry for entry in logs if logger_filter.lower() in entry.logger.lower()]
 
         if execution_id:
-            logs = [l for l in logs if l.execution_id == execution_id]
+            logs = [entry for entry in logs if entry.execution_id == execution_id]
 
         # Return most recent first, limited
         logs = list(reversed(logs))[:limit]
 
-        return [asdict(l) for l in logs]
+        return [asdict(entry) for entry in logs]
 
     def get_stats(self) -> dict:
         """Get log statistics"""

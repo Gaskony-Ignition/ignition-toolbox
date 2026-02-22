@@ -28,12 +28,13 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock ResizeObserver for components that use it
-window.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-})) as unknown as typeof ResizeObserver;
+// Mock ResizeObserver — must be a proper class (MUI calls `new ResizeObserver()`)
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
 // Mock localStorage
 const localStorageMock = {

@@ -5,7 +5,7 @@ All exceptions include contextual information and user-friendly recovery hints.
 """
 
 
-class GatewayException(Exception):
+class GatewayException(Exception):  # noqa: N818
     """Base exception for all Gateway-related errors"""
 
     def __init__(

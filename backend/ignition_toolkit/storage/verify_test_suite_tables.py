@@ -6,6 +6,7 @@ were created successfully.
 """
 
 import logging
+
 from sqlalchemy import inspect
 
 from ignition_toolkit.storage import get_database

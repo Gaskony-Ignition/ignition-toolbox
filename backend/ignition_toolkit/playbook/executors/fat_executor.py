@@ -4,15 +4,14 @@ FAT report generation step handlers
 Handles Factory Acceptance Test report generation and export.
 """
 
-import json
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from ignition_toolkit.core.paths import get_data_dir
 from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
-from ignition_toolkit.core.paths import get_data_dir
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,6 @@ class FATGenerateReportHandler(StepHandler):
         visual_analysis = params.get("visual_analysis", {})
         screenshots_dir = params.get("screenshots_dir", "./data/screenshots")
         format_type = params.get("format", "html")
-        template = params.get("template", "default")
         metadata = params.get("metadata", {})
 
         # Validate test results

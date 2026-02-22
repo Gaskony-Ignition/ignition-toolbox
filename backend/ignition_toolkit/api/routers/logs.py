@@ -5,6 +5,7 @@ Provides endpoints to access backend logs from the UI.
 """
 
 import logging
+
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 

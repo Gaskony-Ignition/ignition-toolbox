@@ -10,7 +10,6 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ignition_toolkit.reporting.analytics import (
-    ExecutionAnalytics,
     ExecutionStats,
     PlaybookStats,
     TrendPoint,

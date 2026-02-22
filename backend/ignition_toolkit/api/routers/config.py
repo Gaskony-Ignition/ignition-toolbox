@@ -7,12 +7,13 @@ to enable frontend portability.
 
 import logging
 import os
+
 from fastapi import APIRouter
 
 from ignition_toolkit.core.config import get_settings
 from ignition_toolkit.core.paths import (
-    get_playbooks_dir,
     get_package_root,
+    get_playbooks_dir,
     get_user_data_dir,
 )
 

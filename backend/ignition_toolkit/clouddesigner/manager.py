@@ -8,7 +8,6 @@ import logging
 import os
 import subprocess
 import time
-
 from pathlib import Path
 
 from ignition_toolkit.clouddesigner.docker import (
@@ -633,7 +632,7 @@ class CloudDesignerManager:
         Returns:
             dict with success status and output/error
         """
-        logger.info(f"[CloudDesigner] ===== MANAGER START CALLED =====")
+        logger.info("[CloudDesigner] ===== MANAGER START CALLED =====")
         logger.info(f"[CloudDesigner] Gateway URL: {gateway_url}")
         logger.info(f"[CloudDesigner] Credential: {credential_name}")
         logger.info(f"[CloudDesigner] Force rebuild: {force_rebuild}")
@@ -670,7 +669,7 @@ class CloudDesignerManager:
                     "error": f"Required Docker file not found: {file}. This may indicate a packaging issue.",
                 }
 
-        logger.info(f"[CloudDesigner] All required docker files validated successfully")
+        logger.info("[CloudDesigner] All required docker files validated successfully")
 
         # Prepare environment
         env = os.environ.copy()
@@ -716,9 +715,9 @@ class CloudDesignerManager:
             }
 
         try:
-            logger.info(f"[CloudDesigner] ========================================")
+            logger.info("[CloudDesigner] ========================================")
             logger.info(f"[CloudDesigner] Starting CloudDesigner with gateway: {gateway_url}")
-            logger.info(f"[CloudDesigner] ========================================")
+            logger.info("[CloudDesigner] ========================================")
 
             docker_cmd = get_docker_command()
             logger.info(f"[CloudDesigner] Using docker command: {' '.join(docker_cmd)}")
@@ -777,9 +776,9 @@ class CloudDesignerManager:
 
             # Step: Stop any existing containers (without destroying volumes)
             current_step += 1
-            logger.info(f"[CloudDesigner] ----------------------------------------")
+            logger.info("[CloudDesigner] ----------------------------------------")
             logger.info(f"[CloudDesigner] STEP {current_step}/{step_count}: Stopping existing containers...")
-            logger.info(f"[CloudDesigner] ----------------------------------------")
+            logger.info("[CloudDesigner] ----------------------------------------")
             cleanup_result = subprocess.run(
                 docker_cmd + compose_args + ["down"],
                 cwd=run_cwd,
@@ -797,7 +796,7 @@ class CloudDesignerManager:
                     logger.error(f"[CloudDesigner] CRITICAL: Docker compose file not accessible: {stderr[:300]}")
                     return {
                         "success": False,
-                        "error": f"Docker compose configuration not found. This may be a path or permission issue.",
+                        "error": "Docker compose configuration not found. This may be a path or permission issue.",
                         "output": stderr,
                     }
                 logger.warning(f"[CloudDesigner] Cleanup warning (continuing): {stderr[:200] if stderr else 'none'}")
@@ -807,13 +806,13 @@ class CloudDesignerManager:
             # Step: Build image (only if needed)
             if needs_build:
                 current_step += 1
-                logger.info(f"[CloudDesigner] ----------------------------------------")
+                logger.info("[CloudDesigner] ----------------------------------------")
                 logger.info(f"[CloudDesigner] STEP {current_step}/{step_count}: Building designer-desktop image...")
                 if not image_exists:
-                    logger.info(f"[CloudDesigner] First build - this may take 10-20 minutes!")
+                    logger.info("[CloudDesigner] First build - this may take 10-20 minutes!")
                 else:
                     logger.info(f"[CloudDesigner] Rebuilding image (force_rebuild={force_rebuild})...")
-                logger.info(f"[CloudDesigner] ----------------------------------------")
+                logger.info("[CloudDesigner] ----------------------------------------")
 
                 build_result = self._build_image(docker_cmd, compose_args, run_cwd, env)
                 if not build_result["success"]:
@@ -824,9 +823,9 @@ class CloudDesignerManager:
 
             # Step: Start containers
             current_step += 1
-            logger.info(f"[CloudDesigner] ----------------------------------------")
+            logger.info("[CloudDesigner] ----------------------------------------")
             logger.info(f"[CloudDesigner] STEP {current_step}/{step_count}: Starting containers...")
-            logger.info(f"[CloudDesigner] ----------------------------------------")
+            logger.info("[CloudDesigner] ----------------------------------------")
 
             up_cmd = docker_cmd + compose_args + ["up", "-d"]
             logger.info(f"[CloudDesigner] Running: {' '.join(up_cmd)} (cwd={run_cwd})")

@@ -194,7 +194,7 @@ class GatewayClient:
 
         # Get system info for uptime
         try:
-            info = await self.get_info()
+            await self.get_info()
             return HealthStatus(
                 healthy=ping_ok,
                 uptime_seconds=0,  # Would need to parse from logs or system API

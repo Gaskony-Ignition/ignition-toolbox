@@ -7,7 +7,6 @@ Version: 4.1.0
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
@@ -29,11 +28,11 @@ class UpdateCheckResponse(BaseModel):
     """Response for update check"""
     update_available: bool
     current_version: str
-    latest_version: Optional[str] = None
-    release_url: Optional[str] = None
-    release_notes: Optional[str] = None
-    download_url: Optional[str] = None
-    published_at: Optional[str] = None
+    latest_version: str | None = None
+    release_url: str | None = None
+    release_notes: str | None = None
+    download_url: str | None = None
+    published_at: str | None = None
 
 
 class UpdateInstallRequest(BaseModel):
@@ -46,8 +45,8 @@ class UpdateStatusResponse(BaseModel):
     status: str  # 'idle', 'downloading', 'installing', 'migrating', 'complete', 'failed'
     progress: int  # 0-100
     message: str
-    version: Optional[str] = None
-    error: Optional[str] = None
+    version: str | None = None
+    error: str | None = None
 
 
 class BackupResponse(BaseModel):
@@ -70,7 +69,7 @@ update_status = {
 }
 
 
-def update_progress(status: str, progress: int, message: str, version: Optional[str] = None, error: Optional[str] = None):
+def update_progress(status: str, progress: int, message: str, version: str | None = None, error: str | None = None):
     """Update the global update status"""
     update_status["status"] = status
     update_status["progress"] = progress

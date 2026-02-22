@@ -3,8 +3,6 @@ API endpoints for schedule management
 """
 
 import logging
-from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -22,11 +20,11 @@ router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 class ScheduleConfig(BaseModel):
     """Schedule configuration"""
 
-    expression: Optional[str] = None  # For cron type
-    minutes: Optional[int] = None  # For interval type
-    time: Optional[str] = None  # For daily/weekly/monthly (HH:MM format)
-    day_of_week: Optional[str] = None  # For weekly (mon, tue, etc.)
-    day: Optional[int] = None  # For monthly (1-31)
+    expression: str | None = None  # For cron type
+    minutes: int | None = None  # For interval type
+    time: str | None = None  # For daily/weekly/monthly (HH:MM format)
+    day_of_week: str | None = None  # For weekly (mon, tue, etc.)
+    day: int | None = None  # For monthly (1-31)
 
 
 class CreateScheduleRequest(BaseModel):
@@ -36,22 +34,22 @@ class CreateScheduleRequest(BaseModel):
     playbook_path: str
     schedule_type: str  # "cron", "interval", "daily", "weekly", "monthly"
     schedule_config: ScheduleConfig
-    parameters: Optional[dict] = None
-    gateway_url: Optional[str] = None
-    credential_name: Optional[str] = None
+    parameters: dict | None = None
+    gateway_url: str | None = None
+    credential_name: str | None = None
     enabled: bool = True
 
 
 class UpdateScheduleRequest(BaseModel):
     """Request to update an existing schedule"""
 
-    name: Optional[str] = None
-    schedule_type: Optional[str] = None
-    schedule_config: Optional[ScheduleConfig] = None
-    parameters: Optional[dict] = None
-    gateway_url: Optional[str] = None
-    credential_name: Optional[str] = None
-    enabled: Optional[bool] = None
+    name: str | None = None
+    schedule_type: str | None = None
+    schedule_config: ScheduleConfig | None = None
+    parameters: dict | None = None
+    gateway_url: str | None = None
+    credential_name: str | None = None
+    enabled: bool | None = None
 
 
 @router.get("")

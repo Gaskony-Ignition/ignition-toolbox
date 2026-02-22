@@ -10,7 +10,6 @@ from typing import Any
 
 from ignition_toolkit.core.timeouts import TimeoutDefaults
 from ignition_toolkit.gateway import GatewayClient
-from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
 from ignition_toolkit.playbook.parameters import ParameterResolver
 

@@ -77,7 +77,7 @@ def backup_user_data() -> Path:
         manifest_path = backup_dir / "MANIFEST.txt"
         with open(manifest_path, "w", encoding='utf-8') as f:
             f.write(f"Backup created: {datetime.now().isoformat()}\n")
-            f.write(f"Files backed up:\n")
+            f.write("Files backed up:\n")
             for file in backup_dir.glob("*"):
                 if file.is_file():
                     f.write(f"  - {file.name} ({file.stat().st_size} bytes)\n")

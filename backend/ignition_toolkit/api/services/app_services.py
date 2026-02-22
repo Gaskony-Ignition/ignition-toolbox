@@ -13,7 +13,7 @@ from ignition_toolkit.api.services.websocket_manager import WebSocketManager
 from ignition_toolkit.credentials import CredentialVault
 from ignition_toolkit.playbook.execution_manager import ExecutionManager
 from ignition_toolkit.playbook.metadata import PlaybookMetadataStore
-from ignition_toolkit.storage import get_database, Database
+from ignition_toolkit.storage import Database, get_database
 
 logger = logging.getLogger(__name__)
 

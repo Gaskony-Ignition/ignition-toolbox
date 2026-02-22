@@ -14,12 +14,6 @@ from typing import Any
 
 import yaml
 
-from ignition_toolkit.stackbuilder.types import (
-    GenerationResult,
-    InstanceConfig,
-    ServiceConfig,
-)
-
 from ignition_toolkit.stackbuilder.catalog import get_service_catalog
 from ignition_toolkit.stackbuilder.config_generators import (
     generate_email_env_vars,
@@ -168,8 +162,6 @@ class ComposeGenerator:
         # Check what's in the stack
         has_traefik = any(inst["app_id"] == "traefik" for inst in instances)
         has_oauth_provider = "oauth_provider" in integrations
-        has_email_testing = "email_testing" in integrations
-        has_mqtt_broker = "mqtt_broker" in integrations
         has_ignition = any(inst["app_id"] == "ignition" for inst in instances)
 
         # Pre-generate Keycloak realm configuration if needed

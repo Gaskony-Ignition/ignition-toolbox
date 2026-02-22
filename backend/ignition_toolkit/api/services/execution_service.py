@@ -8,9 +8,9 @@ Extracts business logic from executions.py router (reducing from 1,220 lines).
 import asyncio
 import logging
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
 
 from fastapi import HTTPException
 

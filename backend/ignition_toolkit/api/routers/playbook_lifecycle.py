@@ -16,7 +16,11 @@ import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ignition_toolkit.core.paths import get_playbooks_dir, get_all_playbook_dirs, get_user_playbooks_dir
+from ignition_toolkit.core.paths import (
+    get_all_playbook_dirs,
+    get_playbooks_dir,
+    get_user_playbooks_dir,
+)
 from ignition_toolkit.playbook.loader import PlaybookLoader
 
 logger = logging.getLogger(__name__)
@@ -240,7 +244,7 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
 
         return {
             "status": "success",
-            "message": f"Playbook duplicated successfully",
+            "message": "Playbook duplicated successfully",
             "source_path": source_relative,
             "new_path": new_relative,
             "playbook": {

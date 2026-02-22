@@ -14,10 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ignition_toolkit.execution import (
-    ExecutionQueue,
     ExecutionPriority,
-    ParallelExecutionManager,
-    ResourceLimiter,
     ResourceType,
     get_execution_queue,
     get_parallel_manager,
@@ -244,7 +241,3 @@ async def update_resource_limits(request: ResourceLimitUpdate):
     }
 
 
-# Import functions for module-level access
-from ignition_toolkit.execution.queue import get_execution_queue
-from ignition_toolkit.execution.parallel import get_parallel_manager
-from ignition_toolkit.execution.resource_limiter import get_resource_limiter

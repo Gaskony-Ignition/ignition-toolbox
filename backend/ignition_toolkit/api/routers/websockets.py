@@ -8,11 +8,9 @@ Note: PTY terminal sessions are only available on Unix systems.
 import asyncio
 import logging
 import os
-import shutil
 import signal
 import subprocess
 import sys
-from datetime import datetime
 
 # PTY modules are Unix-only - import conditionally
 IS_WINDOWS = sys.platform == "win32"
@@ -26,7 +24,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ignition_toolkit.core.paths import get_playbooks_dir
 from ignition_toolkit.playbook.engine import PlaybookEngine
-from ignition_toolkit.playbook.models import ExecutionState
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +40,9 @@ def get_websocket_connections() -> list[WebSocket]:
 
 def get_active_engines() -> dict[str, "PlaybookEngine"]:
     """Get shared active engines dict from app"""
-    from ignition_toolkit.api.routers.executions.helpers import get_active_engines as _get_active_engines
+    from ignition_toolkit.api.routers.executions.helpers import (
+        get_active_engines as _get_active_engines,
+    )
 
     return _get_active_engines()
 
@@ -82,8 +81,6 @@ async def websocket_endpoint(websocket: WebSocket):
         return
 
     # Get WebSocketManager from app state
-    from starlette.requests import Request
-    from fastapi import Request as FastAPIRequest
 
     # Access app through websocket's scope
     app = websocket.app
@@ -307,12 +304,12 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
                 "pid": process.pid,
             }
         )
-        logger.info(f"[TERMINAL DEBUG] Welcome message sent successfully")
+        logger.info("[TERMINAL DEBUG] Welcome message sent successfully")
 
         # Create tasks for bidirectional I/O
         async def read_from_pty():
             """Read output from PTY and send to WebSocket"""
-            logger.info(f"[TERMINAL DEBUG] read_from_pty task started")
+            logger.info("[TERMINAL DEBUG] read_from_pty task started")
             while True:
                 try:
                     # Check if process is still alive
@@ -326,7 +323,7 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
                     if readable:
                         data = os.read(master_fd, 1024)
                         if not data:
-                            logger.info(f"[TERMINAL DEBUG] No data from PTY, breaking")
+                            logger.info("[TERMINAL DEBUG] No data from PTY, breaking")
                             break
                         # Send binary data as bytes WebSocket frame
                         logger.debug(f"[TERMINAL DEBUG] Sending {len(data)} bytes to client")
@@ -341,11 +338,11 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
                 except Exception as e:
                     logger.error(f"[TERMINAL DEBUG] Error reading from PTY: {e}")
                     break
-            logger.info(f"[TERMINAL DEBUG] read_from_pty task ended")
+            logger.info("[TERMINAL DEBUG] read_from_pty task ended")
 
         async def write_to_pty():
             """Receive data from WebSocket and write to PTY"""
-            logger.info(f"[TERMINAL DEBUG] write_to_pty task started")
+            logger.info("[TERMINAL DEBUG] write_to_pty task started")
             while True:
                 try:
                     message = await websocket.receive()
@@ -370,12 +367,12 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
                             pass
 
                 except WebSocketDisconnect:
-                    logger.info(f"[TERMINAL DEBUG] WebSocket disconnected in write_to_pty")
+                    logger.info("[TERMINAL DEBUG] WebSocket disconnected in write_to_pty")
                     break
                 except Exception as e:
                     logger.error(f"[TERMINAL DEBUG] Error writing to PTY: {e}")
                     break
-            logger.info(f"[TERMINAL DEBUG] write_to_pty task ended")
+            logger.info("[TERMINAL DEBUG] write_to_pty task ended")
 
         # Run both tasks concurrently
         await asyncio.gather(read_from_pty(), write_to_pty(), return_exceptions=True)

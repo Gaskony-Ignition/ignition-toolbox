@@ -7,7 +7,7 @@ context manager pattern.
 
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 
@@ -116,8 +116,8 @@ async def lifespan(app: FastAPI):
         logger.info("Phase 5/8: Playwright Browser Check")
         try:
             from ignition_toolkit.startup.playwright_installer import (
-                is_browser_installed,
                 get_playwright_browsers_path,
+                is_browser_installed,
             )
 
             browsers_path = get_playwright_browsers_path()

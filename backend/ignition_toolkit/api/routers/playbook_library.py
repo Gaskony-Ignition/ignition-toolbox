@@ -111,7 +111,7 @@ async def install_playbook(request: PlaybookInstallRequest):
     Downloads the playbook, verifies checksum, and installs to user directory.
     """
     try:
-        from ignition_toolkit.playbook.installer import PlaybookInstaller, PlaybookInstallError
+        from ignition_toolkit.playbook.installer import PlaybookInstaller
 
         installer = PlaybookInstaller()
 
@@ -145,7 +145,7 @@ async def uninstall_playbook(playbook_path: str, force: bool = False):
         force: Force uninstall even if built-in (dangerous!)
     """
     try:
-        from ignition_toolkit.playbook.installer import PlaybookInstaller, PlaybookInstallError
+        from ignition_toolkit.playbook.installer import PlaybookInstaller
 
         installer = PlaybookInstaller()
 
@@ -181,7 +181,7 @@ async def update_playbook_to_latest(playbook_path: str):
         playbook_path: Playbook path (e.g., "gateway/module_upgrade")
     """
     try:
-        from ignition_toolkit.playbook.installer import PlaybookInstaller, PlaybookInstallError
+        from ignition_toolkit.playbook.installer import PlaybookInstaller
 
         installer = PlaybookInstaller()
 
@@ -373,8 +373,8 @@ async def submit_playbook_to_library(request: PlaybookSubmitRequest):
     with the playbook file and updated index.
     """
     try:
-        from ignition_toolkit.playbook.submitter import submit_playbook
         from ignition_toolkit.playbook.playbook_crud import get_playbook_info
+        from ignition_toolkit.playbook.submitter import submit_playbook
 
         # Get the playbook info and YAML content
         info = get_playbook_info(request.playbook_path)

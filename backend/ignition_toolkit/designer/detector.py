@@ -118,10 +118,10 @@ def _is_wsl() -> bool:
     """
     try:
         # Check for WSL-specific indicators
-        with open("/proc/version", "r") as f:
+        with open("/proc/version") as f:
             version = f.read().lower()
             return "microsoft" in version or "wsl" in version
-    except (OSError, IOError):
+    except OSError:
         return False
 
 

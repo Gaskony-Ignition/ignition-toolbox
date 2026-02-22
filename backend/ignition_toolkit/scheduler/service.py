@@ -6,7 +6,6 @@ Handles automated playbook execution using APScheduler
 
 import logging
 from datetime import UTC, datetime
-from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -296,7 +295,7 @@ class PlaybookScheduler:
 
 
 # Global scheduler instance
-_scheduler: Optional[PlaybookScheduler] = None
+_scheduler: PlaybookScheduler | None = None
 
 
 def get_scheduler() -> PlaybookScheduler:

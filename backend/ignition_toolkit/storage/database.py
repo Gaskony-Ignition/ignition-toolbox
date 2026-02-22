@@ -82,8 +82,9 @@ class Database:
         Falls back to create_all() if Alembic is not installed.
         """
         try:
-            from alembic import command
             from alembic.config import Config
+
+            from alembic import command
 
             alembic_ini = Path(__file__).resolve().parents[2] / "alembic.ini"
             if not alembic_ini.exists():

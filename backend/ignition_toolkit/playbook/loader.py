@@ -72,7 +72,7 @@ class PlaybookLoader:
                 line_number=line_number,
                 column=column,
             )
-        except IOError as e:
+        except OSError as e:
             raise PlaybookLoadError(
                 f"Error reading file: {e}",
                 file_path=str(file_path),

@@ -6,9 +6,10 @@ Manages concurrent playbook executions with resource limiting and monitoring.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
 
 from ignition_toolkit.execution.resource_limiter import ResourceLimiter, ResourceType
@@ -114,9 +115,9 @@ class ParallelExecutionManager:
 
         # Wait for all to complete (or fail fast)
         if fail_fast:
-            results = await self._wait_fail_fast(tasks, executions)
+            await self._wait_fail_fast(tasks, executions)
         else:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         # Build result summary
         completed = sum(1 for e in executions if e.status == "completed")

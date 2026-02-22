@@ -918,15 +918,6 @@ class PlaybookEngine:
             except Exception as e:
                 logger.warning(f"Error closing browser during cancellation: {e}")
 
-    def get_current_execution(self) -> ExecutionState | None:
-        """
-        Get current execution state
-
-        Returns:
-            Current execution state or None
-        """
-        return self._current_execution
-
     def get_total_steps(self) -> int:
         """
         Get total number of steps in current playbook

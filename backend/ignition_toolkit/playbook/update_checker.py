@@ -20,9 +20,10 @@ Example:
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
 
-from ignition_toolkit.playbook.registry import PlaybookRegistry, AvailablePlaybook, InstalledPlaybook
+from ignition_toolkit.playbook.registry import (
+    PlaybookRegistry,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -10,10 +10,11 @@ Provides a priority queue for scheduling playbook executions with:
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)

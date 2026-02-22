@@ -5,7 +5,6 @@ Provides standalone functions that wrap the executor classes
 for easier testing and programmatic use.
 """
 
-import asyncio
 import io
 from contextlib import redirect_stdout
 from typing import Any
@@ -69,7 +68,7 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
             raise ValueError(f"Dangerous builtin not allowed: {builtin}")
 
     # Whitelist of safe builtins
-    SAFE_BUILTINS = {
+    SAFE_BUILTINS = {  # noqa: N806
         'abs', 'all', 'any', 'bool', 'dict', 'enumerate', 'filter',
         'float', 'int', 'len', 'list', 'map', 'max', 'min', 'print',
         'range', 'reversed', 'round', 'sorted', 'str', 'sum', 'tuple',

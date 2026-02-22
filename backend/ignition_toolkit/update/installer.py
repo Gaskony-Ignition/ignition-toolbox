@@ -10,8 +10,8 @@ import logging
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
 
 import httpx
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 async def download_update(
     download_url: str,
-    progress_callback: Optional[Callable[[int, int], None]] = None
+    progress_callback: Callable[[int, int], None] | None = None
 ) -> Path:
     """
     Download update archive to temporary directory

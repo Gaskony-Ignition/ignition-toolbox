@@ -12,14 +12,12 @@ Handles:
 import hashlib
 import logging
 from pathlib import Path
-from typing import Any
 
 import httpx
 import yaml
 
-from ignition_toolkit.core.paths import get_user_playbooks_dir, get_builtin_playbooks_dir
-from ignition_toolkit.playbook.loader import PlaybookLoader
-from ignition_toolkit.playbook.registry import PlaybookRegistry, AvailablePlaybook
+from ignition_toolkit.core.paths import get_builtin_playbooks_dir, get_user_playbooks_dir
+from ignition_toolkit.playbook.registry import PlaybookRegistry
 
 logger = logging.getLogger(__name__)
 

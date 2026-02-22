@@ -19,7 +19,7 @@ from typing import Any
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
-from ignition_toolkit.core.paths import get_screenshots_dir, get_data_dir
+from ignition_toolkit.core.paths import get_data_dir, get_screenshots_dir
 
 logger = logging.getLogger(__name__)
 
@@ -478,7 +478,7 @@ class BrowserManager:
                 asyncio.gather(*self._active_downloads, return_exceptions=True),
                 timeout=timeout
             )
-            logger.info(f"All downloads completed")
+            logger.info("All downloads completed")
         except asyncio.TimeoutError:
             logger.warning(f"Download timeout after {timeout}s - some downloads may not have completed")
         finally:

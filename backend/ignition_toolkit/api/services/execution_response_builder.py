@@ -6,12 +6,11 @@ Extracted from routers/executions.py to reduce router complexity.
 """
 
 import logging
-from datetime import datetime
 from pathlib import Path
 
 from ignition_toolkit.api.routers.models import ExecutionStatusResponse, StepResultResponse
 from ignition_toolkit.playbook.engine import PlaybookEngine
-from ignition_toolkit.playbook.models import ExecutionState, StepResult
+from ignition_toolkit.playbook.models import StepResult
 from ignition_toolkit.storage.models import ExecutionModel
 
 logger = logging.getLogger(__name__)

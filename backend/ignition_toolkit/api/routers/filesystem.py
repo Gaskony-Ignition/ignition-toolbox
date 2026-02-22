@@ -9,9 +9,7 @@ PORTABILITY v4: Uses dynamic path resolution instead of hardcoded paths.
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -38,10 +36,10 @@ class DirectoryContents(BaseModel):
 
     current_path: str
     parent_path: str | None
-    entries: List[DirectoryEntry]
+    entries: list[DirectoryEntry]
 
 
-def _get_allowed_base_paths() -> List[Path]:
+def _get_allowed_base_paths() -> list[Path]:
     """
     Get list of allowed base paths for filesystem browsing.
 
@@ -177,7 +175,7 @@ async def browse_directory(path: str = "./data/downloads") -> DirectoryContents:
                 parent_path = str(target_path.parent)
 
         # List directory contents (directories only, sorted)
-        entries: List[DirectoryEntry] = []
+        entries: list[DirectoryEntry] = []
 
         try:
             for entry in sorted(target_path.iterdir(), key=lambda x: x.name.lower()):
@@ -226,7 +224,7 @@ class ModuleFilesResponse(BaseModel):
     """Response containing detected module files"""
 
     path: str
-    files: List[ModuleFileInfo]
+    files: list[ModuleFileInfo]
 
 
 @router.get("/list-modules")

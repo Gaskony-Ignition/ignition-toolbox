@@ -9,10 +9,10 @@ import hmac
 import logging
 import os
 import secrets
-from typing import Optional
+from pathlib import Path
+
 from fastapi import Header, HTTPException, Request
 from fastapi.security import APIKeyHeader
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ def is_auth_required() -> bool:
     return not disable_auth
 
 
-async def verify_api_key(api_key: Optional[str] = Header(None, alias=API_KEY_HEADER)) -> str:
+async def verify_api_key(api_key: str | None = Header(None, alias=API_KEY_HEADER)) -> str:
     """
     Verify API key from request header.
 
@@ -177,10 +177,10 @@ def print_api_key_info():
         print(f"Stored in: {api_key_file}")
         print("")
         print("Include this key in all API requests:")
-        print(f'  X-API-Key: <your-key>')
+        print('  X-API-Key: <your-key>')
         print("")
         print("Example:")
-        print(f'  curl -H "X-API-Key: <your-key>" http://localhost:5000/api/playbooks')
+        print('  curl -H "X-API-Key: <your-key>" http://localhost:5000/api/playbooks')
         print("")
         print("To view full API key:")
         print(f"  cat {api_key_file}")

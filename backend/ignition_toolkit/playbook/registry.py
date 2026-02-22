@@ -11,10 +11,9 @@ Registry is persisted to ~/.ignition-toolkit/registry.json
 
 import json
 import logging
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 
 import httpx
 
@@ -133,7 +132,7 @@ class PlaybookRegistry:
             return
 
         try:
-            with open(self.registry_path, "r", encoding='utf-8') as f:
+            with open(self.registry_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # Load installed playbooks

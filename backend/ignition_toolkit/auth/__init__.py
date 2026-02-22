@@ -8,10 +8,10 @@ Provides:
 - Audit logging
 """
 
-from ignition_toolkit.auth.api_keys import APIKeyManager, APIKey
-from ignition_toolkit.auth.rbac import Role, Permission, RBACManager
-from ignition_toolkit.auth.audit import AuditLogger, AuditEvent
+from ignition_toolkit.auth.api_keys import APIKey, APIKeyManager
+from ignition_toolkit.auth.audit import AuditEvent, AuditLogger
 from ignition_toolkit.auth.middleware import AuthMiddleware, get_current_user
+from ignition_toolkit.auth.rbac import Permission, RBACManager, Role
 
 __all__ = [
     "APIKeyManager",

@@ -345,6 +345,7 @@ class TestSuiteModel(Base):
     for comprehensive testing and re-run failed tests capability.
     """
 
+    __test__ = False  # Prevent pytest from collecting this SQLAlchemy model as a test class
     __tablename__ = "test_suites"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

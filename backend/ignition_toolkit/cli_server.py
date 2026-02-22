@@ -6,18 +6,14 @@ with Python commands that work on Windows, Linux, and macOS.
 
 v4.1.0: Enhanced with pre-flight checks to prevent restart/refresh issues.
 """
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 import click
 import psutil
 from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
@@ -52,7 +48,7 @@ def get_package_root() -> Path:
     return Path(__file__).parent.parent
 
 
-def check_frontend_staleness() -> tuple[str, Optional[str]]:
+def check_frontend_staleness() -> tuple[str, str | None]:
     """
     Check if frontend build is older than source files
 
@@ -115,7 +111,7 @@ def rebuild_frontend(quiet: bool = False) -> bool:
             if not quiet:
                 console.print("[cyan]Building frontend...[/cyan]")
 
-            result = subprocess.run(
+            subprocess.run(
                 ["npm", "run", "build"],
                 cwd=frontend_dir,
                 capture_output=quiet,
@@ -141,7 +137,7 @@ def rebuild_frontend(quiet: bool = False) -> bool:
         if not quiet:
             console.print("[cyan]Running frontend rebuild...[/cyan]")
 
-        result = subprocess.run(
+        subprocess.run(
             ["bash", str(rebuild_script)],
             capture_output=quiet,
             text=True,
@@ -198,13 +194,7 @@ def check_database_locks() -> bool:
     if not db_file.exists():
         return True  # No database yet, no locks
 
-    # Check for SQLite lock files (.db-wal, .db-shm)
-    lock_files = [
-        db_file.parent / f"{db_file.name}-wal",
-        db_file.parent / f"{db_file.name}-shm"
-    ]
-
-    # If lock files exist, that's actually normal for WAL mode
+    # If lock files (.db-wal, .db-shm) exist, that's actually normal for WAL mode
     # Only problematic if we can't open the database
     try:
         import sqlite3
@@ -252,7 +242,7 @@ def run_preflight_checks(skip_checks: bool = False, auto_rebuild: bool = True) -
             checks_passed = False
 
     elif status == "stale":
-        console.print(f"[yellow]⚠ Frontend build is stale[/yellow]")
+        console.print("[yellow]⚠ Frontend build is stale[/yellow]")
         console.print(f"  [dim]Source changed: {newest_file}[/dim]")
         if auto_rebuild:
             if click.confirm("  Rebuild frontend?", default=True):
@@ -439,7 +429,7 @@ def status(port):
         console.print("  ignition-toolkit server start")
         sys.exit(1)
 
-    console.print(f"[green]✓ Server process found[/green]")
+    console.print("[green]✓ Server process found[/green]")
     for proc in processes:
         console.print(f"  PID: {proc.pid}")
 
@@ -466,17 +456,17 @@ def status(port):
             health_response = httpx.get(f'http://localhost:{port}/api/health', timeout=5)
             if health_response.status_code == 200:
                 health_data = health_response.json()
-                console.print(f"[green]✓ Health check passed[/green]")
+                console.print("[green]✓ Health check passed[/green]")
                 console.print(f"  Version: {health_data.get('version', 'unknown')}")
                 console.print(f"  Status: {health_data.get('status', 'unknown')}")
         except httpx.HTTPError:
             pass  # Health endpoint optional
 
         # Summary
-        console.print(f"\n[bold green]✓ Server is HEALTHY[/bold green]")
-        console.print(f"\n[bold]Access the web UI:[/bold]")
+        console.print("\n[bold green]✓ Server is HEALTHY[/bold green]")
+        console.print("\n[bold]Access the web UI:[/bold]")
         console.print(f"  http://localhost:{port}")
-        console.print(f"\n[bold]Server Info:[/bold]")
+        console.print("\n[bold]Server Info:[/bold]")
         console.print(f"  PID: {processes[0].pid}")
         console.print(f"  Port: {port}")
 
@@ -484,7 +474,7 @@ def status(port):
         console.print("\n[yellow]⚠ httpx not installed, skipping HTTP health check[/yellow]")
         console.print("[green]Process is running but HTTP check not available[/green]")
     except Exception as e:
-        console.print(f"\n[red]✗ Server not responding to HTTP requests[/red]")
+        console.print("\n[red]✗ Server not responding to HTTP requests[/red]")
         console.print(f"  Error: {e}")
         console.print("\n[yellow]Server process is running but may not be ready yet[/yellow]")
         sys.exit(1)

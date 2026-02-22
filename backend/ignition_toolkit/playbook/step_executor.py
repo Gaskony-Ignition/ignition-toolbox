@@ -16,21 +16,19 @@ from ignition_toolkit.core.timeouts import TimeoutDefaults, TimeoutKeys
 from ignition_toolkit.designer import DesignerManager
 from ignition_toolkit.gateway import GatewayClient
 from ignition_toolkit.playbook.exceptions import StepExecutionError
-from ignition_toolkit.playbook.models import PlaybookStep, StepResult, StepStatus, StepType
-from ignition_toolkit.playbook.parameters import ParameterResolver
 
 # Import step handlers
 from ignition_toolkit.playbook.executors import (
     BrowserClickHandler,
-    BrowserFillHandler,
     BrowserFileUploadHandler,
+    BrowserFillHandler,
     BrowserGetTextHandler,
     BrowserNavigateHandler,
     BrowserScreenshotHandler,
-    BrowserVerifyHandler,
-    BrowserVerifyTextHandler,
     BrowserVerifyAttributeHandler,
+    BrowserVerifyHandler,
     BrowserVerifyStateHandler,
+    BrowserVerifyTextHandler,
     BrowserWaitHandler,
     DesignerCloseHandler,
     DesignerLaunchHandler,
@@ -39,6 +37,9 @@ from ignition_toolkit.playbook.executors import (
     DesignerOpenProjectHandler,
     DesignerScreenshotHandler,
     DesignerWaitHandler,
+    FATExportReportHandler,
+    # FAT reporting handlers
+    FATGenerateReportHandler,
     GatewayGetHealthHandler,
     GatewayGetInfoHandler,
     GatewayGetProjectHandler,
@@ -51,24 +52,23 @@ from ignition_toolkit.playbook.executors import (
     GatewayUploadModuleHandler,
     GatewayWaitModuleHandler,
     GatewayWaitReadyHandler,
+    # Perspective FAT handlers
+    PerspectiveDiscoverPageHandler,
+    PerspectiveExecuteTestManifestHandler,
+    PerspectiveExtractMetadataHandler,
+    PerspectiveVerifyDockHandler,
+    PerspectiveVerifyNavigationHandler,
+    # AI verification handlers
+    PerspectiveVerifyWithAIHandler,
     PlaybookRunHandler,
     StepHandler,
     UtilityLogHandler,
     UtilityPythonHandler,
     UtilitySetVariableHandler,
     UtilitySleepHandler,
-    # Perspective FAT handlers
-    PerspectiveDiscoverPageHandler,
-    PerspectiveExtractMetadataHandler,
-    PerspectiveExecuteTestManifestHandler,
-    PerspectiveVerifyNavigationHandler,
-    PerspectiveVerifyDockHandler,
-    # FAT reporting handlers
-    FATGenerateReportHandler,
-    FATExportReportHandler,
-    # AI verification handlers
-    PerspectiveVerifyWithAIHandler,
 )
+from ignition_toolkit.playbook.models import PlaybookStep, StepResult, StepStatus, StepType
+from ignition_toolkit.playbook.parameters import ParameterResolver
 
 logger = logging.getLogger(__name__)
 

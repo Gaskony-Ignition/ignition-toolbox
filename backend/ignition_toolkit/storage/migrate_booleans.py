@@ -7,9 +7,8 @@ Migrates:
 """
 
 import logging
-from pathlib import Path
 
-from sqlalchemy import Boolean, Column, inspect, text
+from sqlalchemy import inspect, text
 
 from ignition_toolkit.storage import get_database
 

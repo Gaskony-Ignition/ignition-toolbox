@@ -9,12 +9,10 @@ import asyncio
 import logging
 import platform
 import subprocess
-import tempfile
 from pathlib import Path
-from typing import Any
 
+from ignition_toolkit.core.paths import get_data_dir, get_screenshots_dir
 from ignition_toolkit.designer.detector import detect_designer_installation, get_java_command
-from ignition_toolkit.core.paths import get_screenshots_dir, get_data_dir
 
 logger = logging.getLogger(__name__)
 
@@ -417,7 +415,7 @@ class DesignerManager:
         logger.info("=" * 50)
         logger.info(f"Project: {project_name}")
         logger.info(f"Username: {username}")
-        logger.info(f"Password: ****")
+        logger.info("Password: ****")
         logger.info("")
 
         # Get path to PowerShell helper scripts
@@ -556,7 +554,7 @@ class DesignerManager:
 
             # Optional: Wait and verify project opened
             await asyncio.sleep(5)
-            verify_cmd = f"powershell.exe -Command \"Get-Process | Where-Object {{($_.ProcessName -eq 'java') -or ($_.ProcessName -eq 'javaw')}} | Select-Object -ExpandProperty MainWindowTitle\""
+            verify_cmd = "powershell.exe -Command \"Get-Process | Where-Object {($_.ProcessName -eq 'java') -or ($_.ProcessName -eq 'javaw')} | Select-Object -ExpandProperty MainWindowTitle\""
             proc = await asyncio.create_subprocess_shell(
                 verify_cmd,
                 stdout=asyncio.subprocess.PIPE,

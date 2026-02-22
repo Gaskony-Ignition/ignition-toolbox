@@ -15,9 +15,8 @@ PORTABILITY v4: No external dependencies, uses only Python stdlib.
 import logging
 import time
 from collections import defaultdict
-from typing import Dict, Tuple
 
-from fastapi import Request, Response
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -87,7 +86,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
         # Client buckets: {client_ip: {endpoint_pattern: TokenBucket}}
-        self.buckets: Dict[str, Dict[str, TokenBucket]] = defaultdict(dict)
+        self.buckets: dict[str, dict[str, TokenBucket]] = defaultdict(dict)
 
         # Cleanup: Remove stale buckets periodically
         self.last_cleanup = time.monotonic()
@@ -267,7 +266,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429,
                 content={
                     "error": "Too many requests",
-                    "message": f"Rate limit exceeded. Please try again later.",
+                    "message": "Rate limit exceeded. Please try again later.",
                     "retry_after": 60,  # Suggest retry after 60 seconds
                 },
                 headers={"Retry-After": "60"},

@@ -5,9 +5,10 @@ Provides consistent error responses and error handling decorators.
 """
 
 import logging
+from collections.abc import Callable
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import HTTPException
 from pydantic import BaseModel
