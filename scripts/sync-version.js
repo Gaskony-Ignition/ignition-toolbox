@@ -27,10 +27,16 @@ const pyprojectPath    = path.join(root, 'backend', 'pyproject.toml');
 const claudeMdPath     = path.join(root, '.claude', 'CLAUDE.md');
 
 // ── Determine target version ────────────────────────────────────────────────
-const rootPkg    = JSON.parse(fs.readFileSync(rootPkgPath, 'utf8'));
-const newVersion = process.argv[2] || rootPkg.version;
+// Read version from package.json via regex to avoid JSON roundtrip issues
+const rootPkgContent = fs.readFileSync(rootPkgPath, 'utf8');
+const versionMatch = rootPkgContent.match(/"version":\s*"([^"]+)"/);
+const currentVersion = versionMatch ? versionMatch[1] : '0.0.0';
+const newVersion = process.argv[2] || currentVersion;
 
 // ── Helper ───────────────────────────────────────────────────────────────────
+// Uses regex replacement to update files in place, preserving all existing
+// content exactly as-is. This avoids JSON.parse/JSON.stringify roundtrip
+// which can corrupt package.json by dropping fields.
 function replaceInFile(filePath, replacements) {
   let content = fs.readFileSync(filePath, 'utf8');
   let changed = false;
@@ -47,23 +53,14 @@ function replaceInFile(filePath, replacements) {
 }
 
 // ── package.json ─────────────────────────────────────────────────────────────
-if (process.argv[2] && rootPkg.version !== newVersion) {
-  rootPkg.version = newVersion;
-  fs.writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2) + '\n');
-  console.log(`  package.json -> ${newVersion}`);
-} else {
-  console.log(`  package.json already at ${rootPkg.version}`);
-}
+replaceInFile(rootPkgPath, [
+  [/"version": "[^"]+"/, `"version": "${newVersion}"`],
+]);
 
 // ── frontend/package.json ─────────────────────────────────────────────────────
-const frontendPkg = JSON.parse(fs.readFileSync(frontendPkgPath, 'utf8'));
-if (frontendPkg.version !== newVersion) {
-  frontendPkg.version = newVersion;
-  fs.writeFileSync(frontendPkgPath, JSON.stringify(frontendPkg, null, 2) + '\n');
-  console.log(`  frontend/package.json -> ${newVersion}`);
-} else {
-  console.log(`  frontend/package.json already at ${newVersion}`);
-}
+replaceInFile(frontendPkgPath, [
+  [/"version": "[^"]+"/, `"version": "${newVersion}"`],
+]);
 
 // ── backend/__init__.py ───────────────────────────────────────────────────────
 replaceInFile(initPyPath, [

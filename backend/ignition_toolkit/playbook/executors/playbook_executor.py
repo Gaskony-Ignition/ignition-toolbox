@@ -9,7 +9,7 @@ from typing import Any
 
 from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
-from ignition_toolkit.playbook.models import StepStatus
+from ignition_toolkit.playbook.models import OnFailureAction, StepStatus
 
 logger = logging.getLogger(__name__)
 
@@ -199,15 +199,21 @@ class PlaybookRunHandler(StepHandler):
                     else str(step_result.status),
                 })
 
-                # Fail fast: abort nested playbook if a step fails
+                # Fail fast: abort nested playbook if a step fails (respecting on_failure)
                 if step_result.status == StepStatus.FAILED:
-                    logger.error(
-                        f"Nested step '{step.name}' failed in '{playbook_path}': {step_result.error}"
-                    )
-                    raise StepExecutionError(
-                        "playbook",
-                        f"Nested playbook '{playbook_path}' failed at step '{step.name}': {step_result.error}",
-                    )
+                    if step.on_failure == OnFailureAction.CONTINUE:
+                        logger.warning(
+                            f"Nested step '{step.name}' failed in '{playbook_path}' "
+                            f"(on_failure=continue, proceeding): {step_result.error}"
+                        )
+                    else:
+                        logger.error(
+                            f"Nested step '{step.name}' failed in '{playbook_path}': {step_result.error}"
+                        )
+                        raise StepExecutionError(
+                            "playbook",
+                            f"Nested playbook '{playbook_path}' failed at step '{step.name}': {step_result.error}",
+                        )
 
             logger.info(f"Nested playbook '{playbook_path}' created {len(nested_screenshots)} screenshots")
 
