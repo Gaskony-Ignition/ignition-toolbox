@@ -31,6 +31,17 @@ from ignition_toolkit.startup.validators import (
 logger = logging.getLogger(__name__)
 
 
+async def _background_manifest_check(manifest):
+    """Background task to check manifest and log results."""
+    try:
+        data = await manifest.fetch()
+        if data:
+            components = data.get("components", {})
+            logger.info(f"Manifest loaded: {len(components)} components tracked")
+    except Exception as e:
+        logger.warning(f"Background manifest check failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -43,6 +54,8 @@ async def lifespan(app: FastAPI):
     3. Credential Vault (CRITICAL - must pass)
     4. Playbook Library (NON-FATAL - warns if fails)
     5. Frontend Build (NON-FATAL - production only)
+    6-8. Application services
+    9. Background Manifest Check (NON-FATAL)
 
     Yields control to FastAPI to handle requests, then cleans up on shutdown.
     """
@@ -55,7 +68,7 @@ async def lifespan(app: FastAPI):
 
     try:
         # Phase 1: Environment Validation (CRITICAL)
-        logger.info("Phase 1/8: Environment Validation")
+        logger.info("Phase 1/9: Environment Validation")
         try:
             await validate_environment()
             logger.info("[OK] Environment validated")
@@ -65,7 +78,7 @@ async def lifespan(app: FastAPI):
             raise
 
         # Phase 2: Database Initialization (CRITICAL)
-        logger.info("Phase 2/8: Database Initialization")
+        logger.info("Phase 2/9: Database Initialization")
         try:
             await initialize_database()
             set_component_healthy("database", "Database operational")
@@ -76,7 +89,7 @@ async def lifespan(app: FastAPI):
             raise
 
         # Phase 3: Credential Vault (CRITICAL)
-        logger.info("Phase 3/8: Credential Vault Initialization")
+        logger.info("Phase 3/9: Credential Vault Initialization")
         try:
             await initialize_vault()
             set_component_healthy("vault", "Vault operational")
@@ -87,7 +100,7 @@ async def lifespan(app: FastAPI):
             raise
 
         # Phase 4: Playbook Library (NON-FATAL)
-        logger.info("Phase 4/8: Playbook Library Validation")
+        logger.info("Phase 4/9: Playbook Library Validation")
         try:
             stats = await validate_playbooks()
             set_component_healthy("playbooks", f"Found {stats['total']} playbooks")
@@ -113,7 +126,7 @@ async def lifespan(app: FastAPI):
 
         # Phase 5: Playwright Browser (NON-FATAL but required for playbook execution)
         # Browsers should be bundled with the installer - just verify they exist
-        logger.info("Phase 5/8: Playwright Browser Check")
+        logger.info("Phase 5/9: Playwright Browser Check")
         try:
             from ignition_toolkit.startup.playwright_installer import (
                 get_playwright_browsers_path,
@@ -148,10 +161,10 @@ async def lifespan(app: FastAPI):
         # In frozen mode (PyInstaller), Electron serves the frontend - skip validation
         from ignition_toolkit.core.paths import is_frozen
         if is_frozen():
-            logger.info("Phase 6/8: Frontend Validation (SKIPPED - Electron serves frontend)")
+            logger.info("Phase 6/9: Frontend Validation (SKIPPED - Electron serves frontend)")
             set_component_healthy("frontend", "Electron serves frontend")
         elif not is_dev_mode():
-            logger.info("Phase 6/8: Frontend Validation")
+            logger.info("Phase 6/9: Frontend Validation")
             try:
                 await validate_frontend()
                 set_component_healthy("frontend", "Frontend build verified")
@@ -160,11 +173,11 @@ async def lifespan(app: FastAPI):
                 logger.warning(f"[WARN]  Frontend validation failed: {e}")
                 set_component_degraded("frontend", str(e))
         else:
-            logger.info("Phase 6/8: Frontend Validation (SKIPPED - dev mode)")
+            logger.info("Phase 6/9: Frontend Validation (SKIPPED - dev mode)")
             set_component_healthy("frontend", "Dev mode - frontend served separately")
 
         # Phase 7: Start Scheduler (NON-FATAL)
-        logger.info("Phase 7/8: Starting Playbook Scheduler")
+        logger.info("Phase 7/9: Starting Playbook Scheduler")
         try:
             from ignition_toolkit.scheduler import get_scheduler
 
@@ -177,7 +190,7 @@ async def lifespan(app: FastAPI):
             set_component_degraded("scheduler", str(e))
 
         # Phase 8: Initialize Application Services
-        logger.info("Phase 8/8: Initializing Application Services")
+        logger.info("Phase 8/9: Initializing Application Services")
         try:
             from ignition_toolkit.api.services import AppServices
 
@@ -189,6 +202,19 @@ async def lifespan(app: FastAPI):
             logger.error(f"[ERROR] Failed to initialize services: {e}")
             set_component_unhealthy("services", str(e))
             raise
+
+        # Phase 9: Background Manifest Check (NON-FATAL)
+        logger.info("Phase 9/9: Background Remote Data Check")
+        try:
+            import asyncio
+
+            from ignition_toolkit.core.manifest import get_manifest_manager
+            manifest = get_manifest_manager()
+            # Schedule background fetch (non-blocking)
+            asyncio.create_task(_background_manifest_check(manifest))
+            logger.info("[OK] Background manifest check scheduled")
+        except Exception as e:
+            logger.warning(f"[WARN]  Manifest check scheduling failed: {e}")
 
         # Mark system ready
         health.ready = True

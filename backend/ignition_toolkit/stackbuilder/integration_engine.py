@@ -2,7 +2,8 @@
 Integration Engine for Stack Builder
 
 Handles automatic service integration detection and configuration generation.
-Ported from ignition-stack-builder project.
+Ported from ignition-stack-builder project. Supports remote updates via
+RemoteDataManager.
 """
 
 import json
@@ -10,6 +11,9 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any
+
+from ignition_toolkit.core.remote_data import RemoteDataConfig, RemoteDataManager
+from ignition_toolkit.core.remote_data_registry import RemoteDataRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -22,23 +26,55 @@ def _get_data_path(filename: str) -> Path:
 
 
 class IntegrationEngine:
-    """Core engine for managing service integrations"""
+    """
+    Core engine for managing service integrations.
+
+    When no integrations_path is provided, uses RemoteDataManager for
+    automatic remote update support. When integrations_path is explicitly
+    provided (e.g. in tests), reads directly from that path.
+    """
 
     def __init__(self, integrations_path: Path | None = None):
         """
         Initialize the integration engine
 
         Args:
-            integrations_path: Path to integrations.json. If None, uses default.
+            integrations_path: Path to integrations.json. If provided, uses
+                direct file mode (for testing). If None, uses RemoteDataManager mode.
         """
-        if integrations_path is None:
-            integrations_path = _get_data_path("integrations.json")
+        if integrations_path is not None:
+            # Direct path mode (testing)
+            self.integrations_path = integrations_path
+            self._manager: RemoteDataManager | None = None
+        else:
+            # RemoteDataManager mode (production)
+            self.integrations_path = None
+            config = RemoteDataConfig(
+                component_name="stackbuilder_integrations",
+                filename="integrations.json",
+                github_path="data/stackbuilder/integrations.json",
+                bundled_path_fn=lambda: _get_data_path("integrations.json"),
+                on_update=lambda: setattr(self, "_integrations", None),
+            )
+            self._manager = RemoteDataManager(config)
+            RemoteDataRegistry.register(self._manager)
 
-        self.integrations_path = integrations_path
         self._integrations: dict[str, Any] | None = None
 
     def _load_integrations(self) -> dict[str, Any]:
-        """Load integrations configuration from JSON file"""
+        """Load integrations configuration from JSON file or RemoteDataManager"""
+        if self._manager:
+            # RemoteDataManager mode: load from user data dir or bundled
+            try:
+                data = self._manager.load()
+                if isinstance(data, dict):
+                    return data
+                return {}
+            except Exception as e:
+                logger.error("Failed to load integrations via RemoteDataManager: %s", e)
+                return {}
+
+        # Direct file mode (testing)
         try:
             with open(self.integrations_path, encoding='utf-8') as f:
                 return json.load(f)

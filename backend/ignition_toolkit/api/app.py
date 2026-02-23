@@ -36,6 +36,7 @@ from ignition_toolkit.api.routers.reports import router as reports_router
 from ignition_toolkit.api.routers.schedules import router as schedules_router
 from ignition_toolkit.api.routers.stackbuilder import router as stackbuilder_router
 from ignition_toolkit.api.routers.exchange import router as exchange_router
+from ignition_toolkit.api.routers.remote_data import router as remote_data_router
 from ignition_toolkit.api.routers.step_types import router as step_types_router
 from ignition_toolkit.api.routers.updates import router as updates_router
 from ignition_toolkit.api.routers.websockets import router as websockets_router
@@ -89,6 +90,9 @@ app.include_router(stackbuilder_router)
 
 # Register Exchange router
 app.include_router(exchange_router)
+
+# Register Remote Data Updates router
+app.include_router(remote_data_router)
 
 # Register CloudDesigner router
 app.include_router(clouddesigner_router)

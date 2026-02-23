@@ -6,7 +6,9 @@ managing API keys, and executing raw API requests.
 """
 
 import logging
+import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -14,8 +16,40 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ignition_toolkit.api.services.api_key_service import APIKeyService
+from ignition_toolkit.core.remote_data import RemoteDataConfig, RemoteDataManager
+from ignition_toolkit.core.remote_data_registry import RemoteDataRegistry
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# API Docs Remote Data Manager
+# ============================================================================
+
+
+def _get_api_docs_path() -> Path:
+    """Get path to bundled API docs JSON file."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "api" / "data" / "api_docs.json"
+    return Path(__file__).parent.parent / "data" / "api_docs.json"
+
+
+_api_docs_manager: RemoteDataManager | None = None
+
+
+def _get_api_docs_manager() -> RemoteDataManager:
+    """Get or create the API docs RemoteDataManager (lazy singleton)."""
+    global _api_docs_manager
+    if _api_docs_manager is None:
+        config = RemoteDataConfig(
+            component_name="api_docs",
+            filename="api_docs.json",
+            github_path="data/api/api_docs.json",
+            bundled_path_fn=_get_api_docs_path,
+        )
+        _api_docs_manager = RemoteDataManager(config)
+        RemoteDataRegistry.register(_api_docs_manager)
+    return _api_docs_manager
 
 # Create router
 router = APIRouter(prefix="/api/explorer", tags=["api-explorer"])
@@ -697,3 +731,25 @@ async def test_gateway_connection(request: GatewayRequest):
             "success": False,
             "message": e.detail,
         }
+
+
+# ============================================================================
+# API Documentation
+# ============================================================================
+
+
+@router.get("/docs")
+async def get_api_docs():
+    """
+    Returns updatable API documentation JSON.
+
+    Loads curated Ignition Gateway API documentation from the bundled
+    data file, or from a remotely-updated override if available.
+    """
+    try:
+        manager = _get_api_docs_manager()
+        data = manager.load()
+        return data
+    except Exception as e:
+        logger.exception("Failed to load API docs: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to load API documentation")

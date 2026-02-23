@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "schema_version": 1,
+    "updated_at": "2026-02-23T00:00:00Z"
+  },
+  "exchange_url": "https://inductiveautomation.com/exchange",
+  "listing_page": {
+    "resource_link_selector": "a[href*='/exchange/']",
+    "min_path_segments": 3
+  },
+  "resource_page": {
+    "title": {
+      "primary": ["h1", "h2"],
+      "fallback_meta": "og:title"
+    },
+    "tagline": {
+      "meta_name": "description",
+      "fallback_meta": "og:description"
+    },
+    "contributor": {
+      "class_patterns": ["contributor", "author", "creator"],
+      "itemprop": "author"
+    },
+    "category": {
+      "class_patterns": ["category", "tag", "type"],
+      "itemprop": "category"
+    },
+    "download_count": {
+      "class_patterns": ["download"],
+      "data_attr": "downloads"
+    },
+    "version": {
+      "class_patterns": ["version"],
+      "itemprop": "softwareVersion"
+    },
+    "updated_date": {
+      "element": "time",
+      "attr": "datetime"
+    }
+  }
+}

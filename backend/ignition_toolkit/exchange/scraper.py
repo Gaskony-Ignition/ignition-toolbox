@@ -3,20 +3,60 @@ Ignition Exchange scraper.
 
 Visits inductiveautomation.com/exchange and collects resource listings.
 Uses Playwright for page navigation and BeautifulSoup for HTML parsing.
+
+CSS selectors and field extraction patterns are loaded from selectors.json,
+which can be updated remotely via RemoteDataManager without code changes.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import sys
 import threading
 from collections.abc import Callable
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+
+from ignition_toolkit.core.remote_data import RemoteDataConfig, RemoteDataManager
+from ignition_toolkit.core.remote_data_registry import RemoteDataRegistry
 
 logger = logging.getLogger(__name__)
 
-EXCHANGE_URL = "https://inductiveautomation.com/exchange"
+# Default fallback URL used when selectors config is unavailable
+_DEFAULT_EXCHANGE_URL = "https://inductiveautomation.com/exchange"
+
+# Module-level selector manager (lazy-initialized)
+_selectors_manager: RemoteDataManager | None = None
+
+
+def _get_selectors_path() -> Path:
+    """Get path to bundled selectors.json, handling frozen (PyInstaller) mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "exchange" / "selectors.json"
+    return Path(__file__).parent / "selectors.json"
+
+
+def _get_selectors() -> dict:
+    """Load selector configuration, initializing the manager on first call."""
+    global _selectors_manager
+    if _selectors_manager is None:
+        config = RemoteDataConfig(
+            component_name="exchange_selectors",
+            filename="selectors.json",
+            github_path="data/exchange/selectors.json",
+            bundled_path_fn=_get_selectors_path,
+        )
+        _selectors_manager = RemoteDataManager(config)
+        RemoteDataRegistry.register(_selectors_manager)
+    return _selectors_manager.load()
+
+
+def get_exchange_url() -> str:
+    """Get the Exchange listing URL from config."""
+    selectors = _get_selectors()
+    return selectors.get("exchange_url", _DEFAULT_EXCHANGE_URL)
 
 
 def format_version(v: Any) -> str:
@@ -30,6 +70,35 @@ def format_version(v: Any) -> str:
     return s
 
 
+def _find_by_config(soup: Any, field_config: dict) -> str:
+    """
+    Find an element using config-driven selectors.
+
+    Tries strategies in order: class_patterns, itemprop, data_attr.
+    Returns the element's text content or empty string.
+    """
+    # Try class patterns
+    if "class_patterns" in field_config:
+        pattern = "|".join(field_config["class_patterns"])
+        el = soup.find(attrs={"class": re.compile(pattern, re.I)})
+        if el:
+            return el.get_text(strip=True)
+
+    # Try itemprop
+    if "itemprop" in field_config:
+        el = soup.find(attrs={"itemprop": field_config["itemprop"]})
+        if el:
+            return el.get_text(strip=True)
+
+    # Try data attribute
+    if "data_attr" in field_config:
+        el = soup.find(attrs={"data-stat": field_config["data_attr"]})
+        if el:
+            return el.get_text(strip=True)
+
+    return ""
+
+
 def extract_resource_details(page_html: str, url: str) -> dict[str, Any]:
     """
     Extract resource details from a single exchange resource page HTML.
@@ -40,89 +109,73 @@ def extract_resource_details(page_html: str, url: str) -> dict[str, Any]:
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(page_html, "lxml")
+    selectors = _get_selectors()
+    resource_cfg = selectors.get("resource_page", {})
 
     # Extract title
     title = ""
-    title_el = soup.find("h1") or soup.find("h2")
-    if title_el:
-        title = title_el.get_text(strip=True)
+    title_cfg = resource_cfg.get("title", {})
+    for tag_name in title_cfg.get("primary", ["h1", "h2"]):
+        title_el = soup.find(tag_name)
+        if title_el:
+            title = title_el.get_text(strip=True)
+            break
 
     # Try meta og:title as fallback
     if not title:
-        og_title = soup.find("meta", property="og:title")
+        fallback_meta = title_cfg.get("fallback_meta", "og:title")
+        og_title = soup.find("meta", property=fallback_meta)
         if og_title:
             title = og_title.get("content", "").strip()
 
     # Extract tagline / description
     tagline = ""
-    # Try meta description first
-    meta_desc = soup.find("meta", attrs={"name": "description"})
+    tagline_cfg = resource_cfg.get("tagline", {})
+    meta_name = tagline_cfg.get("meta_name", "description")
+    meta_desc = soup.find("meta", attrs={"name": meta_name})
     if meta_desc:
         tagline = meta_desc.get("content", "").strip()
     if not tagline:
-        og_desc = soup.find("meta", property="og:description")
+        fallback_meta = tagline_cfg.get("fallback_meta", "og:description")
+        og_desc = soup.find("meta", property=fallback_meta)
         if og_desc:
             tagline = og_desc.get("content", "").strip()
 
     # Extract contributor - look for "by <author>" pattern or specific element
-    contributor = ""
-    # Look for contributor/author elements
-    for selector in [
-        {"class": re.compile(r"contributor|author|creator", re.I)},
-        {"itemprop": "author"},
-    ]:
-        el = soup.find(attrs=selector)
-        if el:
-            contributor = el.get_text(strip=True)
-            # Clean "by " prefix
-            if contributor.lower().startswith("by "):
-                contributor = contributor[3:].strip()
-            break
+    contributor_cfg = resource_cfg.get("contributor", {})
+    contributor = _find_by_config(soup, contributor_cfg)
+    # Clean "by " prefix
+    if contributor.lower().startswith("by "):
+        contributor = contributor[3:].strip()
 
     # Extract category
-    category = ""
-    for selector in [
-        {"class": re.compile(r"category|tag|type", re.I)},
-        {"itemprop": "category"},
-    ]:
-        el = soup.find(attrs=selector)
-        if el:
-            category = el.get_text(strip=True)
-            break
+    category_cfg = resource_cfg.get("category", {})
+    category = _find_by_config(soup, category_cfg)
 
     # Extract download count
     download_count = 0
-    for selector in [
-        {"class": re.compile(r"download", re.I)},
-        {"data-stat": "downloads"},
-    ]:
-        el = soup.find(attrs=selector)
-        if el:
-            text = el.get_text(strip=True)
-            nums = re.findall(r"[\d,]+", text)
-            if nums:
-                try:
-                    download_count = int(nums[0].replace(",", ""))
-                    break
-                except ValueError:
-                    pass
+    download_cfg = resource_cfg.get("download_count", {})
+    download_text = _find_by_config(soup, download_cfg)
+    if download_text:
+        nums = re.findall(r"[\d,]+", download_text)
+        if nums:
+            try:
+                download_count = int(nums[0].replace(",", ""))
+            except ValueError:
+                pass
 
     # Extract version
-    version = ""
-    for selector in [
-        {"class": re.compile(r"version", re.I)},
-        {"itemprop": "softwareVersion"},
-    ]:
-        el = soup.find(attrs=selector)
-        if el:
-            version = format_version(el.get_text(strip=True))
-            break
+    version_cfg = resource_cfg.get("version", {})
+    version = format_version(_find_by_config(soup, version_cfg))
 
     # Extract updated date
     updated_date = ""
-    time_el = soup.find("time")
+    date_cfg = resource_cfg.get("updated_date", {})
+    date_element = date_cfg.get("element", "time")
+    date_attr = date_cfg.get("attr", "datetime")
+    time_el = soup.find(date_element)
     if time_el:
-        updated_date = time_el.get("datetime", "") or time_el.get_text(strip=True)
+        updated_date = time_el.get(date_attr, "") or time_el.get_text(strip=True)
 
     # Generate a stable ID from the URL
     resource_id = url.rstrip("/").split("/")[-1]
@@ -161,6 +214,12 @@ async def scrape_all(
     """
     from playwright.async_api import async_playwright
 
+    selectors = _get_selectors()
+    listing_cfg = selectors.get("listing_page", {})
+    exchange_url = get_exchange_url()
+    link_selector = listing_cfg.get("resource_link_selector", "a[href*='/exchange/']")
+    min_segments = listing_cfg.get("min_path_segments", 3)
+
     results: list[dict[str, Any]] = []
 
     async with async_playwright() as p:
@@ -176,13 +235,13 @@ async def scrape_all(
             page = await context.new_page()
 
             # Load the exchange listing page
-            logger.info("Loading Ignition Exchange listing: %s", EXCHANGE_URL)
-            await page.goto(EXCHANGE_URL, wait_until="networkidle", timeout=60000)
+            logger.info("Loading Ignition Exchange listing: %s", exchange_url)
+            await page.goto(exchange_url, wait_until="networkidle", timeout=60000)
 
             # Collect all resource links
             resource_links: list[str] = []
             # Look for links that point to individual exchange resources
-            anchors = await page.query_selector_all("a[href*='/exchange/']")
+            anchors = await page.query_selector_all(link_selector)
             seen: set[str] = set()
             for anchor in anchors:
                 href = await anchor.get_attribute("href")
@@ -192,11 +251,11 @@ async def scrape_all(
                 if href.startswith("/"):
                     href = "https://inductiveautomation.com" + href
                 # Filter: must be a resource detail page (has more path segments)
-                if "/exchange/" in href and href != EXCHANGE_URL and href not in seen:
+                if "/exchange/" in href and href != exchange_url and href not in seen:
                     # Skip links that are just the exchange root or category pages
                     path = href.replace("https://inductiveautomation.com", "").rstrip("/")
                     parts = [seg for seg in path.split("/") if seg]
-                    if len(parts) >= 3:  # e.g. /exchange/category/resource-name
+                    if len(parts) >= min_segments:  # e.g. /exchange/category/resource-name
                         seen.add(href)
                         resource_links.append(href)
 

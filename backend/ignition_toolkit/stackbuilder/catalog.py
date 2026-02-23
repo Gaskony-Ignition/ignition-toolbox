@@ -2,6 +2,7 @@
 Service Catalog for Stack Builder
 
 Loads and manages the catalog of available services for Docker Compose stacks.
+Supports remote updates via RemoteDataManager.
 """
 
 import json
@@ -9,6 +10,9 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any
+
+from ignition_toolkit.core.remote_data import RemoteDataConfig, RemoteDataManager
+from ignition_toolkit.core.remote_data_registry import RemoteDataRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,10 @@ class ServiceCatalog:
 
     Loads the catalog.json file containing all available services
     and their default configurations.
+
+    When no catalog_path is provided, uses RemoteDataManager for
+    automatic remote update support. When catalog_path is explicitly
+    provided (e.g. in tests), reads directly from that path.
     """
 
     def __init__(self, catalog_path: Path | None = None):
@@ -33,16 +41,42 @@ class ServiceCatalog:
         Initialize the service catalog
 
         Args:
-            catalog_path: Path to catalog.json. If None, uses default location.
+            catalog_path: Path to catalog.json. If provided, uses direct file
+                mode (for testing). If None, uses RemoteDataManager mode.
         """
-        if catalog_path is None:
-            catalog_path = _get_data_path("catalog.json")
+        if catalog_path is not None:
+            # Direct path mode (testing)
+            self.catalog_path = catalog_path
+            self._manager: RemoteDataManager | None = None
+        else:
+            # RemoteDataManager mode (production)
+            self.catalog_path = None
+            config = RemoteDataConfig(
+                component_name="stackbuilder_catalog",
+                filename="catalog.json",
+                github_path="data/stackbuilder/catalog.json",
+                bundled_path_fn=lambda: _get_data_path("catalog.json"),
+                on_update=lambda: setattr(self, "_catalog", None),
+            )
+            self._manager = RemoteDataManager(config)
+            RemoteDataRegistry.register(self._manager)
 
-        self.catalog_path = catalog_path
         self._catalog: dict[str, Any] | None = None
 
     def _load_catalog(self) -> dict[str, Any]:
-        """Load the catalog from JSON file"""
+        """Load the catalog from JSON file or RemoteDataManager"""
+        if self._manager:
+            # RemoteDataManager mode: load from user data dir or bundled
+            try:
+                data = self._manager.load()
+                if isinstance(data, dict):
+                    return data
+                return {"applications": [], "categories": []}
+            except Exception as e:
+                logger.error("Failed to load catalog via RemoteDataManager: %s", e)
+                return {"applications": [], "categories": []}
+
+        # Direct file mode (testing)
         try:
             with open(self.catalog_path, encoding='utf-8') as f:
                 return json.load(f)
