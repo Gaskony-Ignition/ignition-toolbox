@@ -9,6 +9,7 @@ from typing import Any
 
 from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
+from ignition_toolkit.playbook.models import StepStatus
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +198,16 @@ class PlaybookRunHandler(StepHandler):
                     if hasattr(step_result.status, "value")
                     else str(step_result.status),
                 })
+
+                # Fail fast: abort nested playbook if a step fails
+                if step_result.status == StepStatus.FAILED:
+                    logger.error(
+                        f"Nested step '{step.name}' failed in '{playbook_path}': {step_result.error}"
+                    )
+                    raise StepExecutionError(
+                        "playbook",
+                        f"Nested playbook '{playbook_path}' failed at step '{step.name}': {step_result.error}",
+                    )
 
             logger.info(f"Nested playbook '{playbook_path}' created {len(nested_screenshots)} screenshots")
 

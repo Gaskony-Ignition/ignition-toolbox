@@ -118,10 +118,16 @@ class ExecutionService:
         logger.info(f"  Loaded playbook: {playbook.name} with {len(playbook.steps)} steps")
 
         # Step 1.5: Ensure browser is installed for playbooks that need it
+        # Mirror engine.py logic: gateway, perspective, and playbooks with browser steps all need Chromium
         playbook_domain = playbook.metadata.get("domain")
         logger.info(f"  Playbook domain: {playbook_domain}")
-        if playbook_domain and playbook_domain.lower() != "gateway":
-            logger.info("  Ensuring browser is available for non-gateway playbook...")
+        has_browser_steps = any(
+            step.type.domain in ("browser", "perspective")
+            for step in playbook.steps
+        )
+        needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
+        if needs_browser:
+            logger.info("  Ensuring browser is available...")
             await self._ensure_browser_available()
 
         # Step 2: Apply credential autofill
