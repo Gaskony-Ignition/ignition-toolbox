@@ -41,7 +41,7 @@ interface StepConfig {
   id: string;
   name: string;
   type: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   timeout?: number;
   retry_count?: number;
   retry_delay?: number;
@@ -64,7 +64,7 @@ export function StepEditorPanel({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Update parameter value
-  const handleParamChange = (name: string, value: any) => {
+  const handleParamChange = (name: string, value: unknown) => {
     onChange({
       ...step,
       parameters: {
@@ -75,7 +75,7 @@ export function StepEditorPanel({
   };
 
   // Update step metadata
-  const handleMetaChange = (field: keyof StepConfig, value: any) => {
+  const handleMetaChange = (field: keyof StepConfig, value: StepConfig[keyof StepConfig]) => {
     onChange({
       ...step,
       [field]: value,
@@ -240,9 +240,9 @@ function ParameterInput({
   onChange,
 }: {
   parameter: StepTypeParameter;
-  value: any;
+  value: unknown;
   credentials: CredentialInfo[];
-  onChange: (value: any) => void;
+  onChange: (value: unknown) => void;
 }) {
   // Handle file browse (Electron native dialog with web fallback)
   const handleBrowseFile = async () => {

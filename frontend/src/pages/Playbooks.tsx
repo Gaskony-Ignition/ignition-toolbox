@@ -2,7 +2,7 @@
  * Playbooks page - List and execute playbooks organized by category
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -348,7 +348,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
   });
 
   // Categorize playbooks
-  const categories = categorizePlaybooks(playbooks);
+  const categories = useMemo(() => categorizePlaybooks(playbooks), [playbooks]);
 
   // State for each category to enable re-rendering on drag
   const [gatewayPlaybooks, setGatewayPlaybooks] = useState(categories.gateway);
@@ -392,7 +392,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         logger.debug(`Cleaned up ${keysToRemove.length} stale playbook configurations`);
       }
     }
-  }, [playbooks]);
+  }, [playbooks, categories]);
 
   // Configure drag sensors with activation distance to prevent accidental drags
   const sensors = useSensors(
@@ -1003,6 +1003,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
         onClose={() => setSectionNameDialog(prev => ({ ...prev, open: false }))}
         maxWidth="xs"
         fullWidth
+        disableRestoreFocus
       >
         <DialogTitle>{sectionNameDialog.title}</DialogTitle>
         <DialogContent>

@@ -13,6 +13,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Credentials } from './Credentials';
+import type { CredentialInfo } from '../types/api';
 
 // ---------------------------------------------------------------------------
 // Mock the API client
@@ -79,7 +80,7 @@ function renderCredentials(queryClient?: QueryClient) {
 }
 
 // Sample credential data
-const sampleCredentials = [
+const sampleCredentials: CredentialInfo[] = [
   {
     name: 'prod-gateway',
     username: 'admin',
@@ -146,7 +147,7 @@ describe('Credentials page', () => {
 
   it('shows credential rows when credentials are returned', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials as any);
+    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials);
 
     renderCredentials();
 
@@ -158,7 +159,7 @@ describe('Credentials page', () => {
 
   it('shows usernames in the credentials table', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials as any);
+    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials);
 
     renderCredentials();
 
@@ -170,7 +171,7 @@ describe('Credentials page', () => {
 
   it('shows gateway URLs as chips in the table', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials as any);
+    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials);
 
     renderCredentials();
 
@@ -181,7 +182,7 @@ describe('Credentials page', () => {
 
   it('shows edit and delete action buttons for each credential', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials as any);
+    vi.mocked(api.credentials.list).mockResolvedValue(sampleCredentials);
 
     renderCredentials();
 

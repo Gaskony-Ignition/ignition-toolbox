@@ -30,6 +30,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { PlaybookInfo } from '../types/api';
 
 // ---------------------------------------------------------------------------
 // DnD Kit stubs — hoisted before all imports by Vitest
@@ -166,7 +167,7 @@ async function renderPlaybooks(props: { domainFilter?: 'gateway' | 'designer' | 
   );
 }
 
-function makePlaybook(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function makePlaybook(overrides: Partial<PlaybookInfo> = {}): PlaybookInfo {
   return {
     name: 'Sample Playbook',
     path: 'gateway/sample_playbook.yaml',
@@ -260,7 +261,7 @@ describe('Playbooks page', () => {
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'Alpha Playbook', path: 'gateway/alpha.yaml' }),
       makePlaybook({ name: 'Beta Playbook', path: 'gateway/beta.yaml' }),
-    ] as any[]);
+    ]);
     await renderPlaybooks();
     await waitFor(() => {
       expect(screen.getByText('Alpha Playbook')).toBeInTheDocument();
@@ -273,7 +274,7 @@ describe('Playbooks page', () => {
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'Alpha Playbook', path: 'gateway/alpha.yaml' }),
       makePlaybook({ name: 'Beta Playbook', path: 'gateway/beta.yaml' }),
-    ] as any[]);
+    ]);
     await renderPlaybooks();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /run alpha playbook/i })).toBeInTheDocument();
@@ -285,7 +286,7 @@ describe('Playbooks page', () => {
     const { api } = await import('../api/client');
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'GW Playbook', path: 'gateway/gw.yaml', domain: 'gateway' }),
-    ] as any[]);
+    ]);
     await renderPlaybooks();
     await waitFor(() => {
       expect(screen.getByText(/gateway/i)).toBeInTheDocument();
@@ -296,7 +297,7 @@ describe('Playbooks page', () => {
     const { api } = await import('../api/client');
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'GW Playbook', path: 'gateway/gw.yaml', domain: 'gateway' }),
-    ] as any[]);
+    ]);
     await renderPlaybooks({ domainFilter: 'gateway' });
     await waitFor(() => {
       expect(screen.getByText('GW Playbook')).toBeInTheDocument();
@@ -312,7 +313,7 @@ describe('Playbooks page', () => {
     const { api } = await import('../api/client');
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'GW Playbook', path: 'gateway/gw.yaml', domain: 'gateway' }),
-    ] as any[]);
+    ]);
     await renderPlaybooks({ domainFilter: 'designer' });
     await waitFor(() => {
       expect(screen.getByText(/no designer playbooks found/i)).toBeInTheDocument();

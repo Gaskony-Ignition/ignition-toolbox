@@ -78,6 +78,8 @@ export default function FolderBrowserDialog({
     if (open) {
       fetchDirectory(currentPath);
     }
+    // Only fetch when dialog opens, not on every path change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleNavigate = (path: string) => {

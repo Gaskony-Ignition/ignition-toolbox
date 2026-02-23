@@ -14,6 +14,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Executions } from './Executions';
+import type { ExecutionStatusResponse } from '../types/api';
 
 // ---------------------------------------------------------------------------
 // Mock the API client
@@ -36,7 +37,7 @@ vi.mock('../api/client', () => ({
 // Mock the Zustand store - the Executions page reads executionUpdates from it
 // ---------------------------------------------------------------------------
 vi.mock('../store', () => ({
-  useStore: (selector: (state: any) => any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       executionUpdates: new Map(),
       setActiveExecutionId: vi.fn(),
@@ -74,7 +75,7 @@ function renderExecutions(queryClient?: QueryClient) {
 // Sample execution data
 // ---------------------------------------------------------------------------
 
-function makeExecution(overrides: Record<string, unknown> = {}) {
+function makeExecution(overrides: Partial<ExecutionStatusResponse> = {}): ExecutionStatusResponse {
   return {
     execution_id: 'exec-abc123',
     playbook_name: 'Test Playbook',
@@ -149,7 +150,7 @@ describe('Executions page', () => {
 
   it('shows execution row with playbook name when executions are returned', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.list).mockResolvedValue([makeExecution()] as any);
+    vi.mocked(api.executions.list).mockResolvedValue([makeExecution()]);
 
     renderExecutions();
 
@@ -160,7 +161,7 @@ describe('Executions page', () => {
 
   it('shows status chip for a running execution', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })] as any);
+    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })]);
 
     renderExecutions();
 
@@ -171,7 +172,7 @@ describe('Executions page', () => {
 
   it('shows pause action button for a running execution', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })] as any);
+    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })]);
 
     renderExecutions();
 
@@ -184,7 +185,7 @@ describe('Executions page', () => {
 
   it('shows cancel action button for a running execution', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })] as any);
+    vi.mocked(api.executions.list).mockResolvedValue([makeExecution({ status: 'running' })]);
 
     renderExecutions();
 
@@ -199,7 +200,7 @@ describe('Executions page', () => {
     const { api } = await import('../api/client');
     vi.mocked(api.executions.list).mockResolvedValue([
       makeExecution({ status: 'paused', execution_id: 'exec-paused' }),
-    ] as any);
+    ]);
 
     renderExecutions();
 
@@ -217,7 +218,7 @@ describe('Executions page', () => {
     const { api } = await import('../api/client');
     vi.mocked(api.executions.list).mockResolvedValue([
       makeExecution({ status: 'completed', completed_at: '2025-01-15T10:05:00Z' }),
-    ] as any);
+    ]);
 
     renderExecutions();
 
@@ -231,7 +232,7 @@ describe('Executions page', () => {
 
   it('shows view-details button for each execution row', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.list).mockResolvedValue([makeExecution()] as any);
+    vi.mocked(api.executions.list).mockResolvedValue([makeExecution()]);
 
     renderExecutions();
 
@@ -247,7 +248,7 @@ describe('Executions page', () => {
     vi.mocked(api.executions.list).mockResolvedValue([
       makeExecution({ execution_id: 'exec-1', playbook_name: 'Alpha Playbook' }),
       makeExecution({ execution_id: 'exec-2', playbook_name: 'Beta Playbook' }),
-    ] as any);
+    ]);
 
     renderExecutions();
 

@@ -204,7 +204,7 @@ function ResultsTab() {
     staleTime: 60_000,
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
 
   // Client-side filter
   const filtered = useMemo(() => {
@@ -658,8 +658,7 @@ function SettingsTab() {
 // Main Exchange Page
 // ============================================================================
 
-const EXCHANGE_TABS = ['results', 'changes', 'history', 'logs', 'settings'] as const;
-type ExchangeTab = (typeof EXCHANGE_TABS)[number];
+type ExchangeTab = 'results' | 'changes' | 'history' | 'logs' | 'settings';
 
 export function Exchange() {
   const [activeTab, setActiveTab] = useState<ExchangeTab>('results');

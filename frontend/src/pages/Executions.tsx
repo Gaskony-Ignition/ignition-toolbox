@@ -52,7 +52,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useStore } from '../store';
-import type { ExecutionStatusResponse } from '../types/api';
+import type { ExecutionStatusResponse, StepResult } from '../types/api';
 import { getStatusChipColor } from '../constants/executionStatus';
 
 type StatusFilter = 'all' | 'running' | 'paused' | 'completed' | 'failed';
@@ -311,7 +311,7 @@ export function Executions() {
   };
 
   // Helper function to find the last step with meaningful output
-  const getLastStepWithOutput = (stepResults: any[] | undefined) => {
+  const getLastStepWithOutput = (stepResults: StepResult[] | undefined) => {
     if (!stepResults || stepResults.length === 0) return null;
 
     // Find the last step that has output data

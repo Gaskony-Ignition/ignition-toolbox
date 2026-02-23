@@ -39,7 +39,7 @@ vi.mock('../api/client', () => ({
 // Mock the Zustand store
 // ---------------------------------------------------------------------------
 vi.mock('../store', () => ({
-  useStore: (selector: (state: any) => any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       theme: 'dark',
       setTheme: vi.fn(),

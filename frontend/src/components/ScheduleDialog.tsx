@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,11 +24,17 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ScheduleDialog');
 
+interface ScheduleDialogSavedConfig {
+  parameters?: Record<string, string>;
+  gateway_url?: string;
+  credential_name?: string;
+}
+
 interface ScheduleDialogProps {
   open: boolean;
   onClose: () => void;
   playbook: PlaybookInfo;
-  savedConfig: any;
+  savedConfig: ScheduleDialogSavedConfig | null;
 }
 
 type ScheduleType = 'interval' | 'daily' | 'weekly' | 'monthly' | 'cron';
@@ -77,11 +83,17 @@ export default function ScheduleDialog({
     }
   }, [open, playbook.name]);
 
-  useEffect(() => {
-    updatePreview();
-  }, [scheduleType, intervalMinutes, scheduleTime, selectedDays, dayOfMonth, cronExpression]);
+  const getDaySuffix = (day: number): string => {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
 
-  const updatePreview = () => {
+  const updatePreview = useCallback(() => {
     switch (scheduleType) {
       case 'interval':
         setPreview(`Every ${intervalMinutes} minute${intervalMinutes !== 1 ? 's' : ''}`);
@@ -103,17 +115,11 @@ export default function ScheduleDialog({
         setPreview(`Cron: ${cronExpression}`);
         break;
     }
-  };
+  }, [scheduleType, intervalMinutes, scheduleTime, selectedDays, dayOfMonth, cronExpression]);
 
-  const getDaySuffix = (day: number): string => {
-    if (day >= 11 && day <= 13) return 'th';
-    switch (day % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
-    }
-  };
+  useEffect(() => {
+    updatePreview();
+  }, [updatePreview]);
 
   const handleDaysChange = (_event: React.MouseEvent<HTMLElement>, newDays: string[]) => {
     if (newDays.length > 0) {
@@ -122,7 +128,7 @@ export default function ScheduleDialog({
   };
 
   const handleSave = async () => {
-    const scheduleConfig: any = {};
+    const scheduleConfig: Record<string, unknown> = {};
 
     switch (scheduleType) {
       case 'interval':

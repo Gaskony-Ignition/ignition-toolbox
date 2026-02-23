@@ -86,6 +86,8 @@ export default function ModuleFileBrowserDialog({
     if (open) {
       fetchModuleFiles(currentPath);
     }
+    // Only fetch when dialog opens, not on every path change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleSelect = () => {

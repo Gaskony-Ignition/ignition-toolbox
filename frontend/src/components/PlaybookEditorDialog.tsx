@@ -49,11 +49,38 @@ import yaml from 'js-yaml';
 
 const logger = createLogger('PlaybookEditorDialog');
 
+interface RawYamlPlaybook {
+  name?: string;
+  version?: string;
+  description?: string;
+  domain?: string;
+  parameters?: RawYamlParam[];
+  steps?: RawYamlStep[];
+  metadata?: Record<string, unknown>;
+}
+interface RawYamlParam {
+  name: string;
+  type?: string;
+  required?: boolean;
+  default?: string;
+  description?: string;
+}
+interface RawYamlStep {
+  id: string;
+  name?: string;
+  type: string;
+  parameters?: Record<string, unknown>;
+  timeout?: number;
+  retry_count?: number;
+  retry_delay?: number;
+  on_failure?: string;
+}
+
 interface StepConfig {
   id: string;
   name: string;
   type: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   timeout?: number;
   retry_count?: number;
   retry_delay?: number;
@@ -75,7 +102,7 @@ interface PlaybookConfig {
   domain: string;
   parameters: ParameterConfig[];
   steps: StepConfig[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface PlaybookEditorDialogProps {
@@ -125,20 +152,20 @@ export function PlaybookEditorDialog({
   useEffect(() => {
     if (exportData?.yaml_content) {
       try {
-        const parsed = yaml.load(exportData.yaml_content) as any;
+        const parsed = yaml.load(exportData.yaml_content) as RawYamlPlaybook;
         const newConfig: PlaybookConfig = {
           name: parsed.name || playbook?.name || '',
           version: parsed.version || '1.0',
           description: parsed.description || '',
           domain: parsed.domain || playbook?.domain || 'gateway',
-          parameters: (parsed.parameters || []).map((p: any) => ({
+          parameters: (parsed.parameters || []).map((p: RawYamlParam) => ({
             name: p.name,
             type: p.type || 'string',
             required: p.required !== false,
             default: p.default,
             description: p.description,
           })),
-          steps: (parsed.steps || []).map((s: any) => ({
+          steps: (parsed.steps || []).map((s: RawYamlStep) => ({
             id: s.id,
             name: s.name || s.id,
             type: s.type,
@@ -166,7 +193,7 @@ export function PlaybookEditorDialog({
   const configToYaml = useMemo(() => {
     if (!config) return '';
     try {
-      const yamlObj: any = {
+      const yamlObj: Record<string, unknown> = {
         name: config.name,
         version: config.version,
         description: config.description,
@@ -175,7 +202,7 @@ export function PlaybookEditorDialog({
 
       if (config.parameters.length > 0) {
         yamlObj.parameters = config.parameters.map((p) => {
-          const param: any = {
+          const param: Record<string, unknown> = {
             name: p.name,
             type: p.type,
             required: p.required,
@@ -188,7 +215,7 @@ export function PlaybookEditorDialog({
 
       if (config.steps.length > 0) {
         yamlObj.steps = config.steps.map((s) => {
-          const step: any = {
+          const step: Record<string, unknown> = {
             id: s.id,
             name: s.name,
             type: s.type,
@@ -275,20 +302,20 @@ export function PlaybookEditorDialog({
   const handleViewChange = (newView: 'form' | 'yaml') => {
     if (viewMode === 'yaml' && newView === 'form') {
       try {
-        const parsed = yaml.load(yamlContent) as any;
+        const parsed = yaml.load(yamlContent) as RawYamlPlaybook;
         const newConfig: PlaybookConfig = {
           name: parsed.name || '',
           version: parsed.version || '1.0',
           description: parsed.description || '',
           domain: parsed.domain || 'gateway',
-          parameters: (parsed.parameters || []).map((p: any) => ({
+          parameters: (parsed.parameters || []).map((p: RawYamlParam) => ({
             name: p.name,
             type: p.type || 'string',
             required: p.required !== false,
             default: p.default,
             description: p.description,
           })),
-          steps: (parsed.steps || []).map((s: any) => ({
+          steps: (parsed.steps || []).map((s: RawYamlStep) => ({
             id: s.id,
             name: s.name || s.id,
             type: s.type,

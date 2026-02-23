@@ -17,6 +17,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ExecutionDetail } from './ExecutionDetail';
+import type { ExecutionStatusResponse } from '../types/api';
 
 // ---------------------------------------------------------------------------
 // Mock the API client
@@ -40,7 +41,7 @@ vi.mock('../api/client', () => ({
 // Mock the Zustand store
 // ---------------------------------------------------------------------------
 vi.mock('../store', () => ({
-  useStore: (selector: (state: any) => any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       executionUpdates: new Map(),
       setPlaybookSubTab: vi.fn(),
@@ -114,8 +115,7 @@ function renderExecutionDetail(executionId?: string, queryClient?: QueryClient) 
 // Sample execution data
 // ---------------------------------------------------------------------------
 
-const sampleRunningExecution = {
-  id: 'exec-123',
+const sampleRunningExecution: ExecutionStatusResponse = {
   execution_id: 'exec-123',
   playbook_name: 'Test Playbook',
   status: 'running',
@@ -127,18 +127,18 @@ const sampleRunningExecution = {
   domain: 'gateway',
   error: null,
   step_results: [
-    { step_id: 'step1', step_name: 'Open Browser', status: 'completed', duration_ms: 100, completed_at: '2024-01-01T10:00:01', error: null, output: null },
-    { step_id: 'step2', step_name: 'Navigate to Page', status: 'completed', duration_ms: 200, completed_at: '2024-01-01T10:00:02', error: null, output: null },
-    { step_id: 'step3', step_name: 'Click Button', status: 'running', duration_ms: null, completed_at: null, error: null, output: null },
+    { step_id: 'step1', step_name: 'Open Browser', status: 'completed', started_at: '2024-01-01T10:00:00', completed_at: '2024-01-01T10:00:01', error: null },
+    { step_id: 'step2', step_name: 'Navigate to Page', status: 'completed', started_at: '2024-01-01T10:00:01', completed_at: '2024-01-01T10:00:02', error: null },
+    { step_id: 'step3', step_name: 'Click Button', status: 'running', started_at: null, completed_at: null, error: null },
   ],
 };
 
-const sampleCompletedExecution = {
+const sampleCompletedExecution: ExecutionStatusResponse = {
   ...sampleRunningExecution,
   status: 'completed',
   completed_at: '2024-01-01T10:05:00',
   current_step_index: 4,
-  step_results: sampleRunningExecution.step_results.map((s) => ({
+  step_results: sampleRunningExecution.step_results!.map((s) => ({
     ...s,
     status: 'completed',
     completed_at: '2024-01-01T10:05:00',
@@ -176,7 +176,7 @@ describe('ExecutionDetail page', () => {
 
   it('shows execution name when execution data is returned', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution as any);
+    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution);
 
     renderExecutionDetail('exec-123');
 
@@ -198,7 +198,7 @@ describe('ExecutionDetail page', () => {
 
   it('shows step progress section when execution has steps', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution as any);
+    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution);
 
     renderExecutionDetail('exec-123');
 
@@ -209,7 +209,7 @@ describe('ExecutionDetail page', () => {
 
   it('shows status chip with "running" text for a running execution', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution as any);
+    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution);
 
     renderExecutionDetail('exec-123');
 
@@ -220,7 +220,7 @@ describe('ExecutionDetail page', () => {
 
   it('shows status chip with "completed" text for a completed execution', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.get).mockResolvedValue(sampleCompletedExecution as any);
+    vi.mocked(api.executions.get).mockResolvedValue(sampleCompletedExecution);
 
     renderExecutionDetail('exec-123');
 
@@ -231,7 +231,7 @@ describe('ExecutionDetail page', () => {
 
   it('shows the execution ID in the header', async () => {
     const { api } = await import('../api/client');
-    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution as any);
+    vi.mocked(api.executions.get).mockResolvedValue(sampleRunningExecution);
 
     renderExecutionDetail('exec-123');
 
@@ -243,7 +243,7 @@ describe('ExecutionDetail page', () => {
   it('shows "Execution not found" when API returns null and no WebSocket update', async () => {
     const { api } = await import('../api/client');
     // API returns null — the component's !execution guard renders "Execution not found"
-    vi.mocked(api.executions.get).mockResolvedValue(null as any);
+    vi.mocked(api.executions.get).mockResolvedValue(null as unknown as ExecutionStatusResponse);
 
     renderExecutionDetail('exec-123');
 
