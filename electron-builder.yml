@@ -70,7 +70,7 @@ linux:
 # Auto-update configuration
 publish:
   provider: github
-  owner: nigelgwork
+  owner: Gaskony-Ignition
   repo: ignition-toolbox
   releaseType: release
 

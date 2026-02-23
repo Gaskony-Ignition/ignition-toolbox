@@ -1,13 +1,62 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { UpdateStatus } from './services/auto-updater';
-import { IPC_CHANNELS, EVENT_CHANNELS } from './ipc/channels';
-import type { ValidEventChannel } from './ipc/channels';
+
+// IMPORTANT: Preload scripts run in a sandboxed environment (sandbox: true).
+// They can only require built-in Electron/Node modules, NOT local files.
+// All IPC channel constants must be inlined here.
+// Keep these in sync with electron/ipc/channels.ts (the main process source of truth).
+
+/** IPC invoke channels (must match IPC_CHANNELS in channels.ts) */
+const IPC_CHANNELS = {
+  APP_GET_VERSION: 'app:getVersion',
+  APP_GET_BACKEND_URL: 'app:getBackendUrl',
+  APP_GET_WS_URL: 'app:getWebSocketUrl',
+  APP_GET_WS_API_KEY: 'app:getWebSocketApiKey',
+  APP_GET_BACKEND_STATUS: 'app:getBackendStatus',
+  APP_RESTART_BACKEND: 'app:restartBackend',
+  DIALOG_OPEN_FILE: 'dialog:openFile',
+  DIALOG_SAVE_FILE: 'dialog:saveFile',
+  SHELL_OPEN_EXTERNAL: 'shell:openExternal',
+  SHELL_OPEN_PATH: 'shell:openPath',
+  SETTINGS_GET: 'settings:get',
+  SETTINGS_SET: 'settings:set',
+  SETTINGS_GET_ALL: 'settings:getAll',
+  UPDATES_CHECK: 'updates:check',
+  UPDATES_DOWNLOAD: 'updates:download',
+  UPDATES_INSTALL: 'updates:install',
+  UPDATES_GET_STATUS: 'updates:getStatus',
+} as const;
+
+/** Event channels (must match EVENT_CHANNELS in channels.ts) */
+const EVENT_CHANNELS = {
+  BACKEND_STATUS: 'backend:status',
+  BACKEND_ERROR: 'backend:error',
+  BACKEND_LOG: 'backend:log',
+  UPDATE_CHECKING: 'update:checking',
+  UPDATE_AVAILABLE: 'update:available',
+  UPDATE_NOT_AVAILABLE: 'update:not-available',
+  UPDATE_PROGRESS: 'update:progress',
+  UPDATE_DOWNLOADED: 'update:downloaded',
+  UPDATE_ERROR: 'update:error',
+} as const;
+
+type ValidEventChannel = (typeof EVENT_CHANNELS)[keyof typeof EVENT_CHANNELS];
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 
 // Define valid event channels for security
-const validEventChannels = Object.values(EVENT_CHANNELS);
+const validEventChannels: string[] = Object.values(EVENT_CHANNELS);
+
+interface UpdateStatus {
+  available: boolean;
+  downloaded: boolean;
+  checking: boolean;
+  error: string | null;
+  updateInfo?: {
+    version: string;
+    releaseNotes?: string;
+  };
+}
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // App info

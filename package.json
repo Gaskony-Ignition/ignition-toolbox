@@ -1,44 +1,15 @@
 {
   "name": "ignition-toolbox",
-  "version": "3.0.10",
+  "version": "3.0.11",
   "description": "Ignition Automation Toolkit - Visual acceptance testing platform for Ignition SCADA",
   "main": "dist-electron/main.js",
   "author": "Nigel G",
   "license": "MIT",
   "private": true,
-  "scripts": {
-    "dev": "concurrently -k \"npm run dev:frontend\" \"npm run dev:electron\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:electron": "npm run build:electron && concurrently -k \"npm run watch:electron\" \"wait-on tcp:3000 && electron .\"",
-    "watch:electron": "tsc -p electron/tsconfig.json --watch",
-    "build": "npm run build:frontend && npm run build:electron",
-    "build:frontend": "cd frontend && npm run build",
-    "build:electron": "tsc -p electron/tsconfig.json",
-    "build:backend": "cd backend && pyinstaller backend.spec --clean --noconfirm",
-    "build:backend:win": "cd backend && .venv\\Scripts\\pyinstaller.exe backend.spec --clean --noconfirm",
-    "dist": "npm run build && npm run build:backend && electron-builder",
-    "dist:win": "npm run build && npm run build:backend:win && electron-builder --win --x64",
-    "dist:linux": "npm run build && npm run build:backend && electron-builder --linux --x64",
-    "dist:mac": "npm run build && npm run build:backend && electron-builder --mac",
-    "dist:mac:x64": "npm run build && npm run build:backend && electron-builder --mac --x64",
-    "dist:mac:arm64": "npm run build && npm run build:backend && electron-builder --mac --arm64",
-    "postinstall": "electron-builder install-app-deps",
-    "setup": "npm install && cd frontend && npm install && cd ../backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
-    "setup:win": "npm install && cd frontend && npm install && cd ../backend && python -m venv .venv && .venv\\Scripts\\pip install -r requirements.txt",
-    "version:sync": "node scripts/sync-version.js"
-  },
   "dependencies": {
     "electron-log": "^5.2.0",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.9"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "concurrently": "^9.1.2",
-    "electron": "^40.0.0",
-    "electron-builder": "^25.1.8",
-    "typescript": "^5.7.2",
-    "wait-on": "^8.0.1"
   }
 }
