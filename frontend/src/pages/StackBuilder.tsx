@@ -56,9 +56,20 @@ import {
   Circle as StatusIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, type StackBuilderApplication } from '../api/client';
+import { api, type StackBuilderApplication, type SavedStack } from '../api/client';
 import { TIMING } from '../config/timing';
 import { useStore } from '../store';
+
+/** Docker-compatible name pattern (matches backend VALID_NAME_PATTERN) */
+const VALID_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/;
+const RESERVED_NAMES = new Set(['docker', 'host', 'none', 'bridge', 'null', 'default']);
+
+function validateDockerName(name: string): string | null {
+  if (!name) return 'Name is required';
+  if (!VALID_NAME_RE.test(name)) return 'Must start with alphanumeric; only letters, digits, hyphens, dots, underscores allowed (max 64 chars)';
+  if (RESERVED_NAMES.has(name.toLowerCase())) return `"${name}" is a reserved name`;
+  return null;
+}
 
 interface ServiceInstance {
   app_id: string;
@@ -66,8 +77,6 @@ interface ServiceInstance {
   config: Record<string, unknown>;
 }
 
-/** Local alias for StackBuilderApplication */
-type ServiceApplication = StackBuilderApplication;
 
 interface GlobalSettings {
   stack_name: string;
@@ -102,22 +111,10 @@ interface IntegrationSettings {
   [key: string]: unknown;
 }
 
-interface SavedStack {
-  id: number;
-  stack_name: string;
-  description?: string;
-  config_json: {
-    instances: ServiceInstance[];
-  };
-  global_settings?: GlobalSettings;
-  created_at?: string;
-  updated_at?: string;
-}
-
 interface ServiceConfigDialogProps {
   open: boolean;
   onClose: () => void;
-  service: ServiceApplication | null;
+  service: StackBuilderApplication | null;
   instance?: ServiceInstance;
   onSave: (instance: ServiceInstance) => void;
   existingNames: string[];
@@ -144,14 +141,22 @@ function ServiceConfigDialog({
 
   // Reset state when dialog opens with new service or instance
   useEffect(() => {
+    if (!open) return;
     if (instance) {
       setInstanceName(instance.instance_name);
       setConfig((instance.config as Record<string, string | string[] | boolean>) || {});
     } else if (service) {
-      setInstanceName(`${service.id}-1`);
+      // Auto-increment to find an available default name
+      let counter = 1;
+      let name = `${service.id}-${counter}`;
+      while (existingNames.includes(name)) {
+        counter++;
+        name = `${service.id}-${counter}`;
+      }
+      setInstanceName(name);
       setConfig({});
     }
-  }, [instance, service]);
+  }, [open, instance, service, existingNames]);
 
   const handleSave = () => {
     if (!service) return;
@@ -182,8 +187,12 @@ function ServiceConfigDialog({
             fullWidth
             required
             placeholder={`${service.id}-1`}
-            error={existingNames.includes(instanceName)}
-            helperText={existingNames.includes(instanceName) ? 'Name already in use' : ''}
+            error={existingNames.includes(instanceName) || (!!instanceName && !!validateDockerName(instanceName))}
+            helperText={
+              existingNames.includes(instanceName)
+                ? 'Name already in use'
+                : (instanceName && validateDockerName(instanceName)) || ''
+            }
           />
 
           <FormControl fullWidth>
@@ -371,8 +380,8 @@ function ServiceConfigDialog({
                       key={key}
                       label={option.label || key}
                       type="number"
-                      value={config[key] || ''}
-                      onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
+                      value={config[key] ?? ''}
+                      onChange={(e) => setConfig({ ...config, [key]: e.target.value ? Number(e.target.value) : '' })}
                       placeholder={String(option.default || '')}
                       helperText={option.description}
                       fullWidth
@@ -426,7 +435,7 @@ function ServiceConfigDialog({
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={!instanceName || existingNames.includes(instanceName)}
+          disabled={!instanceName || existingNames.includes(instanceName) || !!validateDockerName(instanceName)}
         >
           {instance ? 'Update' : 'Add Service'}
         </Button>
@@ -470,7 +479,7 @@ export function StackBuilder() {
   });
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceApplication | null>(null);
+  const [selectedService, setSelectedService] = useState<StackBuilderApplication | null>(null);
   const [editingInstance, setEditingInstance] = useState<ServiceInstance | undefined>();
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -478,11 +487,10 @@ export function StackBuilder() {
   const [stackName, setStackName] = useState('');
   const [stackDescription, setStackDescription] = useState('');
 
-  // Deployment state
-  const [deploymentStatus, setDeploymentStatus] = useState<{
-    status: string;
-    services: Record<string, string>;
-  } | null>(null);
+  // Clear stale YAML preview when services change
+  useEffect(() => {
+    setPreviewContent(null);
+  }, [instances]);
 
   // Fetch catalog
   const { data: catalog, isLoading: catalogLoading, error: catalogError } = useQuery({
@@ -497,8 +505,9 @@ export function StackBuilder() {
   });
 
   // Detect integrations
+  const instancesKey = JSON.stringify(instances);
   const { data: integrations } = useQuery({
-    queryKey: ['integrations', instances],
+    queryKey: ['integrations', instancesKey],
     queryFn: () =>
       api.stackBuilder.detectIntegrations({
         instances: instances.map((i) => ({
@@ -546,29 +555,16 @@ export function StackBuilder() {
 
   // Download offline bundle mutation
   const offlineBundleMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`${api.getBaseUrl()}/api/stackbuilder/generate-offline-bundle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: instances.map((i) => ({
-            app_id: i.app_id,
-            instance_name: i.instance_name,
-            config: i.config,
-          })),
-          global_settings: globalSettings,
-          integration_settings: integrationSettings,
-        }),
-      });
-      if (!response.ok) throw new Error('Failed to generate offline bundle');
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${globalSettings.stack_name}-offline.zip`;
-      a.click();
-      URL.revokeObjectURL(url);
-    },
+    mutationFn: () =>
+      api.stackBuilder.offlineBundle({
+        instances: instances.map((i) => ({
+          app_id: i.app_id,
+          instance_name: i.instance_name,
+          config: i.config,
+        })),
+        global_settings: globalSettings,
+        integration_settings: integrationSettings,
+      }),
   });
 
   // Save stack mutation
@@ -577,7 +573,7 @@ export function StackBuilder() {
       api.stackBuilder.saveStack({
         stack_name: data.stack_name,
         description: data.description,
-        config_json: { instances },
+        config_json: { instances, integration_settings: integrationSettings },
         global_settings: globalSettings,
       }),
     onSuccess: () => {
@@ -602,15 +598,15 @@ export function StackBuilder() {
   });
 
   // Deployment status check
-  const { refetch: refetchDeploymentStatus } = useQuery({
+  const { data: deploymentStatus, refetch: refetchDeploymentStatus } = useQuery({
     queryKey: ['deployment-status', globalSettings.stack_name],
-    queryFn: async () => {
-      const status = await api.stackBuilder.getDeploymentStatus(globalSettings.stack_name);
-      setDeploymentStatus(status);
-      return status;
-    },
+    queryFn: () => api.stackBuilder.getDeploymentStatus(globalSettings.stack_name),
     enabled: !!globalSettings.stack_name,
-    refetchInterval: TIMING.POLLING.STACKBUILDER_FAST, // Check every 5 seconds when deployed
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === 'running' || status === 'partial') return TIMING.POLLING.STACKBUILDER_FAST;
+      return false;
+    },
   });
 
   // Deploy stack mutation
@@ -638,17 +634,17 @@ export function StackBuilder() {
     },
   });
 
-  const applications = catalog?.applications?.filter((a: ServiceApplication) => a.enabled) || [];
-  const categories = Array.from(new Set(applications.map((a: ServiceApplication) => a.category))) as string[];
+  const applications = catalog?.applications?.filter((a: StackBuilderApplication) => a.enabled) || [];
+  const categories = Array.from(new Set(applications.map((a: StackBuilderApplication) => a.category))) as string[];
 
-  const handleAddService = (service: ServiceApplication) => {
+  const handleAddService = (service: StackBuilderApplication) => {
     setSelectedService(service);
     setEditingInstance(undefined);
     setConfigDialogOpen(true);
   };
 
   const handleEditInstance = (instance: ServiceInstance) => {
-    const service = applications.find((a: ServiceApplication) => a.id === instance.app_id);
+    const service = applications.find((a: StackBuilderApplication) => a.id === instance.app_id);
     if (service) {
       setSelectedService(service);
       setEditingInstance(instance);
@@ -669,6 +665,7 @@ export function StackBuilder() {
   };
 
   const handleRemoveInstance = (instanceName: string) => {
+    if (!window.confirm(`Remove service "${instanceName}" from the stack?`)) return;
     setInstances((prev) => prev.filter((i) => i.instance_name !== instanceName));
   };
 
@@ -676,6 +673,9 @@ export function StackBuilder() {
     setInstances(stack.config_json.instances);
     if (stack.global_settings) {
       setGlobalSettings(stack.global_settings);
+    }
+    if (stack.config_json.integration_settings) {
+      setIntegrationSettings(stack.config_json.integration_settings as IntegrationSettings);
     }
     setLoadDialogOpen(false);
   };
@@ -717,8 +717,8 @@ export function StackBuilder() {
                   </Typography>
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
                     {applications
-                      .filter((a: ServiceApplication) => a.category === category)
-                      .map((app: ServiceApplication) => (
+                      .filter((a: StackBuilderApplication) => a.category === category)
+                      .map((app: StackBuilderApplication) => (
                         <Card key={app.id} variant="outlined" sx={{ height: '100%' }}>
                           <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                             <Typography variant="body2" fontWeight="medium" noWrap>
@@ -968,6 +968,11 @@ export function StackBuilder() {
         {/* Preview Tab */}
         {stackSubTab === 'preview' && (
         <Box sx={{ p: 2 }}>
+          {previewContent && /(?:PASSWORD[:\s=]+(?:password|postgres|rootpassword|changeme|admin))/i.test(previewContent) && (
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              Default passwords detected in the generated YAML. Change all credentials before deploying to production.
+            </Alert>
+          )}
           {previewContent ? (
             <Box
               component="pre"
@@ -1037,7 +1042,11 @@ export function StackBuilder() {
             <Button
               variant="outlined"
               startIcon={<SaveIcon />}
-              onClick={() => setSaveDialogOpen(true)}
+              onClick={() => {
+                setStackName(globalSettings.stack_name);
+                setStackDescription('');
+                setSaveDialogOpen(true);
+              }}
               size="small"
               disabled={instances.length === 0}
             >
@@ -1076,7 +1085,10 @@ export function StackBuilder() {
                 variant="contained"
                 color="error"
                 startIcon={stopMutation.isPending ? <CircularProgress size={16} color="inherit" /> : <StopIcon />}
-                onClick={() => stopMutation.mutate()}
+                onClick={() => {
+                  if (!window.confirm(`Stop all services in stack "${globalSettings.stack_name}"?`)) return;
+                  stopMutation.mutate();
+                }}
                 size="small"
                 disabled={stopMutation.isPending}
               >
@@ -1097,7 +1109,10 @@ export function StackBuilder() {
                     variant="contained"
                     color="success"
                     startIcon={deployMutation.isPending ? <CircularProgress size={16} color="inherit" /> : <DeployIcon />}
-                    onClick={() => deployMutation.mutate()}
+                    onClick={() => {
+                      if (!window.confirm(`Deploy stack "${globalSettings.stack_name}" to local Docker?`)) return;
+                      deployMutation.mutate();
+                    }}
                     size="small"
                     disabled={instances.length === 0 || !dockerStatus?.available || deployMutation.isPending}
                   >
@@ -1122,7 +1137,22 @@ export function StackBuilder() {
               </IconButton>
             </Tooltip>
           </Box>
-          {/* Deployment error/success messages */}
+          {/* Error messages for all mutations */}
+          {generateMutation.isError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              Preview failed: {(generateMutation.error as Error)?.message || 'Unknown error'}
+            </Alert>
+          )}
+          {downloadMutation.isError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              Download failed: {(downloadMutation.error as Error)?.message || 'Unknown error'}
+            </Alert>
+          )}
+          {offlineBundleMutation.isError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              Offline bundle failed: {(offlineBundleMutation.error as Error)?.message || 'Unknown error'}
+            </Alert>
+          )}
           {deployMutation.isError && (
             <Alert severity="error" sx={{ mt: 1 }}>
               Deploy failed: {(deployMutation.error as Error)?.message || 'Unknown error'}
@@ -1150,7 +1180,7 @@ export function StackBuilder() {
           ) : (
             <List>
               {instances.map((instance) => {
-                const app = applications.find((a: ServiceApplication) => a.id === instance.app_id);
+                const app = applications.find((a: StackBuilderApplication) => a.id === instance.app_id);
                 return (
                   <ListItem
                     key={instance.instance_name}
@@ -1326,6 +1356,7 @@ export function StackBuilder() {
                       color="error"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (!window.confirm(`Delete saved stack "${stack.stack_name}"?`)) return;
                         deleteStackMutation.mutate(stack.id);
                       }}
                     >
@@ -1356,6 +1387,8 @@ export function StackBuilder() {
               onChange={(e) => setGlobalSettings({ ...globalSettings, stack_name: e.target.value })}
               fullWidth
               size="small"
+              error={!!validateDockerName(globalSettings.stack_name)}
+              helperText={validateDockerName(globalSettings.stack_name) || ''}
             />
             <FormControl fullWidth size="small">
               <InputLabel>Timezone</InputLabel>
@@ -1369,11 +1402,19 @@ export function StackBuilder() {
                 <MenuItem value="America/Chicago">America/Chicago</MenuItem>
                 <MenuItem value="America/Denver">America/Denver</MenuItem>
                 <MenuItem value="America/Los_Angeles">America/Los_Angeles</MenuItem>
+                <MenuItem value="America/Sao_Paulo">America/Sao_Paulo</MenuItem>
                 <MenuItem value="Europe/London">Europe/London</MenuItem>
                 <MenuItem value="Europe/Paris">Europe/Paris</MenuItem>
+                <MenuItem value="Europe/Berlin">Europe/Berlin</MenuItem>
+                <MenuItem value="Asia/Dubai">Asia/Dubai</MenuItem>
+                <MenuItem value="Asia/Kolkata">Asia/Kolkata</MenuItem>
+                <MenuItem value="Asia/Shanghai">Asia/Shanghai</MenuItem>
                 <MenuItem value="Asia/Tokyo">Asia/Tokyo</MenuItem>
+                <MenuItem value="Asia/Seoul">Asia/Seoul</MenuItem>
+                <MenuItem value="Asia/Singapore">Asia/Singapore</MenuItem>
                 <MenuItem value="Australia/Sydney">Australia/Sydney</MenuItem>
                 <MenuItem value="Australia/Adelaide">Australia/Adelaide</MenuItem>
+                <MenuItem value="Pacific/Auckland">Pacific/Auckland</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth size="small">

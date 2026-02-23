@@ -157,13 +157,7 @@ export interface SavedStack {
 
 /** StackBuilder - integration detection result */
 export interface IntegrationDetectionResult {
-  integrations: Array<{
-    source: string;
-    target: string;
-    type: string;
-    auto_configured: boolean;
-    [key: string]: unknown;
-  }>;
+  integrations: Record<string, unknown>;
   suggestions: string[];
   conflicts?: Array<{ message: string; [key: string]: unknown }>;
   warnings?: Array<{ message: string; [key: string]: unknown }>;
@@ -828,6 +822,43 @@ export const api = {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+    },
+
+    offlineBundle: async (config: {
+      instances: Array<{
+        app_id: string;
+        instance_name: string;
+        config: Record<string, unknown>;
+      }>;
+      global_settings?: {
+        stack_name?: string;
+        timezone?: string;
+        restart_policy?: string;
+      };
+      integration_settings?: Record<string, unknown>;
+    }) => {
+      const response = await fetch(`${API_BASE_URL}/api/stackbuilder/generate-offline-bundle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+
+      if (!response.ok) {
+        throw new APIError('Failed to generate offline bundle', response.status);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${config.global_settings?.stack_name || 'iiot-stack'}-offline.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } finally {
+        window.URL.revokeObjectURL(url);
+      }
     },
 
     listStacks: () => fetchJSON<SavedStack[]>('/api/stackbuilder/stacks'),
