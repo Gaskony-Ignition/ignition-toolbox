@@ -56,7 +56,8 @@ def get_relative_playbook_path(path_str: str) -> str:
             continue
 
     # Fallback: if path looks safe, return as-is (for deleted playbooks)
-    if ".." not in path_str and not Path(path_str).is_absolute():
+    # Check both platform-native absolute and Unix-style absolute (for cross-platform safety)
+    if ".." not in path_str and not Path(path_str).is_absolute() and not path_str.startswith("/"):
         return path_str
     raise HTTPException(
         status_code=400,

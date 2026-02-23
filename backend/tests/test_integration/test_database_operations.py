@@ -22,7 +22,8 @@ def temp_db():
         db_path = Path(tmpdir) / "test.db"
         db = Database(db_path)  # Pass Path object, not string
         yield db
-        # Cleanup happens automatically when tmpdir is deleted
+        # Close DB engine before tmpdir cleanup (prevents Windows file-locking errors)
+        db.engine.dispose()
 
 
 class TestExecutionLifecycle:
