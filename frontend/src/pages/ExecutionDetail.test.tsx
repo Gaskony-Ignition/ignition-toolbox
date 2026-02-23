@@ -44,6 +44,8 @@ vi.mock('../store', () => ({
     const state = {
       executionUpdates: new Map(),
       setPlaybookSubTab: vi.fn(),
+      activeExecutionId: 'exec-123',
+      setActiveExecutionId: vi.fn(),
     };
     return selector(state);
   },

@@ -111,11 +111,14 @@ export function ExecutionDetail({ executionId }: ExecutionDetailProps) {
       )
     : [];
 
-  // Navigate back to playbook list when execution is cancelled
+  // Navigate away when execution ends (failed/cancelled/completed)
   useEffect(() => {
     if (execution?.status === 'cancelled') {
       setActiveExecutionId(null);
       setPlaybookSubTab('gateway');
+    } else if (execution?.status === 'failed' || execution?.status === 'completed') {
+      setActiveExecutionId(null);
+      setPlaybookSubTab('past-executions');
     }
   }, [execution?.status, setActiveExecutionId, setPlaybookSubTab]);
 
