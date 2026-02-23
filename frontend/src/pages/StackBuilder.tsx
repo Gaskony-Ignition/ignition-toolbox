@@ -381,7 +381,7 @@ function ServiceConfigDialog({
                       label={option.label || key}
                       type="number"
                       value={config[key] ?? ''}
-                      onChange={(e) => setConfig({ ...config, [key]: e.target.value ? Number(e.target.value) : '' })}
+                      onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
                       placeholder={String(option.default || '')}
                       helperText={option.description}
                       fullWidth

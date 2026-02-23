@@ -144,6 +144,7 @@ export interface SavedStack {
       instance_name: string;
       config: Record<string, unknown>;
     }>;
+    integration_settings?: Record<string, unknown>;
   };
   global_settings?: {
     stack_name: string;
