@@ -127,13 +127,13 @@ def main() -> int:
     errors = validate_playbooks(playbooks_dir)
 
     if errors:
-        print(f"\n❌  {len(errors)} validation error(s) found:\n")
+        print(f"\nFAILED: {len(errors)} validation error(s) found:\n")
         for error in errors:
             print(f"  {error}")
         return 1
 
     yaml_count = sum(1 for _ in playbooks_dir.rglob("*.yaml"))
-    print(f"✅  All {yaml_count} playbook(s) valid")
+    print(f"OK: All {yaml_count} playbook(s) valid")
     return 0
 
 
