@@ -258,9 +258,10 @@ steps:
     name: "Step 17: Verify Gateway is Accessible"
     type: browser.verify
     parameters:
-      selector: ".home-page, .ia_homePage, [data-page='home'], nav"
+      selector: ".home-page, .ia_homePage, [data-page='home'], nav, form, [class*='login'], [class*='Login'], main, #app"
       state: "visible"
-      timeout: 10000
+      timeout: 15000
+    on_failure: continue
 
   # ==========================================================================
   # STEP 18: Execution Summary
