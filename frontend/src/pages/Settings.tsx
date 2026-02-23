@@ -569,12 +569,12 @@ export function Settings() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">Repository</Typography>
               <Link
-                href="https://github.com/nigelgwork/ignition-toolbox"
+                href="https://github.com/Gaskony-Ignition/ignition-toolbox"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ fontSize: '0.875rem' }}
               >
-                github.com/nigelgwork/ignition-toolbox
+                github.com/Gaskony-Ignition/ignition-toolbox
               </Link>
             </Box>
           </Stack>

@@ -47,7 +47,7 @@ export function initAutoUpdater(window: BrowserWindow): void {
   if (githubToken) {
     autoUpdater.setFeedURL({
       provider: 'github',
-      owner: 'nigelgwork',
+      owner: 'Gaskony-Ignition',
       repo: 'ignition-toolbox',
       private: true,
       token: githubToken,
@@ -185,7 +185,7 @@ export function setGitHubToken(token: string | null): void {
   if (token) {
     autoUpdater.setFeedURL({
       provider: 'github',
-      owner: 'nigelgwork',
+      owner: 'Gaskony-Ignition',
       repo: 'ignition-toolbox',
       private: true,
       token,

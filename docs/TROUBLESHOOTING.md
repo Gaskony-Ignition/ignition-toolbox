@@ -292,7 +292,7 @@ When reporting issues, please include:
 4. **Error messages:** Full error text from logs
 5. **Screenshots:** If applicable
 
-Report issues at: https://github.com/nigelgwork/ignition-toolbox/issues
+Report issues at: https://github.com/Gaskony-Ignition/ignition-toolbox/issues
 
 ---
 

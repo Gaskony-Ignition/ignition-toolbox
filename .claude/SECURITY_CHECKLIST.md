@@ -266,5 +266,5 @@ Before deploying to a new machine:
 ---
 
 **Next Security Audit**: 2025-11-22 (monthly)
-**Security Contact**: nigelgwork@users.noreply.github.com
+**Security Contact**: Gaskony-Ignition@users.noreply.github.com
 **Report Issues**: GitHub Issues (for non-critical) or email (for critical)

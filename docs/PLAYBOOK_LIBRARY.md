@@ -184,12 +184,12 @@ The central repository uses GitHub Releases:
 
 ### Repository URL
 ```
-https://github.com/nigelgwork/ignition-toolbox
+https://github.com/Gaskony-Ignition/ignition-toolbox
 ```
 
 ### Playbooks Index
 ```
-https://github.com/nigelgwork/ignition-toolbox/releases/latest/download/playbooks-index.json
+https://github.com/Gaskony-Ignition/ignition-toolbox/releases/latest/download/playbooks-index.json
 ```
 
 ### Index Format
