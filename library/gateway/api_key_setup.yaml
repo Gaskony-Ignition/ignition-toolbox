@@ -1,0 +1,195 @@
+name: "Gateway API Key Setup"
+version: "2.0"
+description: "Create an Ignition 8.3 API key and store it in the Toolbox API Explorer"
+domain: gateway
+group: "Gateway (Base Playbooks)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: username
+    type: string
+    required: true
+    description: "Gateway admin username"
+
+  - name: password
+    type: string
+    required: true
+    description: "Gateway admin password"
+
+  - name: api_key_name
+    type: string
+    required: false
+    default: "toolbox-api-key"
+    description: "Name for the API key in both Ignition and Toolbox"
+
+steps:
+  - id: step1
+    name: "Step 1: Login to Gateway"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/gateway_login.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+    on_failure: abort
+
+  - id: step2
+    name: "Step 2: Navigate to API Keys Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/security/api-keys"
+    timeout: 15
+    on_failure: abort
+
+  - id: step3
+    name: "Step 3: Wait for API Keys Page"
+    type: browser.wait
+    parameters:
+      selector: "button:has-text('Create API Key')"
+      timeout: 10000
+    timeout: 15
+
+  - id: step4
+    name: "Step 4: Screenshot API Keys Page"
+    type: browser.screenshot
+    parameters:
+      path: "api_keys_page.png"
+    on_failure: continue
+
+  - id: step5
+    name: "Step 5: Click Create API Key Button"
+    type: browser.click
+    parameters:
+      selector: "button:has-text('Create API Key')"
+      timeout: 10000
+    on_failure: abort
+
+  - id: step6
+    name: "Step 6: Wait for Wizard - Type Selection"
+    type: browser.wait
+    parameters:
+      selector: "button:has-text('Next')"
+      timeout: 10000
+    timeout: 15
+
+  - id: step7
+    name: "Step 7: Click Next (Basic Token Selected)"
+    type: browser.click
+    parameters:
+      selector: "button:has-text('Next')"
+      timeout: 10000
+    on_failure: abort
+
+  - id: step8
+    name: "Step 8: Wait for API Setup Form"
+    type: browser.wait
+    parameters:
+      selector: "#name-input"
+      timeout: 10000
+    timeout: 15
+
+  - id: step9
+    name: "Step 9: Enter API Key Name"
+    type: browser.fill
+    parameters:
+      selector: "#name-input"
+      value: "{{ parameter.api_key_name }}"
+      timeout: 10000
+
+  - id: step10
+    name: "Step 10: Screenshot Filled Form"
+    type: browser.screenshot
+    parameters:
+      path: "api_key_form_filled.png"
+    on_failure: continue
+
+  - id: step11
+    name: "Step 11: Submit - Click Create API Key"
+    type: browser.click
+    parameters:
+      selector: "div[class*='modal'] button:has-text('Create API Key')"
+      timeout: 10000
+      force: true
+    on_failure: abort
+
+  - id: step12
+    name: "Step 12: Wait for Token Display"
+    type: browser.wait
+    parameters:
+      selector: "input#api-key[disabled]"
+      timeout: 15000
+    timeout: 20
+    on_failure: abort
+
+  - id: step13
+    name: "Step 13: Screenshot Token Display"
+    type: browser.screenshot
+    parameters:
+      path: "api_key_token_displayed.png"
+    on_failure: continue
+
+  - id: step14
+    name: "Step 14: Extract Token Value"
+    type: browser.get_text
+    parameters:
+      selector: "input#api-key[disabled]"
+      timeout: 10000
+    on_failure: abort
+
+  - id: step15
+    name: "Step 15: Store Token in Toolbox"
+    type: utility.python
+    parameters:
+      script: |
+        r"""
+        Store the extracted API key in the Toolbox API Explorer credentials.
+        Token: {{ step.step14.text }}
+        Gateway: {{ parameter.gateway_url }}
+        Name: {{ parameter.api_key_name }}
+        """
+        from ignition_toolkit.api.services.api_key_service import APIKeyService
+
+        token = r"""{{ step.step14.text }}""".strip()
+        gateway_url = r"""{{ parameter.gateway_url }}""".strip()
+        key_name = r"""{{ parameter.api_key_name }}""".strip()
+
+        service = APIKeyService()
+        try:
+            service.create_api_key(
+                name=key_name,
+                gateway_url=gateway_url,
+                api_key=token,
+                description="Created by API Key Setup playbook",
+            )
+            result = f"Created API key '{key_name}' for {gateway_url}"
+        except ValueError:
+            service.update_api_key(
+                name=key_name,
+                gateway_url=gateway_url,
+                api_key=token,
+                description="Updated by API Key Setup playbook",
+            )
+            result = f"Updated existing API key '{key_name}' for {gateway_url}"
+
+        print(result)
+    on_failure: abort
+
+  - id: step16
+    name: "Step 16: Final Screenshot"
+    type: browser.screenshot
+    parameters:
+      path: "api_key_setup_complete.png"
+    on_failure: continue
+
+  - id: step17
+    name: "Step 17: Log Success"
+    type: utility.log
+    parameters:
+      message: "API key '{{ parameter.api_key_name }}' has been created in the Ignition Gateway and stored in the Toolbox API Explorer. You can now use it in the API Explorer tab."
+      level: "info"

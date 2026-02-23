@@ -1,0 +1,80 @@
+name: "Gateway Backup"
+version: "5.0"
+description: "Download a Gateway backup file"
+domain: gateway
+group: "Gateway (Base Playbooks)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: username
+    type: string
+    required: true
+    description: "Gateway admin username"
+
+  - name: password
+    type: string
+    required: true
+    description: "Gateway admin password"
+
+  - name: download_path
+    type: string
+    required: false
+    default: "./data/downloads"
+    description: "Custom download location (default: ./data/downloads)"
+
+steps:
+  - id: step1
+    name: "Step 1: Execute Gateway Login Playbook"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/gateway_login.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+    on_failure: abort
+
+  - id: step2
+    name: "Step 2: Navigate to Backup/Restore Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/backup-restore/backup"
+    timeout: 10
+
+  - id: step3
+    name: "Step 3: Wait for Backup Page to Load"
+    type: browser.wait
+    parameters:
+      selector: "button, .backup, [class*='download'], [class*='backup']"
+    timeout: 10
+
+  - id: step4
+    name: "Step 4: Click Download Backup Button"
+    type: browser.click
+    parameters:
+      selector: "text=Download Backup"
+    timeout: 10
+    on_failure: abort
+
+  - id: step5
+    name: "Step 5: Wait for Download to Complete"
+    type: utility.sleep
+    parameters:
+      seconds: 15
+    timeout: 30
+
+  - id: step6
+    name: "Step 6: Backup Download Complete"
+    type: utility.log
+    parameters:
+      message: "Gateway backup download complete. Check ./data/downloads directory for the backup file (.gwbk extension)."
+      level: "info"
+
+metadata:
+  author: "Ignition Toolkit"
+  category: "gateway"
+  tags: ["backup", "maintenance", "configuration"]
