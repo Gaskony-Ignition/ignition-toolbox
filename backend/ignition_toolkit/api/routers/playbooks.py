@@ -14,6 +14,9 @@ from fastapi import APIRouter
 
 # Import individual route functions
 from ignition_toolkit.api.routers.playbook_crud import (
+    duplicate_playbook as duplicate_playbook_crud,
+)
+from ignition_toolkit.api.routers.playbook_crud import (
     edit_step,
     get_playbook,
     list_playbooks,
@@ -32,7 +35,6 @@ from ignition_toolkit.api.routers.playbook_library import (
 from ignition_toolkit.api.routers.playbook_lifecycle import (
     create_playbook,
     delete_playbook,
-    duplicate_playbook,
     export_playbook,
     import_playbook,
 )
@@ -57,6 +59,7 @@ router.add_api_route("", list_playbooks, methods=["GET"], tags=["playbooks-crud"
 router.add_api_route("/update", update_playbook, methods=["PUT"], tags=["playbooks-crud"])
 router.add_api_route("/metadata", update_playbook_metadata, methods=["PATCH"], tags=["playbooks-crud"])
 router.add_api_route("/edit-step", edit_step, methods=["POST"], tags=["playbooks-crud"])
+router.add_api_route("/duplicate", duplicate_playbook_crud, methods=["POST"], tags=["playbooks-crud"])
 
 # ============================================================================
 # Library Operations (static routes MUST come before catch-all paths)
@@ -93,7 +96,6 @@ router.add_api_route("/{playbook_path:path}/disable", disable_playbook, methods=
 # ============================================================================
 
 router.add_api_route("/{playbook_path:path}", delete_playbook, methods=["DELETE"], tags=["playbooks-lifecycle"])
-router.add_api_route("/{playbook_path:path}/duplicate", duplicate_playbook, methods=["POST"], tags=["playbooks-lifecycle"])
 router.add_api_route("/{playbook_path:path}/export", export_playbook, methods=["GET"], tags=["playbooks-lifecycle"])
 router.add_api_route("/import", import_playbook, methods=["POST"], tags=["playbooks-lifecycle"])
 router.add_api_route("/create", create_playbook, methods=["POST"], tags=["playbooks-lifecycle"])
