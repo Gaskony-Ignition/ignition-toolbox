@@ -17,6 +17,7 @@ import httpx
 import yaml
 
 from ignition_toolkit.core.paths import get_builtin_playbooks_dir, get_user_playbooks_dir
+from ignition_toolkit.playbook.metadata import PlaybookMetadataStore
 from ignition_toolkit.playbook.registry import PlaybookRegistry
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ class PlaybookInstaller:
         """
         self.registry = registry or PlaybookRegistry()
         self.registry.load()
+        self.metadata_store = PlaybookMetadataStore()
         self.user_playbooks_dir = get_user_playbooks_dir()
         self.builtin_playbooks_dir = get_builtin_playbooks_dir()
 
@@ -143,6 +145,10 @@ class PlaybookInstaller:
         )
         self.registry.save()
 
+        # Mark as library-installed in metadata store so auto-sync
+        # doesn't overwrite with older bundled version
+        self.metadata_store.mark_as_library_installed(f"{playbook_path}.yaml")
+
         logger.info(f"✓ Playbook {playbook_path} installed successfully")
         return install_path
 
@@ -186,6 +192,9 @@ class PlaybookInstaller:
         # Unregister from registry
         self.registry.unregister_playbook(playbook_path)
         self.registry.save()
+
+        # Clean up metadata so auto-sync can manage the built-in copy again
+        self.metadata_store.delete_metadata(f"{playbook_path}.yaml")
 
         logger.info(f"✓ Playbook {playbook_path} uninstalled successfully")
         return True

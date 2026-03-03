@@ -303,6 +303,23 @@ class PlaybookMetadataStore:
         self.update_metadata(playbook_path, metadata)
         logger.info(f"Marked {playbook_path} as imported")
 
+    def mark_as_library_installed(self, playbook_path: str):
+        """
+        Mark playbook as installed from the GitHub playbook library.
+
+        This prevents auto-sync from overwriting library-installed playbooks
+        with older bundled versions (auto-sync only fires when origin is
+        "built-in" or "unknown").
+
+        Args:
+            playbook_path: Relative path from playbooks directory
+        """
+        metadata = self.get_metadata(playbook_path)
+        metadata.origin = "library"
+        metadata.created_at = datetime.now().isoformat()
+        self.update_metadata(playbook_path, metadata)
+        logger.info(f"Marked {playbook_path} as library-installed")
+
     def auto_detect_built_ins(self, playbooks_dir: Path):
         """
         Auto-detect and mark built-in playbooks
