@@ -19,19 +19,19 @@
       "release_notes": "Fixed checkbox selectors for Ignition 8.3.3 compatibility — uses generic input[type=checkbox] instead of text matching"
     },
     "gateway/gateway_restart": {
-      "version": "2.1",
+      "version": "2.2",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Restart Ignition Gateway from restart notification bar (assumes already logged in)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/gateway_restart.yaml",
-      "checksum": "sha256:ba000b27ffbd8254ed5df9b6dfad12dfed8b94999c4bcf6bb9a08e745fd5d669",
-      "size_bytes": 12178,
+      "checksum": "sha256:d2e8376585aedb07a260c1992c2fbcd41822ce5445f76c0e35b74b404fd8466c",
+      "size_bytes": 12224,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["gateway", "restart"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Added generic checkbox fallback selector for Ignition 8.3.3 compatibility"
+      "release_notes": "Fix broken selector — text= prefix can't be mixed with CSS in comma-separated selectors"
     },
     "gateway/gateway_login": {
       "version": "2.0",

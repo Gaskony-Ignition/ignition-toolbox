@@ -1,5 +1,5 @@
 name: "Gateway Restart"
-version: "2.1"
+version: "2.2"
 description: "Restart Ignition Gateway from restart notification bar (assumes already logged in)"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -105,7 +105,7 @@ steps:
     name: "Step 8: Click I understand the risks"
     type: browser.click
     parameters:
-      selector: 'text=I understand the risks, input[type="checkbox"], [role="checkbox"]'
+      selector: 'label:has-text("I understand the risks"), :text("I understand the risks"), input[type="checkbox"], [role="checkbox"]'
       timeout: 30000
       force: true
 

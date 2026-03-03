@@ -1,5 +1,5 @@
 name: "Gateway Restart"
-version: "2.0"
+version: "2.2"
 description: "Restart Ignition Gateway from restart notification bar (assumes already logged in)"
 domain: gateway
 verified: true
@@ -65,12 +65,13 @@ steps:
 
   # ==========================================================================
   # STEP 7: Click I understand the risks Checkbox
+  # NOTE: Uses generic checkbox selector as fallback — text labels may change between Ignition versions
   # ==========================================================================
   - id: step5_click_checkbox
     name: "Step 5: Click I understand the risks"
     type: browser.click
     parameters:
-      selector: 'text=I understand the risks'
+      selector: 'label:has-text("I understand the risks"), :text("I understand the risks"), input[type="checkbox"], [role="checkbox"]'
       timeout: 30000
       force: true
 
