@@ -147,7 +147,10 @@ class PlaybookInstaller:
 
         # Mark as library-installed in metadata store so auto-sync
         # doesn't overwrite with older bundled version
-        self.metadata_store.mark_as_library_installed(f"{playbook_path}.yaml")
+        self.metadata_store.mark_as_library_installed(
+            f"{playbook_path}.yaml",
+            verified=available_playbook.verified,
+        )
 
         logger.info(f"✓ Playbook {playbook_path} installed successfully")
         return install_path

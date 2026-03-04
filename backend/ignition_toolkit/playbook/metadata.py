@@ -303,7 +303,7 @@ class PlaybookMetadataStore:
         self.update_metadata(playbook_path, metadata)
         logger.info(f"Marked {playbook_path} as imported")
 
-    def mark_as_library_installed(self, playbook_path: str):
+    def mark_as_library_installed(self, playbook_path: str, *, verified: bool = False):
         """
         Mark playbook as installed from the GitHub playbook library.
 
@@ -313,12 +313,17 @@ class PlaybookMetadataStore:
 
         Args:
             playbook_path: Relative path from playbooks directory
+            verified: Whether the playbook is verified in the library index
         """
         metadata = self.get_metadata(playbook_path)
         metadata.origin = "library"
         metadata.created_at = datetime.now().isoformat()
+        if verified:
+            metadata.verified = True
+            metadata.verified_at = datetime.now().isoformat()
+            metadata.verified_by = "library"
         self.update_metadata(playbook_path, metadata)
-        logger.info(f"Marked {playbook_path} as library-installed")
+        logger.info(f"Marked {playbook_path} as library-installed (verified={verified})")
 
     def auto_detect_built_ins(self, playbooks_dir: Path):
         """
