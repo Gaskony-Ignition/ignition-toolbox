@@ -19,19 +19,19 @@
       "release_notes": "Fixed checkbox selectors for Ignition 8.3.3 compatibility — uses generic input[type=checkbox] instead of text matching"
     },
     "gateway/gateway_restart": {
-      "version": "3.0",
+      "version": "3.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Restart Ignition Gateway from notification banner (assumes already logged in)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/gateway_restart.yaml",
-      "checksum": "sha256:bfea1c7100de48528fb5e6b7d9e875c072f68082ffdc16b8eed01305fde441ab",
-      "size_bytes": 13052,
+      "checksum": "sha256:547ca047c35dd7108d5a0d8e1b24f4774826d90f0238f205aaacf24530e3ccbd",
+      "size_bytes": 12552,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["gateway", "restart"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Rewritten for Ignition 8.3.x multi-banner system — handles collapsed/expanded restart banner, proper data-label selectors"
+      "release_notes": "Fix: removed page navigation that broke auth session; stays on current page like v2.2; adds multi-banner expand for 8.3.x"
     },
     "gateway/gateway_login": {
       "version": "2.0",
