@@ -146,10 +146,32 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 13: Execution Summary
+  # STEP 13: Wait for Gateway to be Fully Accessible (30s timeout)
   # ==========================================================================
-  - id: step13_summary
-    name: "Step 13: Execution Summary"
+  - id: step13_verify_gateway_ready
+    name: "Step 13: Verify Gateway is Fully Accessible"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      wait_for: "load"
+      timeout: 30
+
+  # ==========================================================================
+  # STEP 14: Verify Home Page Loaded
+  # ==========================================================================
+  - id: step14_verify_home_page
+    name: "Step 14: Verify Home Page Loaded"
+    type: browser.verify
+    parameters:
+      selector: 'nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
+      state: "visible"
+      timeout: 30000
+
+  # ==========================================================================
+  # STEP 15: Execution Summary
+  # ==========================================================================
+  - id: step15_summary
+    name: "Step 15: Execution Summary"
     type: utility.python
     parameters:
       script: |
@@ -160,10 +182,12 @@ steps:
         print("=" * 80)
         print(f"Module: {module_name}")
         print(f"Gateway Restarted: Yes")
+        print(f"Gateway Verified Ready: Yes (30s wait for full accessibility)")
         print(f"")
         print(f"Status: Module uninstallation complete")
         print(f"")
-        print(f"Note: Gateway has restarted successfully.")
+        print(f"Note: Gateway has restarted and is fully accessible.")
+        print(f"      Authentication system is ready for subsequent operations.")
         print(f"      You can manually verify the module was removed in the")
         print(f"      Gateway Config > System > Modules page.")
         print("=" * 80)

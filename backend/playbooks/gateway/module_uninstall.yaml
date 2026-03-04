@@ -163,9 +163,9 @@ steps:
     name: "Step 14: Verify Home Page Loaded"
     type: browser.verify
     parameters:
-      selector: ".home-page, .ia_homePage, [data-page='home'], nav"
+      selector: 'nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
       state: "visible"
-      timeout: 10000
+      timeout: 30000
 
   # ==========================================================================
   # STEP 15: Execution Summary

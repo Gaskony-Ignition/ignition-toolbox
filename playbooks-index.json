@@ -49,19 +49,19 @@
       "release_notes": "Initial library release — base dependency for all gateway playbooks"
     },
     "gateway/module_uninstall": {
-      "version": "4.0",
+      "version": "4.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Uninstall an existing module from the Gateway and restart",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_uninstall.yaml",
-      "checksum": "sha256:93dd56a695b1134be1105deab144a33bb76d65ca9a64459c535fc4e22e37bfa3",
-      "size_bytes": 6958,
+      "checksum": "sha256:354fe29c06a7317c9d8290fdc8b61c76cf332d8d95cf41c6ddd31fda036fa655",
+      "size_bytes": 6975,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "uninstall", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Initial library release — dependency for module_upgrade"
+      "release_notes": "Fix: use correct 8.3.x home page selectors for post-restart verification, increase timeout to 30s"
     },
     "gateway/backup_gateway": {
       "version": "5.0",
