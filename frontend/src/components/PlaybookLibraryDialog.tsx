@@ -40,6 +40,8 @@ import {
   Verified as VerifiedIcon,
   Refresh as RefreshIcon,
   Description as DescriptionIcon,
+  Update as UpdateIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
@@ -60,6 +62,9 @@ interface AvailablePlaybook {
   size_bytes: number;
   dependencies: string[];
   release_notes?: string;
+  is_installed?: boolean;
+  installed_version?: string | null;
+  update_available?: boolean;
 }
 
 interface BrowseResponse {
@@ -131,9 +136,38 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
     },
   });
 
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (playbookPath: string) => {
+      const response = await fetch(`${api.getBaseUrl()}/api/playbooks/${playbookPath}/update`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Update failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playbooks'] });
+      queryClient.invalidateQueries({ queryKey: ['playbook-library'] });
+      setInstalling(null);
+    },
+    onError: (error: Error) => {
+      logger.error('Update failed:', error);
+      setInstalling(null);
+      setErrorMessage(`Update failed: ${error.message}`);
+    },
+  });
+
   const handleInstall = async (playbookPath: string) => {
     setInstalling(playbookPath);
     installMutation.mutate(playbookPath);
+  };
+
+  const handleUpdate = async (playbookPath: string) => {
+    setInstalling(playbookPath);
+    updateMutation.mutate(playbookPath);
   };
 
   const handleRefresh = () => {
@@ -279,6 +313,12 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
                       sx={{ mb: 1 }}
                     />
                     <Chip label={`v${playbook.version}`} size="small" variant="outlined" sx={{ mb: 1, ml: 1 }} />
+                    {playbook.update_available && (
+                      <Chip label={`v${playbook.installed_version} installed`} size="small" color="warning" variant="outlined" sx={{ mb: 1, ml: 1 }} />
+                    )}
+                    {playbook.is_installed && !playbook.update_available && (
+                      <Chip label="Installed" size="small" color="success" variant="outlined" sx={{ mb: 1, ml: 1 }} />
+                    )}
 
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       {playbook.description}
@@ -307,16 +347,40 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
                   </CardContent>
 
                   <CardActions>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={installing === playbook.playbook_path ? <CircularProgress size={16} /> : <DownloadIcon />}
-                      onClick={() => handleInstall(playbook.playbook_path)}
-                      disabled={installing !== null}
-                      fullWidth
-                    >
-                      {installing === playbook.playbook_path ? 'Installing...' : 'Install'}
-                    </Button>
+                    {playbook.update_available ? (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="warning"
+                        startIcon={installing === playbook.playbook_path ? <CircularProgress size={16} /> : <UpdateIcon />}
+                        onClick={() => handleUpdate(playbook.playbook_path)}
+                        disabled={installing !== null}
+                        fullWidth
+                      >
+                        {installing === playbook.playbook_path ? 'Updating...' : `Update to v${playbook.version}`}
+                      </Button>
+                    ) : playbook.is_installed ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<CheckCircleIcon />}
+                        disabled
+                        fullWidth
+                      >
+                        Installed
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={installing === playbook.playbook_path ? <CircularProgress size={16} /> : <DownloadIcon />}
+                        onClick={() => handleInstall(playbook.playbook_path)}
+                        disabled={installing !== null}
+                        fullWidth
+                      >
+                        {installing === playbook.playbook_path ? 'Installing...' : 'Install'}
+                      </Button>
+                    )}
                   </CardActions>
                 </Card>
             ))}

@@ -21,13 +21,16 @@ from fastapi import HTTPException
 # ---------------------------------------------------------------------------
 
 
-def _make_registry(*, available=None):
+def _make_registry(*, available=None, installed=None):
     """
     Build a MagicMock PlaybookRegistry with sensible defaults.
     available: list of MagicMock AvailablePlaybook objects
+    installed: dict mapping playbook_path to MagicMock InstalledPlaybook
     """
     registry = MagicMock()
     registry.get_available_playbooks.return_value = available or []
+    registry.installed = installed or {}
+    registry.check_for_updates.return_value = {}
     registry.last_fetched = None
     registry.fetch_available_playbooks = AsyncMock()
     return registry

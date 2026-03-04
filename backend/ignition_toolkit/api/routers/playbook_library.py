@@ -70,10 +70,18 @@ async def browse_available_playbooks(force_refresh: bool = False):
             logger.warning(f"Could not fetch playbook library from remote: {fetch_error}")
             # Continue with cached/empty data - don't fail the whole request
 
-        available = registry.get_available_playbooks(include_installed=False)
+        available = registry.get_available_playbooks(include_installed=True)
 
-        playbooks = [
-            {
+        # Build lookup of installed versions for status enrichment
+        updates = registry.check_for_updates()
+
+        playbooks = []
+        for pb in available:
+            is_installed = pb.playbook_path in registry.installed
+            installed_info = registry.installed.get(pb.playbook_path)
+            has_update = pb.playbook_path in updates
+
+            playbooks.append({
                 "playbook_path": pb.playbook_path,
                 "version": pb.version,
                 "domain": pb.domain,
@@ -86,9 +94,10 @@ async def browse_available_playbooks(force_refresh: bool = False):
                 "size_bytes": pb.size_bytes,
                 "dependencies": pb.dependencies,
                 "release_notes": pb.release_notes,
-            }
-            for pb in available
-        ]
+                "is_installed": is_installed,
+                "installed_version": installed_info.version if installed_info else None,
+                "update_available": has_update,
+            })
 
         return {
             "status": "success",
