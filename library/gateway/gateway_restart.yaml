@@ -1,5 +1,5 @@
 name: "Gateway Restart"
-version: "3.1"
+version: "3.2"
 description: "Restart Ignition Gateway from notification banner (assumes already logged in)"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -128,12 +128,15 @@ steps:
 
   # ==========================================================================
   # STEP 10: Click Restart Gateway Button in Confirmation Dialog
+  # NOTE: MUST use specific dialog button ID only — broad selectors like
+  #       button:has-text("Restart Gateway") match the BANNER button first,
+  #       not the dialog button, causing the restart to never trigger.
   # ==========================================================================
   - id: step10_click_restart_in_dialog
     name: "Step 10: Click Restart Gateway Button in Dialog"
     type: browser.click
     parameters:
-      selector: 'button[id="restart gateway-button"], button[data-label="Restart Gateway"]:not([disabled]), button:has-text("Restart Gateway"):not([disabled])'
+      selector: 'button[id="restart gateway-button"]'
       timeout: 30000
       force: true
 
