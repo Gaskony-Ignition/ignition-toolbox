@@ -1,6 +1,6 @@
 name: "Gateway Restart"
-version: "2.2"
-description: "Restart Ignition Gateway from restart notification bar (assumes already logged in)"
+version: "3.0"
+description: "Restart Ignition Gateway from notification banner (assumes already logged in)"
 domain: gateway
 group: "Gateway (Base Playbooks)"
 verified: true
@@ -23,86 +23,109 @@ parameters:
 
 steps:
   # ==========================================================================
-  # STEP 1: Check for Trial Reset Button (May Overlap with Restart Button)
+  # STEP 1: Navigate to Gateway Config Page (Ensure Banner is Visible)
+  # NOTE: After module install/uninstall the page may be in an unknown state.
+  #       Navigating to a config page ensures the multi-banner bar is loaded.
   # ==========================================================================
-  - id: step1_check_trial_reset
-    name: "Step 1: Check for Trial Reset Button"
+  - id: step1_navigate_to_config
+    name: "Step 1: Navigate to Gateway Config Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/modules"
+      wait_for: "load"
+      timeout: 30
+
+  - id: step2_wait_for_page_load
+    name: "Step 2: Wait for Page to Fully Load"
+    type: utility.sleep
+    parameters:
+      seconds: 3
+
+  # ==========================================================================
+  # STEP 3: Screenshot Banner State (Diagnostic)
+  # ==========================================================================
+  - id: step3_screenshot_banner_state
+    name: "Step 3: Screenshot - Banner State"
+    type: browser.screenshot
+    parameters:
+      name: "restart_banner_state"
+      full_page: false
+
+  # ==========================================================================
+  # STEP 4: Check if Restart Banner is Already Visible
+  # NOTE: Ignition 8.3.x uses a multi-banner (<ul data-component="web-ui.multi-banner">).
+  #       When multiple banners exist (trial + restart), one is active and others
+  #       are collapsed with a small expand button (e.g. button#expand-restart-required-banner).
+  #       The restart banner has id="restart-required-banner".
+  # ==========================================================================
+  - id: step4_check_restart_banner_visible
+    name: "Step 4: Check if Restart Banner is Visible"
     type: browser.verify
     parameters:
-      selector: 'button:has-text("Reset"), button:has-text("RESET"), [class*="reset"]:has-text("Reset")'
+      selector: '#restart-required-banner:not(.collapsed) button[data-label="Restart Gateway"], #restart-required-banner:not(.collapsed) button:has-text("Restart Gateway")'
       state: "visible"
-      timeout: 3000
+      timeout: 5000
     on_failure: continue
 
   # ==========================================================================
-  # STEP 2: Click Trial Reset Button (if present)
+  # STEP 5: If Restart Banner is Collapsed, Expand It
+  # NOTE: When the trial banner has priority, the restart banner collapses to
+  #       a small icon button (button#expand-restart-required-banner) with a
+  #       warning SVG. Click it to switch the active banner to restart.
   # ==========================================================================
-  - id: step2_click_trial_reset
-    name: "Step 2: Click Trial Reset Button (if present)"
+  - id: step5_expand_restart_banner
+    name: "Step 5: Expand Restart Banner (if collapsed)"
     type: browser.click
     parameters:
-      selector: 'button:has-text("Reset"), button:has-text("RESET"), [class*="reset"]:has-text("Reset")'
+      selector: 'button#expand-restart-required-banner, #restart-required-banner.collapsed button, [data-component="web-ui.multi-banner"] li.collapsed button'
       timeout: 5000
       force: true
     on_failure: continue
 
-  # ==========================================================================
-  # STEP 3: Wait for Trial Reset to Complete
-  # ==========================================================================
-  - id: step3_wait_trial_reset
-    name: "Step 3: Wait for Trial Reset to Complete"
+  - id: step6_wait_for_banner_switch
+    name: "Step 6: Wait for Banner to Switch"
     type: utility.sleep
     parameters:
-      seconds: 2
+      seconds: 1
 
   # ==========================================================================
-  # STEP 4: Verify Restart Required Bar is Visible (Try Multiple Selectors)
+  # STEP 7: Click Restart Gateway Button in Banner
+  # NOTE: The button is inside #restart-required-banner with
+  #       data-label="Restart Gateway" and data-component="web-ui.button"
   # ==========================================================================
-  - id: step4_verify_restart_bar
-    name: "Step 4: Verify Restart Required Bar is Visible"
-    type: browser.verify
-    parameters:
-      selector: 'button:has-text("Restart"), button:has-text("RESTART"), a:has-text("Restart Gateway")'
-      state: "visible"
-      timeout: 10000
-    on_failure: continue
-
-  # ==========================================================================
-  # STEP 5: Click Restart Gateway Button (Try Multiple Selectors)
-  # ==========================================================================
-  - id: step5_click_restart_button
-    name: "Step 5: Click Restart Gateway Button"
+  - id: step7_click_restart_button
+    name: "Step 7: Click Restart Gateway Button"
     type: browser.click
     parameters:
-      selector: 'button:has-text("Restart"), a:has-text("Restart Gateway"), button:has-text("RESTART")'
+      selector: 'button[data-label="Restart Gateway"], #restart-required-banner button:has-text("Restart Gateway"), button:has-text("Restart Gateway")'
       timeout: 30000
       force: true
 
   # ==========================================================================
-  # STEP 6: Wait for Confirmation Dialog
+  # STEP 8: Wait for Confirmation Dialog
   # ==========================================================================
-  - id: step6_wait_for_dialog
-    name: "Step 6: Wait for Confirmation Dialog"
+  - id: step8_wait_for_dialog
+    name: "Step 8: Wait for Confirmation Dialog"
     type: utility.sleep
     parameters:
       seconds: 2
 
   # ==========================================================================
-  # STEP 7: Screenshot Confirmation Dialog
+  # STEP 9: Screenshot Confirmation Dialog
   # ==========================================================================
-  - id: step7_screenshot_dialog
-    name: "Step 7: Screenshot - Confirmation Dialog"
+  - id: step9_screenshot_dialog
+    name: "Step 9: Screenshot - Confirmation Dialog"
     type: browser.screenshot
     parameters:
       name: "restart_confirmation_dialog"
       full_page: false
 
   # ==========================================================================
-  # STEP 8: Click I understand the risks Checkbox
+  # STEP 10: Click I understand the risks Checkbox
   # NOTE: Uses generic checkbox selector as fallback — text labels may change between Ignition versions
   # ==========================================================================
-  - id: step8_click_checkbox
-    name: "Step 8: Click I understand the risks"
+  - id: step10_click_checkbox
+    name: "Step 10: Click I understand the risks"
     type: browser.click
     parameters:
       selector: 'label:has-text("I understand the risks"), :text("I understand the risks"), input[type="checkbox"], [role="checkbox"]'
@@ -110,41 +133,30 @@ steps:
       force: true
 
   # ==========================================================================
-  # STEP 9: Wait for Restart Gateway Button to Enable
+  # STEP 11: Wait for Restart Gateway Button to Enable
   # ==========================================================================
-  - id: step9_wait_for_button_enable
-    name: "Step 9: Wait for Restart Gateway Button to Enable"
+  - id: step11_wait_for_button_enable
+    name: "Step 11: Wait for Restart Gateway Button to Enable"
     type: utility.sleep
     parameters:
       seconds: 1
 
   # ==========================================================================
-  # STEP 10: Verify Restart Gateway Button is Enabled
+  # STEP 12: Click Restart Gateway Button in Confirmation Dialog
   # ==========================================================================
-  - id: step10_verify_button_enabled
-    name: "Step 10: Verify Restart Gateway Button is Enabled"
-    type: browser.verify
-    parameters:
-      selector: 'button:has-text("Restart Gateway"):not([disabled]), button:has-text("RESTART GATEWAY"):not([disabled]), button:has-text("Restart"):not([disabled])'
-      state: "visible"
-      timeout: 15000
-
-  # ==========================================================================
-  # STEP 11: Click Restart Gateway Button (BLUE button inside dialog)
-  # ==========================================================================
-  - id: step11_click_restart_in_dialog
-    name: "Step 11: Click Restart Gateway Button"
+  - id: step12_click_restart_in_dialog
+    name: "Step 12: Click Restart Gateway Button in Dialog"
     type: browser.click
     parameters:
-      selector: 'button[id="restart gateway-button"]'
+      selector: 'button[id="restart gateway-button"], button[data-label="Restart Gateway"]:not([disabled]), button:has-text("Restart Gateway"):not([disabled])'
       timeout: 30000
       force: true
 
   # ==========================================================================
-  # STEP 12: Confirm Gateway is Restarting (Goes Offline)
+  # STEP 13: Confirm Gateway is Restarting (Goes Offline)
   # ==========================================================================
-  - id: step12_confirm_offline
-    name: "Step 12: Confirm Gateway is Restarting"
+  - id: step13_confirm_offline
+    name: "Step 13: Confirm Gateway is Restarting"
     type: utility.python
     parameters:
       script: |
@@ -180,10 +192,10 @@ steps:
         print(f"Gateway went offline after {attempt * wait_seconds}s - restart in progress")
 
   # ==========================================================================
-  # STEP 13: Poll Gateway Until Online
+  # STEP 14: Poll Gateway Until Online
   # ==========================================================================
-  - id: step13_poll_gateway
-    name: "Step 13: Poll Gateway Until Online"
+  - id: step14_poll_gateway
+    name: "Step 14: Poll Gateway Until Online"
     type: utility.python
     parameters:
       script: |
@@ -223,19 +235,19 @@ steps:
         print(f"Gateway online after {attempt} attempts ({attempt * wait_seconds}s)")
 
   # ==========================================================================
-  # STEP 14: Wait After Gateway Online (Extended for Auth System Initialization)
+  # STEP 15: Wait After Gateway Online (Extended for Auth System Initialization)
   # ==========================================================================
-  - id: step14_wait_after_online
-    name: "Step 14: Wait After Gateway Online (15s for auth initialization)"
+  - id: step15_wait_after_online
+    name: "Step 15: Wait After Gateway Online (15s for auth initialization)"
     type: utility.sleep
     parameters:
       seconds: 15
 
   # ==========================================================================
-  # STEP 15: Verify Home Page Access (No Login Required)
+  # STEP 16: Verify Home Page Access (No Login Required)
   # ==========================================================================
-  - id: step15_verify_home_page
-    name: "Step 15: Verify Home Page Access"
+  - id: step16_verify_home_page
+    name: "Step 16: Verify Home Page Access"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
@@ -243,20 +255,20 @@ steps:
       timeout: 30
 
   # ==========================================================================
-  # STEP 16: Screenshot Home Page
+  # STEP 17: Screenshot Home Page
   # ==========================================================================
-  - id: step16_screenshot_home
-    name: "Step 16: Screenshot Home Page"
+  - id: step17_screenshot_home
+    name: "Step 17: Screenshot Home Page"
     type: browser.screenshot
     parameters:
       name: "after_restart_home_page"
       full_page: true
 
   # ==========================================================================
-  # STEP 17: Verify Gateway is Accessible
+  # STEP 18: Verify Gateway is Accessible
   # ==========================================================================
-  - id: step17_verify_accessible
-    name: "Step 17: Verify Gateway is Accessible"
+  - id: step18_verify_accessible
+    name: "Step 18: Verify Gateway is Accessible"
     type: browser.verify
     parameters:
       selector: ".home-page, .ia_homePage, [data-page='home'], nav, form, [class*='login'], [class*='Login'], main, #app"
@@ -265,10 +277,10 @@ steps:
     on_failure: continue
 
   # ==========================================================================
-  # STEP 18: Execution Summary
+  # STEP 19: Execution Summary
   # ==========================================================================
-  - id: step18_summary
-    name: "Step 18: Execution Summary"
+  - id: step19_summary
+    name: "Step 19: Execution Summary"
     type: utility.python
     parameters:
       script: |
