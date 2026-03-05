@@ -1,5 +1,5 @@
 name: "Test Visual Consistency"
-version: "1.0"
+version: "1.1"
 description: "Test visual consistency across components - alignment, fonts, colors, spacing"
 domain: perspective
 verified: false
@@ -90,7 +90,7 @@ steps:
     name: "Extract Visual Properties from Components"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
 
         # Get discovered components
@@ -136,7 +136,7 @@ steps:
     name: "Analyze Component Alignment"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
 
         # Get visual properties
@@ -246,7 +246,7 @@ steps:
     name: "Generate Visual Consistency Report"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 

@@ -1,5 +1,5 @@
 name: "Test Dock/Popup Behavior"
-version: "1.0"
+version: "1.1"
 description: "Systematically test components that open docked windows, popups, or modals"
 domain: perspective
 verified: false
@@ -81,7 +81,7 @@ steps:
     name: "Identify Potential Dock Triggers"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
 
         # Get discovered components
@@ -165,7 +165,7 @@ steps:
     name: "Generate Dock Test Report"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 

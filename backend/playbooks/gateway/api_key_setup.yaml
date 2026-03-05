@@ -1,5 +1,5 @@
 name: "Gateway API Key Setup"
-version: "2.0"
+version: "2.1"
 description: "Create an Ignition 8.3 API key and store it in the Toolbox API Explorer"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -44,7 +44,6 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/security/api-keys"
-    timeout: 15
     on_failure: abort
 
   - id: step3
@@ -59,7 +58,7 @@ steps:
     name: "Step 4: Screenshot API Keys Page"
     type: browser.screenshot
     parameters:
-      path: "api_keys_page.png"
+      name: "api_keys_page"
     on_failure: continue
 
   - id: step5
@@ -106,7 +105,7 @@ steps:
     name: "Step 10: Screenshot Filled Form"
     type: browser.screenshot
     parameters:
-      path: "api_key_form_filled.png"
+      name: "api_key_form_filled"
     on_failure: continue
 
   - id: step11
@@ -131,7 +130,7 @@ steps:
     name: "Step 13: Screenshot Token Display"
     type: browser.screenshot
     parameters:
-      path: "api_key_token_displayed.png"
+      name: "api_key_token_displayed"
     on_failure: continue
 
   - id: step14
@@ -184,7 +183,7 @@ steps:
     name: "Step 16: Final Screenshot"
     type: browser.screenshot
     parameters:
-      path: "api_key_setup_complete.png"
+      name: "api_key_setup_complete"
     on_failure: continue
 
   - id: step17

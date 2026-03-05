@@ -1,5 +1,5 @@
 name: "Module Upgrade"
-version: "4.0"
+version: "4.1"
 description: "Upgrade an existing module - Uninstall old version then install new version"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -122,8 +122,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
-      wait_for: load
-      timeout: 60
+      wait_until: load
 
   # ==========================================================================
   # STEP 4: Wait for Login Button Available

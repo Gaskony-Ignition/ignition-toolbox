@@ -1,97 +1,165 @@
-name: Module Upgrade (Simulator)
-version: "4.0"
-description: Upgrade an existing module - Uninstall old version then install new version
+name: "Module Upgrade"
+version: "4.1"
+description: "Upgrade an existing module - Uninstall old version then install new version"
 domain: gateway
 group: "Gateway (Base Playbooks)"
 verified: true
+
 parameters:
-- name: gateway_url
-  type: string
-  required: true
-  description: Gateway URL (e.g., http://localhost:9088)
-- name: username
-  type: string
-  required: true
-  description: Gateway admin username
-- name: password
-  type: string
-  required: true
-  description: Gateway admin password
-- name: module_folder
-  type: string
-  required: true
-  description: Path to folder containing .modl file
-- name: prefer_unsigned
-  type: boolean
-  required: false
-  default: false
-  description: "Prefer Unsigned Module (Slider: Signed \u2190 \u2192 Unsigned)"
+  - name: gateway_url
+    type: string
+    required: true
+    description: "Gateway URL (e.g., http://localhost:9088)"
+
+  - name: username
+    type: string
+    required: true
+    description: "Gateway admin username"
+
+  - name: password
+    type: string
+    required: true
+    description: "Gateway admin password"
+
+  - name: module_folder
+    type: string
+    required: true
+    description: "Path to folder containing .modl file"
+
+  - name: prefer_unsigned
+    type: boolean
+    required: false
+    default: false
+    description: "Prefer Unsigned Module (Slider: Signed ← → Unsigned)"
+
 steps:
-- id: step1_detect_module
-  name: 'Step 1: Detect Module File and Metadata'
-  type: utility.python
-  parameters:
-    script: "import zipfile\nimport xml.etree.ElementTree as ET\nfrom pathlib import\
-      \ Path\n\nfolder_path = r\"\"\"{{ parameter.module_folder }}\"\"\"\nprefer_unsigned_str\
-      \ = r\"\"\"{{ parameter.prefer_unsigned }}\"\"\"\nprefer_unsigned = prefer_unsigned_str.lower()\
-      \ in ('true', '1', 'yes')\nfolder = Path(folder_path)\n\nif not folder.exists():\n\
-      \    print(f\"ERROR: Folder not found: {folder_path}\")\n    raise Exception(\"\
-      Step failed\")\n\nmodl_files = list(folder.glob('*.modl'))\n\nif not modl_files:\n\
-      \    print(f\"ERROR: No .modl files found in {folder_path}\")\n    raise Exception(\"\
-      Step failed\")\n\n# Filter based on preference\nif prefer_unsigned:\n    # Look\
-      \ for .unsigned.modl files first\n    unsigned_files = [f for f in modl_files\
-      \ if 'unsigned' in f.name.lower()]\n    if unsigned_files:\n        modl_file\
-      \ = unsigned_files[0]\n        print(f\"Found unsigned module: {modl_file.name}\"\
-      )\n    else:\n        modl_file = modl_files[0]\n        print(f\"No unsigned\
-      \ version found, using: {modl_file.name}\")\nelse:\n    # Prefer signed (non-unsigned)\
-      \ files\n    signed_files = [f for f in modl_files if 'unsigned' not in f.name.lower()]\n\
-      \    if signed_files:\n        modl_file = signed_files[0]\n        print(f\"\
-      Found signed module: {modl_file.name}\")\n    else:\n        modl_file = modl_files[0]\n\
-      \        print(f\"No signed version found, using: {modl_file.name}\")\n\n# Extract\
-      \ metadata from module.xml\nwith zipfile.ZipFile(modl_file, 'r') as zf:\n  \
-      \  module_xml = zf.read('module.xml').decode('utf-8')\n    root = ET.fromstring(module_xml)\n\
-      \    module_elem = root.find('module')\n    module_name = module_elem.find('name').text\n\
-      \    module_version = module_elem.find('version').text\n    module_id = module_elem.find('id').text\n\
-      \nprint(f\"Module to upgrade: {module_name}\")\nprint(f\"Version: {module_version}\"\
-      )\nprint(f\"ID: {module_id}\")\nprint(f\"File: {modl_file.name}\")\n\n# Store\
-      \ for later use\nset_variable('module_name', module_name)\nset_variable('module_version',\
-      \ module_version)\nset_variable('module_id', module_id)\nset_variable('module_path',\
-      \ str(modl_file))\nset_variable('module_filename', modl_file.name)\n"
-- id: step2_uninstall
-  name: 'Step 2: Uninstall Existing Module'
-  type: playbook.run
-  parameters:
-    playbook: gateway/module_uninstall.yaml
-    gateway_url: '{{ parameter.gateway_url }}'
-    username: '{{ parameter.username }}'
-    password: '{{ parameter.password }}'
-    module_name: '{{ variable.module_name }}'
-- id: step3_install
-  name: 'Step 3: Install New Module Version'
-  type: playbook.run
-  parameters:
-    playbook: gateway/module_install.yaml
-    gateway_url: '{{ parameter.gateway_url }}'
-    username: '{{ parameter.username }}'
-    password: '{{ parameter.password }}'
-    module_folder: '{{ parameter.module_folder }}'
-    prefer_unsigned: '{{ parameter.prefer_unsigned }}'
-- id: step4_summary
-  name: 'Step 4: Upgrade Summary'
-  type: utility.python
-  parameters:
-    script: 'print("=" * 80)
+  # ==========================================================================
+  # STEP 1: Detect Module File and Metadata
+  # ==========================================================================
+  - id: step1_detect_module
+    name: "Step 1: Detect Module File and Metadata"
+    type: utility.python
+    parameters:
+      script: |
+        import zipfile
+        import xml.etree.ElementTree as ET
+        from pathlib import Path
 
-      print("MODULE UPGRADE COMPLETE")
+        folder_path = r"""{{ parameter.module_folder }}"""
+        prefer_unsigned_str = r"""{{ parameter.prefer_unsigned }}"""
+        prefer_unsigned = prefer_unsigned_str.lower() in ('true', '1', 'yes')
+        folder = Path(folder_path)
 
-      print("=" * 80)
+        if not folder.exists():
+            print(f"ERROR: Folder not found: {folder_path}")
+            raise Exception("Step failed")
 
-      print("Old version has been uninstalled")
+        modl_files = list(folder.glob('*.modl'))
 
-      print("New version has been installed")
+        if not modl_files:
+            print(f"ERROR: No .modl files found in {folder_path}")
+            raise Exception("Step failed")
 
-      print("Gateway has been restarted twice (after uninstall and after install)")
+        # Filter based on preference
+        if prefer_unsigned:
+            # Look for .unsigned.modl files first
+            unsigned_files = [f for f in modl_files if 'unsigned' in f.name.lower()]
+            if unsigned_files:
+                modl_file = unsigned_files[0]
+                print(f"Found unsigned module: {modl_file.name}")
+            else:
+                modl_file = modl_files[0]
+                print(f"No unsigned version found, using: {modl_file.name}")
+        else:
+            # Prefer signed (non-unsigned) files
+            signed_files = [f for f in modl_files if 'unsigned' not in f.name.lower()]
+            if signed_files:
+                modl_file = signed_files[0]
+                print(f"Found signed module: {modl_file.name}")
+            else:
+                modl_file = modl_files[0]
+                print(f"No signed version found, using: {modl_file.name}")
 
-      print("=" * 80)
+        # Extract metadata from module.xml
+        with zipfile.ZipFile(modl_file, 'r') as zf:
+            module_xml = zf.read('module.xml').decode('utf-8')
+            root = ET.fromstring(module_xml)
+            module_elem = root.find('module')
+            module_name = module_elem.find('name').text
+            module_version = module_elem.find('version').text
+            module_id = module_elem.find('id').text
 
-      '
+        print(f"Module to upgrade: {module_name}")
+        print(f"Version: {module_version}")
+        print(f"ID: {module_id}")
+        print(f"File: {modl_file.name}")
+
+        # Store for later use
+        set_variable('module_name', module_name)
+        set_variable('module_version', module_version)
+        set_variable('module_id', module_id)
+        set_variable('module_path', str(modl_file))
+        set_variable('module_filename', modl_file.name)
+
+  # ==========================================================================
+  # STEP 2: Uninstall Existing Module
+  # ==========================================================================
+  - id: step2_uninstall
+    name: "Step 2: Uninstall Existing Module"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/module_uninstall.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+      module_name: "{{ variable.module_name }}"
+
+  # ==========================================================================
+  # STEP 3: Navigate to Gateway Home
+  # ==========================================================================
+  - id: step3_navigate_home
+    name: "Step 3: Navigate to Gateway Home"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      wait_until: load
+
+  # ==========================================================================
+  # STEP 4: Wait for Login Button Available
+  # ==========================================================================
+  - id: step4_wait_login_ready
+    name: "Step 4: Wait for Login Button Available"
+    type: browser.wait
+    parameters:
+      selector: "a.login-link, a[href*='login'], button.login-button, #login-button, [data-testid='login'], nav a:has-text('Login')"
+      timeout: 60000
+
+  # ==========================================================================
+  # STEP 5: Install New Module Version
+  # ==========================================================================
+  - id: step5_install
+    name: "Step 5: Install New Module Version"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/module_install.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+      module_folder: "{{ parameter.module_folder }}"
+      prefer_unsigned: "{{ parameter.prefer_unsigned }}"
+
+  # ==========================================================================
+  # STEP 6: Upgrade Summary
+  # ==========================================================================
+  - id: step6_summary
+    name: "Step 6: Upgrade Summary"
+    type: utility.python
+    parameters:
+      script: |
+        print("=" * 80)
+        print("MODULE UPGRADE COMPLETE")
+        print("=" * 80)
+        print("Old version has been uninstalled")
+        print("New version has been installed")
+        print("Gateway has been restarted twice (after uninstall and after install)")
+        print("=" * 80)

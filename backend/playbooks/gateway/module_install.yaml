@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.2"
+version: "4.3"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -120,8 +120,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 4: Wait for Modules Page to Load
@@ -176,7 +175,7 @@ steps:
   # ==========================================================================
   - id: step9_verify_button_enabled
     name: "Step 9: Verify Install Button is Enabled"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-label="Install Module"][data-component="web-ui.button"]:not([disabled])'
       state: "visible"
@@ -239,7 +238,7 @@ steps:
   # ==========================================================================
   - id: step15_verify_checkbox_checked
     name: "Step 15: Verify acceptance checkbox is checked"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'input[type="checkbox"]:checked, [role="checkbox"][aria-checked="true"]'
       state: "visible"
@@ -251,7 +250,7 @@ steps:
   # ==========================================================================
   - id: step16_verify_accept_button_enabled
     name: "Step 16: Verify Accept Button is Enabled"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       state: "visible"
@@ -296,7 +295,7 @@ steps:
   # ==========================================================================
   - id: step20_verify_accept_button_enabled_second
     name: "Step 20: Verify Accept Button is Enabled (Second Dialog)"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       state: "visible"
@@ -356,8 +355,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 26: Wait for Modules Page to Load

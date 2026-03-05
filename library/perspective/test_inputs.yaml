@@ -1,5 +1,5 @@
 name: "Test All Inputs"
-version: "1.0"
+version: "1.1"
 description: "Systematically test all input fields and setpoints on a Perspective page - fill, verify, and validate"
 domain: perspective
 verified: false
@@ -83,7 +83,7 @@ steps:
     name: "Filter Inputs and Prepare Test Plan"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
 
         # Get discovered components
@@ -170,7 +170,7 @@ steps:
     name: "Generate Input Test Report"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 

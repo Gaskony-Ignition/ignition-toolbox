@@ -1,5 +1,5 @@
 name: "Gateway Login"
-version: "2.0"
+version: "2.1"
 description: "Login to Ignition Gateway with credentials"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -28,7 +28,6 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
-      timeout: 30000
 
   - id: step2
     name: "Step 2: Click Login Button"
@@ -56,16 +55,15 @@ steps:
     name: "Step 5: Capture page after username entry"
     type: browser.screenshot
     parameters:
-      path: "after_username_entry.png"
-      timeout: 10000
+      name: "after_username_entry"
 
   - id: step6
     name: "Step 6: Click Continue Button"
     type: browser.click
+    retry_count: 3
     parameters:
       selector: "text='CONTINUE'"
       timeout: 10000
-      retry_count: 3
 
   - id: step7
     name: "Step 7: Enter Password"
@@ -78,10 +76,10 @@ steps:
   - id: step8
     name: "Step 8: Click Continue Button (After Password)"
     type: browser.click
+    retry_count: 3
     parameters:
       selector: "text='CONTINUE'"
       timeout: 10000
-      retry_count: 3
 
   - id: step9
     name: "Step 9: Wait for Dashboard"
@@ -95,4 +93,3 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/licensing"
-      timeout: 10000

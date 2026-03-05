@@ -1,5 +1,5 @@
 name: "Gateway Trial Reset"
-version: "3.0"
+version: "3.1"
 description: "Reset Gateway trial license"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -51,7 +51,7 @@ steps:
     type: browser.verify
     parameters:
       selector: "button:has-text('activate'), [class*='activate']"
-      condition: exists
+      exists: true
     timeout: 3
     on_failure: continue
 
@@ -59,8 +59,7 @@ steps:
     name: "Step 5: Take Screenshot of Current State"
     type: browser.screenshot
     parameters:
-      path: "trial_status_check.png"
-    timeout: 10
+      name: "trial_status_check"
 
   - id: step6
     name: "Step 6: Look for Reset Button (Yellow Box - Needs Reset)"
@@ -89,8 +88,7 @@ steps:
     name: "Step 9: Take Final Screenshot of Trial State"
     type: browser.screenshot
     parameters:
-      path: "trial_mode_active.png"
-    timeout: 10
+      name: "trial_mode_active"
 
   - id: step10
     name: "Step 10: Log Trial Status"

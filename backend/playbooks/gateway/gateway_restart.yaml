@@ -1,5 +1,5 @@
 name: "Gateway Restart"
-version: "3.3"
+version: "3.4"
 description: "Restart Ignition Gateway from notification banner (assumes already logged in)"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -44,7 +44,7 @@ steps:
   # ==========================================================================
   - id: step2_check_restart_banner_visible
     name: "Step 2: Check if Restart Banner is Visible"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-label="Restart Gateway"], button:has-text("Restart Gateway"), button:has-text("Restart"), button:has-text("RESTART")'
       state: "visible"
@@ -126,7 +126,6 @@ steps:
     type: browser.wait
     parameters:
       selector: 'button[id="restart gateway-button"]:not([disabled])'
-      state: "visible"
       timeout: 10000
 
   # ==========================================================================
@@ -241,8 +240,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 15: Screenshot Home Page
@@ -259,7 +257,7 @@ steps:
   # ==========================================================================
   - id: step16_verify_accessible
     name: "Step 16: Verify Gateway is Accessible"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: ".home-page, .ia_homePage, [data-page='home'], nav, form, [class*='login'], [class*='Login'], main, #app"
       state: "visible"

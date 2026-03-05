@@ -1,5 +1,5 @@
 name: "Test All Buttons"
-version: "1.0"
+version: "1.1"
 description: "Systematically test all buttons on a Perspective page - click and verify expected behavior"
 domain: perspective
 verified: false
@@ -76,7 +76,7 @@ steps:
     name: "Filter Buttons and Execute Tests"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
 
         # Get discovered components
@@ -145,7 +145,7 @@ steps:
     name: "Execute Button Click Tests"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import asyncio
         import json
         from datetime import datetime
@@ -246,7 +246,7 @@ steps:
     name: "Generate Button Test Report"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 

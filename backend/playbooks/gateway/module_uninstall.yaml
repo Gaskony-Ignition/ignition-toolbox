@@ -1,5 +1,5 @@
 name: "Module Uninstall"
-version: "4.0"
+version: "4.2"
 description: "Uninstall an existing module"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -47,8 +47,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   - id: step3_wait_modules_load
     name: "Step 3: Wait for Modules Page to Load"
@@ -153,15 +152,14 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 14: Verify Home Page Loaded
   # ==========================================================================
   - id: step14_verify_home_page
     name: "Step 14: Verify Home Page Loaded"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
       state: "visible"

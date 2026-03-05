@@ -4,64 +4,64 @@
   "repository": "https://github.com/Gaskony-Ignition/ignition-toolbox",
   "playbooks": {
     "gateway/module_install": {
-      "version": "4.2",
+      "version": "4.3",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Install a new module - Upload, Install, and Restart (generic checkbox selectors for Ignition 8.3.1+)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_install.yaml",
-      "checksum": "sha256:aeedb71734d54db60159979bcc8a99d423e7207eb843a16bd265ff1578ea8ee7",
-      "size_bytes": 16040,
+      "checksum": "sha256:8bcac18fc5be7c710579c3cccedf3701670a4ea4c13aee30e62f7abee8b62ff9",
+      "size_bytes": 16032,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "install", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fixed checkbox selectors for Ignition 8.3.3 compatibility — uses generic input[type=checkbox] instead of text matching"
+      "release_notes": "Fix: browser.verify→browser.verify_state for state checks, wait_for→wait_until in browser.navigate, removed unsupported timeout params"
     },
     "gateway/gateway_restart": {
-      "version": "3.3",
+      "version": "3.4",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Restart Ignition Gateway from notification banner (assumes already logged in)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/gateway_restart.yaml",
-      "checksum": "sha256:5f097fd78be4cb8ec6fddf0681bccd9e194c2f2fcfdbd916b91ea08fded20568",
-      "size_bytes": 12926,
+      "checksum": "sha256:eb2c6b126e67b2525da21d6c3cb1cff08a805e19854b304b1e5a4ac1542b3942",
+      "size_bytes": 12897,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["gateway", "restart"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: use specific dialog selectors (#confirm-restart-modal checkbox and #restart gateway-button), wait for button to enable before clicking, verified end-to-end on Ignition 8.3.3"
+      "release_notes": "Fix: browser.verify→browser.verify_state for state checks, removed invalid state param from browser.wait, wait_for→wait_until in browser.navigate"
     },
     "gateway/gateway_login": {
-      "version": "2.0",
+      "version": "2.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Login to Ignition Gateway with credentials (supports Ignition 8.3 identity provider flow)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/gateway_login.yaml",
-      "checksum": "sha256:f42e8b09b18acbc4f0b7463f5f45fb84a1b333a5298a70b2697f312e475efc5c",
-      "size_bytes": 2682,
+      "checksum": "sha256:a7450543cf322d4cb4fad3f2f394fea59ac4bc7145fd09255b95a9216c44fafc",
+      "size_bytes": 2608,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["gateway", "login", "authentication"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Initial library release — base dependency for all gateway playbooks"
+      "release_notes": "Fix: removed unsupported timeout params from browser.navigate/screenshot, changed screenshot path→name, moved retry_count from parameters to step level"
     },
     "gateway/module_uninstall": {
-      "version": "4.1",
+      "version": "4.2",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Uninstall an existing module from the Gateway and restart",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_uninstall.yaml",
-      "checksum": "sha256:354fe29c06a7317c9d8290fdc8b61c76cf332d8d95cf41c6ddd31fda036fa655",
-      "size_bytes": 6975,
+      "checksum": "sha256:cf5266ed5cdbdf30c4aaa279ee9301e971d785118def00996d1f45b7fd82fcbc",
+      "size_bytes": 6949,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "uninstall", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: use correct 8.3.x home page selectors for post-restart verification, increase timeout to 30s"
+      "release_notes": "Fix: wait_for→wait_until in browser.navigate, removed unsupported timeout param, browser.verify→browser.verify_state for state checks"
     },
     "gateway/backup_gateway": {
       "version": "5.0",
@@ -79,63 +79,63 @@
       "release_notes": "Initial library release — standalone gateway backup playbook"
     },
     "gateway/reset_trial": {
-      "version": "3.0",
+      "version": "3.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Reset Gateway trial license activation timer",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/reset_trial.yaml",
-      "checksum": "sha256:1be6e98dfeacb15e922d07a495bbc9ead59ee373963d0b096ffc7e495b3a34de",
-      "size_bytes": 2862,
+      "checksum": "sha256:bfe8c9d996c9851b99624b729436b6881bc1c94fa70ad14753facac1393168bf",
+      "size_bytes": 2815,
       "dependencies": ["gateway/gateway_login"],
       "author": "Nigel G",
       "tags": ["gateway", "trial", "license"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Initial library release — standalone trial reset playbook"
+      "release_notes": "Fix: condition→exists in browser.verify, screenshot path→name parameter"
     },
     "gateway/api_key_setup": {
-      "version": "2.0",
+      "version": "2.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Create an Ignition 8.3 API key and store it in the Toolbox API Explorer",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/api_key_setup.yaml",
-      "checksum": "sha256:99c72129a27e8a0939096bcefdd291bf20634f82947fe8a521f989415e451bac",
-      "size_bytes": 5251,
+      "checksum": "sha256:6629af3dba51eccf451dee53dc44aa37e77c2036cb4f7d39759ce60d50143e49",
+      "size_bytes": 5219,
       "dependencies": ["gateway/gateway_login"],
       "author": "Nigel G",
       "tags": ["gateway", "api", "api-key", "setup"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Initial library release — API key creation and Toolbox integration"
+      "release_notes": "Fix: screenshot path→name parameter, removed unsupported timeout from browser.navigate"
     },
     "gateway/module_upgrade": {
-      "version": "4.0",
+      "version": "4.1",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Upgrade an existing module - Uninstall old version then install new version (auto-detects module from .modl file)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade.yaml",
-      "checksum": "sha256:abced352c0a568bbbed1f8b63a2bcabd2bf331c14ce7aabb6e6fc79f806747ef",
-      "size_bytes": 6364,
+      "checksum": "sha256:55752273b944ce654adfc91250241ced00795e5dc0bcd58b5ea5a1a449cc7f77",
+      "size_bytes": 6347,
       "dependencies": ["gateway/module_install", "gateway/module_uninstall"],
       "author": "Nigel G",
       "tags": ["module", "upgrade"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Consolidated 5 module-specific upgrade playbooks into single generic playbook"
+      "release_notes": "Fix: wait_for→wait_until in browser.navigate, removed unsupported timeout param"
     },
     "perspective/test_buttons": {
-      "version": "1.0",
+      "version": "1.1",
       "domain": "perspective",
       "verified": false,
       "description": "Systematically test all buttons on a Perspective page - click and verify expected behavior",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_buttons.yaml",
-      "checksum": "sha256:94c94dcd45ac2ec76f959ace8276c06e7d6ca966fd96d871b8287221df9569c8",
-      "size_bytes": 13855,
+      "checksum": "sha256:3085df77c509c8753e01e969b4ecdb02aec84b103e33c5c87c0624c567cc9aa2",
+      "size_bytes": 13861,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["perspective", "testing", "buttons", "ui"],
       "group": "Perspective Testing",
-      "release_notes": "Initial library release - button testing playbook"
+      "release_notes": "Fix: code→script parameter in utility.python steps"
     },
     "perspective/test_discovery_debug": {
       "version": "1.0",
@@ -152,46 +152,46 @@
       "release_notes": "Initial library release - discovery debug playbook"
     },
     "perspective/test_docks": {
-      "version": "1.0",
+      "version": "1.1",
       "domain": "perspective",
       "verified": false,
       "description": "Systematically test components that open docked windows, popups, or modals",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_docks.yaml",
-      "checksum": "sha256:ba2487c4e59b426b7cb9537ff1800853b5dc9ce5ffdf9b7568a4f96e1d15d517",
-      "size_bytes": 13284,
+      "checksum": "sha256:601f83cf8ad6a4de720e615bf7f4ef50d7296558685f2366428d2d4b0b2fc389",
+      "size_bytes": 13288,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["perspective", "testing", "docks", "popups", "modals"],
       "group": "Perspective Testing",
-      "release_notes": "Initial library release - dock/popup testing playbook"
+      "release_notes": "Fix: code→script parameter in utility.python steps"
     },
     "perspective/test_inputs": {
-      "version": "1.0",
+      "version": "1.1",
       "domain": "perspective",
       "verified": false,
       "description": "Systematically test all input fields and setpoints on a Perspective page - fill, verify, and validate",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_inputs.yaml",
-      "checksum": "sha256:70b7f11467e093884deb59bf6edb6be1ae116fba4b98f0a3dfcaace2bd4902ab",
-      "size_bytes": 12233,
+      "checksum": "sha256:6d2aa28fec177658f3064feb0ea68d90aff9e175e9d72b80b56bb76dddfa7bc7",
+      "size_bytes": 12237,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["perspective", "testing", "inputs", "forms"],
       "group": "Perspective Testing",
-      "release_notes": "Initial library release - input field testing playbook"
+      "release_notes": "Fix: code→script parameter in utility.python steps"
     },
     "perspective/test_suite_master": {
-      "version": "1.0",
+      "version": "1.2",
       "domain": "perspective",
       "verified": false,
       "description": "Comprehensive test suite that runs all specialized perspective tests and compiles results",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_suite_master.yaml",
-      "checksum": "sha256:21dacf2aae837cdd86f9e2d92b36f8dce16d9230b0c6466301d933ecbf857a02",
-      "size_bytes": 17880,
+      "checksum": "sha256:afe5222b47328a46db3bbd8494425d8cb9e2902f6b5020efa62739fed264e196",
+      "size_bytes": 18907,
       "dependencies": ["perspective/test_buttons", "perspective/test_inputs", "perspective/test_docks", "perspective/test_visual_consistency"],
       "author": "Nigel G",
       "tags": ["perspective", "testing", "suite", "orchestrator"],
       "group": "Perspective Testing",
-      "release_notes": "Initial library release - master test orchestrator"
+      "release_notes": "Fix: code→script in utility.python, added required parameters for nested verification playbook"
     },
     "perspective/test_verification_examples": {
       "version": "1.0",
@@ -208,18 +208,18 @@
       "release_notes": "Initial library release - verification step type examples"
     },
     "perspective/test_visual_consistency": {
-      "version": "1.0",
+      "version": "1.1",
       "domain": "perspective",
       "verified": false,
       "description": "Test visual consistency across components - alignment, fonts, colors, spacing",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_visual_consistency.yaml",
-      "checksum": "sha256:ed4b1077988e1bdf869ed892e3c4708f29af767892b617f860aab96ecf63c2c3",
-      "size_bytes": 17363,
+      "checksum": "sha256:97d585b1f689113b4b2aed398786b3b39214bfc6b769b077d968238a83050a0e",
+      "size_bytes": 17369,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["perspective", "testing", "visual", "css", "consistency"],
       "group": "Perspective Testing",
-      "release_notes": "Initial library release - visual consistency testing playbook"
+      "release_notes": "Fix: code→script parameter in utility.python steps"
     }
   }
 }

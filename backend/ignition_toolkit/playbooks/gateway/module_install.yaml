@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.1"
+version: "4.3"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -120,8 +120,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 4: Wait for Modules Page to Load
@@ -176,7 +175,7 @@ steps:
   # ==========================================================================
   - id: step9_verify_button_enabled
     name: "Step 9: Verify Install Button is Enabled"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-label="Install Module"][data-component="web-ui.button"]:not([disabled])'
       state: "visible"
@@ -213,38 +212,37 @@ steps:
       seconds: 3
 
   # ==========================================================================
-  # STEP 13: Check if Restart Gateway Button Appeared (module already installed)
+  # STEP 13: Screenshot Dialog State (for debugging)
   # ==========================================================================
-  - id: step13_check_restart_button
-    name: "Step 13: Check for Restart Gateway Button"
-    type: utility.python
+  - id: step13_screenshot_dialog
+    name: "Step 13: Screenshot - Install Dialog State"
+    type: browser.screenshot
     parameters:
-      script: |
-        # This step sets a variable based on whether we need acceptance dialogs or direct restart
-        # The actual check happens in browser steps - this just initializes the flow
-        set_variable('acceptance_flow_started', 'true')
-        print("Checking for acceptance dialogs or restart button...")
+      name: "module_install_dialog"
+      full_page: false
 
   # ==========================================================================
-  # STEP 14: Click Certificate Checkbox (if present)
+  # STEP 14: Click Acceptance Checkbox (if present)
+  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
   # ==========================================================================
   - id: step14_click_cert_checkbox
-    name: "Step 14: Click 'I accept the module certificate' (if present)"
+    name: "Step 14: Click acceptance checkbox (if present)"
     type: browser.click
     parameters:
-      selector: 'text=I accept the module certificate'
+      selector: 'input[type="checkbox"], [role="checkbox"]'
       timeout: 5000
     on_failure: continue
 
   # ==========================================================================
-  # STEP 15: Click License Checkbox (if present in first dialog)
+  # STEP 15: Verify Checkbox is Checked
   # ==========================================================================
-  - id: step15_click_license_checkbox
-    name: "Step 15: Click 'I accept' for license (if present)"
-    type: browser.click
+  - id: step15_verify_checkbox_checked
+    name: "Step 15: Verify acceptance checkbox is checked"
+    type: browser.verify_state
     parameters:
-      selector: 'label:has-text("I accept"):not(:has-text("certificate"))'
-      timeout: 5000
+      selector: 'input[type="checkbox"]:checked, [role="checkbox"][aria-checked="true"]'
+      state: "visible"
+      timeout: 3000
     on_failure: continue
 
   # ==========================================================================
@@ -252,7 +250,7 @@ steps:
   # ==========================================================================
   - id: step16_verify_accept_button_enabled
     name: "Step 16: Verify Accept Button is Enabled"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       state: "visible"
@@ -282,12 +280,13 @@ steps:
 
   # ==========================================================================
   # STEP 19: Click License Checkbox (if second dialog appeared)
+  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
   # ==========================================================================
   - id: step19_click_license_checkbox_second
-    name: "Step 19: Click 'I accept' for license (second dialog)"
+    name: "Step 19: Click acceptance checkbox (second dialog)"
     type: browser.click
     parameters:
-      selector: 'label:has-text("I accept"):not(:has-text("certificate"))'
+      selector: 'input[type="checkbox"], [role="checkbox"]'
       timeout: 5000
     on_failure: continue
 
@@ -296,7 +295,7 @@ steps:
   # ==========================================================================
   - id: step20_verify_accept_button_enabled_second
     name: "Step 20: Verify Accept Button is Enabled (Second Dialog)"
-    type: browser.verify
+    type: browser.verify_state
     parameters:
       selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       state: "visible"
@@ -356,8 +355,7 @@ steps:
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
-      wait_for: "load"
-      timeout: 30
+      wait_until: "load"
 
   # ==========================================================================
   # STEP 26: Wait for Modules Page to Load

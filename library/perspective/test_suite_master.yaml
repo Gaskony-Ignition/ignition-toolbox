@@ -1,5 +1,5 @@
 name: "Perspective Test Suite - Master Orchestrator"
-version: "1.0"
+version: "1.2"
 description: "Comprehensive test suite that runs all specialized perspective tests and compiles results"
 domain: perspective
 verified: false
@@ -9,6 +9,36 @@ parameters:
     type: string
     required: true
     description: "Perspective session URL to test (e.g., http://localhost:8088/data/perspective/client/MyProject/main)"
+
+  - name: gateway_url
+    type: string
+    required: false
+    default: "http://localhost:8088"
+    description: "Gateway URL (needed for verification tests that login)"
+
+  - name: username
+    type: string
+    required: false
+    default: "admin"
+    description: "Gateway admin username (needed for verification tests)"
+
+  - name: password
+    type: string
+    required: false
+    default: "password"
+    description: "Gateway admin password (needed for verification tests)"
+
+  - name: project_name
+    type: string
+    required: false
+    default: "MyProject"
+    description: "Perspective project name (needed for verification tests)"
+
+  - name: view_path
+    type: string
+    required: false
+    default: "/main"
+    description: "Perspective view path (needed for verification tests)"
 
   - name: run_verification_tests
     type: boolean
@@ -79,6 +109,11 @@ steps:
     parameters:
       playbook: "perspective/test_verification_examples.yaml"
       perspective_url: "{{ parameter.perspective_url }}"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+      project_name: "{{ parameter.project_name }}"
+      view_path: "{{ parameter.view_path }}"
     timeout: 120
     on_failure: continue
     # Note: Conditional execution would require utility.python step to check parameter
@@ -138,7 +173,7 @@ steps:
     name: "Compile Test Suite Results"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 
@@ -198,7 +233,7 @@ steps:
     name: "Generate Master Test Report"
     type: utility.python
     parameters:
-      code: |
+      script: |
         import json
         from datetime import datetime
 
