@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.3"
+version: "4.4"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -336,10 +336,30 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 24: Login to Gateway After Restart
+  # STEP 24: Navigate to Gateway Home After Restart
   # ==========================================================================
-  - id: step24_login_after_restart
-    name: "Step 24: Login to Gateway After Restart"
+  - id: step24_navigate_home
+    name: "Step 24: Navigate to Gateway Home After Restart"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      wait_until: "load"
+
+  # ==========================================================================
+  # STEP 25: Wait for Home Page Login Button Available
+  # ==========================================================================
+  - id: step25_wait_login_ready
+    name: "Step 25: Wait for Home Page Login Button Available"
+    type: browser.wait
+    parameters:
+      selector: "a.login-link, a[href*='login'], button.login-button, #login-button, [data-testid='login'], nav a:has-text('Login')"
+      timeout: 60000
+
+  # ==========================================================================
+  # STEP 26: Login to Gateway After Restart
+  # ==========================================================================
+  - id: step26_login_after_restart
+    name: "Step 26: Login to Gateway After Restart"
     type: playbook.run
     parameters:
       playbook: "gateway/gateway_login.yaml"
@@ -348,29 +368,29 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 25: Navigate to Modules Page to Verify
+  # STEP 27: Navigate to Modules Page to Verify
   # ==========================================================================
-  - id: step25_navigate_modules
-    name: "Step 25: Navigate to Modules Page"
+  - id: step27_navigate_modules
+    name: "Step 27: Navigate to Modules Page"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
       wait_until: "load"
 
   # ==========================================================================
-  # STEP 26: Wait for Modules Page to Load
+  # STEP 28: Wait for Modules Page to Load
   # ==========================================================================
-  - id: step26_wait_modules_load
-    name: "Step 26: Wait for Modules Page to Load"
+  - id: step28_wait_modules_load
+    name: "Step 28: Wait for Modules Page to Load"
     type: utility.sleep
     parameters:
       seconds: 3
 
   # ==========================================================================
-  # STEP 27: Verify Module is Installed
+  # STEP 29: Verify Module is Installed
   # ==========================================================================
-  - id: step27_verify_installed
-    name: "Step 27: Verify Module is Installed"
+  - id: step29_verify_installed
+    name: "Step 29: Verify Module is Installed"
     type: utility.python
     parameters:
       script: |
@@ -381,10 +401,10 @@ steps:
         print(f"✓ Successfully verified module '{module_name}' is installed")
 
   # ==========================================================================
-  # STEP 28: Execution Summary
+  # STEP 30: Execution Summary
   # ==========================================================================
-  - id: step28_summary
-    name: "Step 28: Execution Summary"
+  - id: step30_summary
+    name: "Step 30: Execution Summary"
     type: utility.python
     parameters:
       script: |

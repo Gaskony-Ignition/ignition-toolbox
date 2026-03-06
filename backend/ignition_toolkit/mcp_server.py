@@ -542,6 +542,15 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
         prefer_unsigned = arguments.get("prefer_unsigned", False)
         timeout = min(arguments.get("timeout", EXECUTION_POLL_TIMEOUT), EXECUTION_POLL_TIMEOUT)
 
+        # Translate WSL absolute paths to Windows UNC paths.
+        # The Toolbox backend runs on Windows and cannot access /linux/paths directly.
+        # WSL paths like /modules/... become \\wsl.localhost\<distro>\modules\...
+        if module_folder.startswith("/") and not module_folder.startswith("//"):
+            wsl_distro = os.environ.get("WSL_DISTRO_NAME", "")
+            if wsl_distro:
+                win_path = f"\\\\wsl.localhost\\{wsl_distro}{module_folder}"
+                module_folder = win_path.replace("/", "\\")
+
         # Resolve credential: use provided name, or find first available
         credential_name = arguments.get("credential_name")
         if not credential_name:
@@ -563,7 +572,7 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
                 "credential_name": credential_name,
                 "parameters": {
                     "module_folder": module_folder,
-                    "prefer_unsigned": str(prefer_unsigned).lower(),
+                    "prefer_unsigned": prefer_unsigned,
                 },
             }
             exec_result = await _post("/api/executions", exec_body)
