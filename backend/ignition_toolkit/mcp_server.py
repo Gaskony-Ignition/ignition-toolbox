@@ -379,6 +379,32 @@ TOOLS: list[Tool] = [
             "required": ["module_folder"],
         },
     ),
+
+    # ── Playbook Library ──────────────────────────────────────────────
+    Tool(
+        name="update_playbooks",
+        description=(
+            "Check for and apply playbook updates from the library. "
+            "With no arguments, checks what updates are available. "
+            "With playbook_path, updates that specific playbook. "
+            "With update_all=true, updates all playbooks that have updates."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "playbook_path": {
+                    "type": "string",
+                    "description": "Specific playbook to update (e.g. 'gateway/module_install.yaml'). Omit to check all.",
+                },
+                "update_all": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Update all playbooks that have available updates",
+                },
+            },
+            "required": [],
+        },
+    ),
 ]
 
 
@@ -605,6 +631,38 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
                             "execution_id": execution_id,
                             "last_status": result.get("status"),
                         }
+
+    # ── Playbook Library ────────────────────────────────────────────
+    elif name == "update_playbooks":
+        playbook_path = arguments.get("playbook_path")
+        update_all = arguments.get("update_all", False)
+
+        if playbook_path:
+            # Update a specific playbook
+            result = await _post(f"/api/playbooks/{playbook_path}/update", {})
+        elif update_all:
+            # Check what needs updating, then update each one
+            updates_result = await _get("/api/playbooks/updates", force_refresh=True)
+            if "error" in updates_result:
+                result = updates_result
+            else:
+                updates = updates_result.get("updates", [])
+                if not updates:
+                    result = {"status": "success", "message": "All playbooks are up to date"}
+                else:
+                    results = []
+                    for update in updates:
+                        path = update["playbook_path"]
+                        r = await _post(f"/api/playbooks/{path}/update", {})
+                        results.append({"playbook_path": path, "result": r})
+                    result = {
+                        "status": "success",
+                        "updated": len(results),
+                        "results": results,
+                    }
+        else:
+            # Just check for available updates
+            result = await _get("/api/playbooks/updates", force_refresh=True)
 
     else:
         result = {"error": f"Unknown tool: {name}"}
