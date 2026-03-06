@@ -348,7 +348,24 @@ export function Settings() {
               />
             </Box>
             {allowRemoteAccess && (
-              <Alert severity="info" sx={{ mt: 2 }}>
+              <Alert
+                severity="info"
+                sx={{ mt: 2 }}
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    startIcon={<RestartIcon />}
+                    onClick={async () => {
+                      if (window.electronAPI) {
+                        await window.electronAPI.restartBackend();
+                      }
+                    }}
+                  >
+                    Restart Now
+                  </Button>
+                }
+              >
                 Remote access is enabled. Restart the backend for changes to take effect.
               </Alert>
             )}
