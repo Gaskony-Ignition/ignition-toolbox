@@ -20,6 +20,9 @@ interface SettingsSchema {
   // Backend settings
   backendPort: number | null;
 
+  // Network access - bind to 0.0.0.0 so WSL and other local tools can reach the backend
+  allowRemoteAccess: boolean;
+
   // Update settings
   autoUpdate: boolean;
   checkForUpdatesOnStartup: boolean;
@@ -43,6 +46,7 @@ const defaults: SettingsSchema = {
   autoStart: false,
   minimizeToTray: false,
   backendPort: null,
+  allowRemoteAccess: false,
   autoUpdate: true,
   checkForUpdatesOnStartup: true,
   skippedVersion: null,

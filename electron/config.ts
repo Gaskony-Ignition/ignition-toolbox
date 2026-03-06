@@ -8,6 +8,9 @@
 
 export const BACKEND_HOST = '127.0.0.1';
 
+/** When allowRemoteAccess is enabled, bind to all interfaces for WSL/network access */
+export const BACKEND_HOST_REMOTE = '0.0.0.0';
+
 export const BACKEND_PORT_RANGE = {
   START: 5000,
   END: 5099,

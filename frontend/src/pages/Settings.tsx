@@ -87,10 +87,17 @@ export function Settings() {
   const [githubTokenConfigured, setGithubTokenConfigured] = useState(false);
   const [githubTokenSaving, setGithubTokenSaving] = useState(false);
 
+  // Remote access state (for MCP/WSL integration)
+  const [allowRemoteAccess, setAllowRemoteAccess] = useState(false);
+
   // Get app version and health on mount
   useEffect(() => {
     if (isElectron() && window.electronAPI) {
       window.electronAPI.getVersion().then(setAppVersion).catch(() => {});
+      // Load remote access setting
+      window.electronAPI.getSetting('allowRemoteAccess').then((v: unknown) => {
+        setAllowRemoteAccess(v === true);
+      }).catch(() => {});
     }
     api.health().then(setHealth).catch(() => {});
 
@@ -298,6 +305,55 @@ export function Settings() {
             </Box>
           )}
         </Paper>
+
+        {/* MCP / Remote Access */}
+        {isElectron() && (
+          <Paper
+            sx={{
+              p: 3,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 1 }}>
+              MCP / Remote Access
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="body1" fontWeight="medium">
+                  Allow Remote Access
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Bind backend to all network interfaces (0.0.0.0) so WSL, MCP servers, and other local tools can reach it. Requires restart.
+                </Typography>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={allowRemoteAccess}
+                    onChange={async (e) => {
+                      const newValue = e.target.checked;
+                      setAllowRemoteAccess(newValue);
+                      if (window.electronAPI) {
+                        await window.electronAPI.setSetting('allowRemoteAccess', newValue);
+                      }
+                    }}
+                    color="primary"
+                  />
+                }
+                label=""
+              />
+            </Box>
+            {allowRemoteAccess && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Remote access is enabled. Restart the backend for changes to take effect.
+              </Alert>
+            )}
+          </Paper>
+        )}
       </Stack>
     </Box>
   );

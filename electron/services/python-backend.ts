@@ -4,7 +4,8 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { app } from 'electron';
 import * as http from 'http';
-import { BACKEND_HOST, BACKEND_PORT_RANGE, getBackendHttpUrl, getBackendWsUrl } from '../config';
+import { BACKEND_HOST, BACKEND_HOST_REMOTE, BACKEND_PORT_RANGE, getBackendHttpUrl, getBackendWsUrl } from '../config';
+import { getSetting } from './settings';
 
 export interface BackendStatus {
   running: boolean;
@@ -243,11 +244,18 @@ export class PythonBackend {
       }
     }
 
+    // Determine backend host binding
+    const remoteAccess = getSetting('allowRemoteAccess');
+    const backendHost = remoteAccess ? BACKEND_HOST_REMOTE : BACKEND_HOST;
+    if (remoteAccess) {
+      console.log('[Backend] Remote access enabled — binding to 0.0.0.0');
+    }
+
     // Set environment variables
     const env = {
       ...process.env,
       IGNITION_TOOLKIT_PORT: String(this.port),
-      IGNITION_TOOLKIT_HOST: BACKEND_HOST,
+      IGNITION_TOOLKIT_HOST: backendHost,
       WEBSOCKET_API_KEY: this.wsApiKey,
       PYTHONUNBUFFERED: '1',
       // Use app data directory for toolkit data
