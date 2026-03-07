@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.5"
+version: "4.6"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -223,13 +223,15 @@ steps:
 
   # ==========================================================================
   # STEP 14: Click Acceptance Checkbox (if present)
-  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
+  # NOTE: Ignition 8.3.3 uses MUI-style checkboxes with data-component="web-ui.checkbox".
+  #       Must click the LABEL wrapper to toggle state (same pattern as gateway_restart).
+  #       Falls back to raw input for older Ignition versions.
   # ==========================================================================
   - id: step14_click_cert_checkbox
     name: "Step 14: Click acceptance checkbox (if present)"
     type: browser.click
     parameters:
-      selector: 'input[type="checkbox"], [role="checkbox"]'
+      selector: '[data-component="web-ui.checkbox"] label, label:has(input[type="checkbox"]), input[type="checkbox"], [role="checkbox"]'
       timeout: 5000
     on_failure: continue
 
@@ -240,7 +242,7 @@ steps:
     name: "Step 15: Verify acceptance checkbox is checked"
     type: browser.verify_state
     parameters:
-      selector: 'input[type="checkbox"]:checked, [role="checkbox"][aria-checked="true"]'
+      selector: '[data-component="web-ui.checkbox"][data-selected="true"], input[type="checkbox"]:checked, [role="checkbox"][aria-checked="true"]'
       state: "visible"
       timeout: 3000
     on_failure: continue
@@ -259,14 +261,15 @@ steps:
 
   # ==========================================================================
   # STEP 17: Click Accept Button (First Dialog)
+  # NOTE: Do NOT use force:true — the button must be enabled (checkbox checked)
+  #       to produce a valid acceptance. force:true would click a disabled button.
   # ==========================================================================
   - id: step17_click_accept_button
     name: "Step 17: Click Accept Button (First Dialog)"
     type: browser.click
     parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept")'
+      selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       timeout: 5000
-      force: true
     on_failure: continue
 
   # ==========================================================================
@@ -280,13 +283,13 @@ steps:
 
   # ==========================================================================
   # STEP 19: Click License Checkbox (if second dialog appeared)
-  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
+  # NOTE: Same label-based click pattern for Ignition 8.3.3 MUI checkboxes.
   # ==========================================================================
   - id: step19_click_license_checkbox_second
     name: "Step 19: Click acceptance checkbox (second dialog)"
     type: browser.click
     parameters:
-      selector: 'input[type="checkbox"], [role="checkbox"]'
+      selector: '[data-component="web-ui.checkbox"] label, label:has(input[type="checkbox"]), input[type="checkbox"], [role="checkbox"]'
       timeout: 5000
     on_failure: continue
 
@@ -304,14 +307,14 @@ steps:
 
   # ==========================================================================
   # STEP 21: Click Accept Button (Second Dialog)
+  # NOTE: Do NOT use force:true — must only click when enabled (checkbox checked).
   # ==========================================================================
   - id: step21_click_accept_button_second
     name: "Step 21: Click Accept Button (Second Dialog)"
     type: browser.click
     parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept")'
+      selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
       timeout: 5000
-      force: true
     on_failure: continue
 
   # ==========================================================================

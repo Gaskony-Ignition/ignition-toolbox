@@ -4,19 +4,19 @@
   "repository": "https://github.com/Gaskony-Ignition/ignition-toolbox",
   "playbooks": {
     "gateway/module_install": {
-      "version": "4.5",
+      "version": "4.6",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Install a new module - Upload, Install, and Restart (generic checkbox selectors for Ignition 8.3.1+)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_install.yaml",
-      "checksum": "sha256:356492bf667dda935c22bce69b8afe747792b30b9c842394769f50a35a65c656",
-      "size_bytes": 18397,
+      "checksum": "sha256:0abf29b0ffe83b4d7244155ebaacb1cb4eef133d83250cac45307db51834d678",
+      "size_bytes": 18978,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "install", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: Navigate to modules page before restart to ensure banner is visible (install dialog may hide it)"
+      "release_notes": "Fix: Use label-based selectors for MUI checkboxes (Ignition 8.3.3), remove force:true from Accept buttons to ensure valid certificate acceptance"
     },
     "gateway/gateway_restart": {
       "version": "3.4",
