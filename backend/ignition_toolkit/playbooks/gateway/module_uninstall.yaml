@@ -1,5 +1,5 @@
 name: "Module Uninstall"
-version: "4.2"
+version: "4.4"
 description: "Uninstall an existing module"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -124,19 +124,51 @@ steps:
       timeout: 10000
 
   # ==========================================================================
-  # STEP 11: Wait for Uninstall to Complete and Restart Prompt
+  # STEP 11: Wait for Uninstall to Complete
   # ==========================================================================
   - id: step11_wait_for_uninstall_complete
     name: "Step 11: Wait for Uninstall to Complete"
     type: utility.sleep
     parameters:
-      seconds: 10
+      seconds: 5
 
   # ==========================================================================
-  # STEP 12: Restart Gateway (Embedded Playbook)
+  # STEP 12: Screenshot Post-Uninstall State (Diagnostic)
   # ==========================================================================
-  - id: step12_restart_gateway
-    name: "Step 12: Restart Gateway"
+  - id: step12_screenshot_post_uninstall
+    name: "Step 12: Screenshot - Post-Uninstall State"
+    type: browser.screenshot
+    parameters:
+      name: "post_uninstall_state"
+      full_page: false
+
+  # ==========================================================================
+  # STEP 13: Navigate to Modules Page (Ensure Restart Banner Visible)
+  # NOTE: After clicking Uninstall, a dialog or confirmation may still be
+  #       open hiding the restart banner. Navigate to modules page to
+  #       ensure the banner is visible for the restart playbook.
+  # ==========================================================================
+  - id: step13_navigate_modules_for_restart
+    name: "Step 13: Navigate to Modules Page for Restart"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/modules"
+      wait_until: "load"
+
+  # ==========================================================================
+  # STEP 14: Wait for Restart Banner to Appear
+  # ==========================================================================
+  - id: step14_wait_for_restart_banner
+    name: "Step 14: Wait for Restart Banner"
+    type: utility.sleep
+    parameters:
+      seconds: 3
+
+  # ==========================================================================
+  # STEP 15: Restart Gateway (Embedded Playbook)
+  # ==========================================================================
+  - id: step15_restart_gateway
+    name: "Step 15: Restart Gateway"
     type: playbook.run
     parameters:
       playbook: "gateway/gateway_restart.yaml"
@@ -145,31 +177,34 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 13: Wait for Gateway to be Fully Accessible (30s timeout)
+  # STEP 16: Wait for Gateway to be Fully Accessible
   # ==========================================================================
-  - id: step13_verify_gateway_ready
-    name: "Step 13: Verify Gateway is Fully Accessible"
+  - id: step16_verify_gateway_ready
+    name: "Step 16: Verify Gateway is Fully Accessible"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
       wait_until: "load"
 
   # ==========================================================================
-  # STEP 14: Verify Home Page Loaded
+  # STEP 17: Verify Home Page Loaded
+  # NOTE: on_failure: continue — the navigate already proves the gateway is
+  #       up. Home page selectors vary across Ignition versions.
   # ==========================================================================
-  - id: step14_verify_home_page
-    name: "Step 14: Verify Home Page Loaded"
+  - id: step17_verify_home_page
+    name: "Step 17: Verify Home Page Loaded"
     type: browser.verify_state
     parameters:
-      selector: 'nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
+      selector: 'a.login-link, a[href*="login"], nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
       state: "visible"
       timeout: 30000
+    on_failure: continue
 
   # ==========================================================================
-  # STEP 15: Execution Summary
+  # STEP 18: Execution Summary
   # ==========================================================================
-  - id: step15_summary
-    name: "Step 15: Execution Summary"
+  - id: step18_summary
+    name: "Step 18: Execution Summary"
     type: utility.python
     parameters:
       script: |

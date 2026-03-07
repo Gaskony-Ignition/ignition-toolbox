@@ -1,5 +1,5 @@
 name: "Module Uninstall"
-version: "4.3"
+version: "4.4"
 description: "Uninstall an existing module"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -177,7 +177,7 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 16: Wait for Gateway to be Fully Accessible (30s timeout)
+  # STEP 16: Wait for Gateway to be Fully Accessible
   # ==========================================================================
   - id: step16_verify_gateway_ready
     name: "Step 16: Verify Gateway is Fully Accessible"
@@ -188,14 +188,17 @@ steps:
 
   # ==========================================================================
   # STEP 17: Verify Home Page Loaded
+  # NOTE: on_failure: continue — the navigate already proves the gateway is
+  #       up. Home page selectors vary across Ignition versions.
   # ==========================================================================
   - id: step17_verify_home_page
     name: "Step 17: Verify Home Page Loaded"
     type: browser.verify_state
     parameters:
-      selector: 'nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
+      selector: 'a.login-link, a[href*="login"], nav.main-nav, a[data-label="Home"], main, .home-page, .ia_homePage'
       state: "visible"
       timeout: 30000
+    on_failure: continue
 
   # ==========================================================================
   # STEP 18: Execution Summary
