@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.4"
+version: "4.5"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -321,13 +321,45 @@ steps:
     name: "Step 22: Wait for Installation to Complete"
     type: utility.sleep
     parameters:
-      seconds: 15
+      seconds: 10
 
   # ==========================================================================
-  # STEP 23: Restart Gateway (Embedded Playbook)
+  # STEP 23: Screenshot Post-Install State (Diagnostic)
   # ==========================================================================
-  - id: step23_restart_gateway
-    name: "Step 23: Restart Gateway"
+  - id: step23_screenshot_post_install
+    name: "Step 23: Screenshot - Post-Install State"
+    type: browser.screenshot
+    parameters:
+      name: "post_install_state"
+      full_page: false
+
+  # ==========================================================================
+  # STEP 24: Navigate to Modules Page (Ensure Restart Banner Visible)
+  # NOTE: After installation, a dialog may still be open hiding the restart
+  #       banner. Navigating to the modules page closes any dialog and
+  #       ensures the "Restart Required" banner is visible.
+  # ==========================================================================
+  - id: step24_navigate_modules_for_restart
+    name: "Step 24: Navigate to Modules Page for Restart"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/modules"
+      wait_until: "load"
+
+  # ==========================================================================
+  # STEP 25: Wait for Modules Page and Restart Banner
+  # ==========================================================================
+  - id: step25_wait_for_restart_banner
+    name: "Step 25: Wait for Modules Page and Restart Banner"
+    type: utility.sleep
+    parameters:
+      seconds: 3
+
+  # ==========================================================================
+  # STEP 26: Restart Gateway (Embedded Playbook)
+  # ==========================================================================
+  - id: step26_restart_gateway
+    name: "Step 26: Restart Gateway"
     type: playbook.run
     parameters:
       playbook: "gateway/gateway_restart.yaml"
@@ -336,30 +368,30 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 24: Navigate to Gateway Home After Restart
+  # STEP 27: Navigate to Gateway Home After Restart
   # ==========================================================================
-  - id: step24_navigate_home
-    name: "Step 24: Navigate to Gateway Home After Restart"
+  - id: step27_navigate_home
+    name: "Step 27: Navigate to Gateway Home After Restart"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}"
       wait_until: "load"
 
   # ==========================================================================
-  # STEP 25: Wait for Home Page Login Button Available
+  # STEP 28: Wait for Home Page Login Button Available
   # ==========================================================================
-  - id: step25_wait_login_ready
-    name: "Step 25: Wait for Home Page Login Button Available"
+  - id: step28_wait_login_ready
+    name: "Step 28: Wait for Home Page Login Button Available"
     type: browser.wait
     parameters:
       selector: "a.login-link, a[href*='login'], button.login-button, #login-button, [data-testid='login'], nav a:has-text('Login')"
       timeout: 60000
 
   # ==========================================================================
-  # STEP 26: Login to Gateway After Restart
+  # STEP 29: Login to Gateway After Restart
   # ==========================================================================
-  - id: step26_login_after_restart
-    name: "Step 26: Login to Gateway After Restart"
+  - id: step29_login_after_restart
+    name: "Step 29: Login to Gateway After Restart"
     type: playbook.run
     parameters:
       playbook: "gateway/gateway_login.yaml"
@@ -368,29 +400,29 @@ steps:
       password: "{{ parameter.password }}"
 
   # ==========================================================================
-  # STEP 27: Navigate to Modules Page to Verify
+  # STEP 30: Navigate to Modules Page to Verify
   # ==========================================================================
-  - id: step27_navigate_modules
-    name: "Step 27: Navigate to Modules Page"
+  - id: step30_navigate_modules
+    name: "Step 30: Navigate to Modules Page"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
       wait_until: "load"
 
   # ==========================================================================
-  # STEP 28: Wait for Modules Page to Load
+  # STEP 31: Wait for Modules Page to Load
   # ==========================================================================
-  - id: step28_wait_modules_load
-    name: "Step 28: Wait for Modules Page to Load"
+  - id: step31_wait_modules_load
+    name: "Step 31: Wait for Modules Page to Load"
     type: utility.sleep
     parameters:
       seconds: 3
 
   # ==========================================================================
-  # STEP 29: Verify Module is Installed
+  # STEP 32: Verify Module is Installed
   # ==========================================================================
-  - id: step29_verify_installed
-    name: "Step 29: Verify Module is Installed"
+  - id: step32_verify_installed
+    name: "Step 32: Verify Module is Installed"
     type: utility.python
     parameters:
       script: |
@@ -401,10 +433,10 @@ steps:
         print(f"✓ Successfully verified module '{module_name}' is installed")
 
   # ==========================================================================
-  # STEP 30: Execution Summary
+  # STEP 33: Execution Summary
   # ==========================================================================
-  - id: step30_summary
-    name: "Step 30: Execution Summary"
+  - id: step33_summary
+    name: "Step 33: Execution Summary"
     type: utility.python
     parameters:
       script: |

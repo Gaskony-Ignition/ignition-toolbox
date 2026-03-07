@@ -4,19 +4,19 @@
   "repository": "https://github.com/Gaskony-Ignition/ignition-toolbox",
   "playbooks": {
     "gateway/module_install": {
-      "version": "4.4",
+      "version": "4.5",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Install a new module - Upload, Install, and Restart (generic checkbox selectors for Ignition 8.3.1+)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_install.yaml",
-      "checksum": "sha256:305a886485b11a9795d466a9dff591582ba82492a929df8790e9b41a5721c344",
-      "size_bytes": 16943,
+      "checksum": "sha256:356492bf667dda935c22bce69b8afe747792b30b9c842394769f50a35a65c656",
+      "size_bytes": 18397,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "install", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: Wait for home page to load after gateway restart before attempting login (Steps 24-25 added)"
+      "release_notes": "Fix: Navigate to modules page before restart to ensure banner is visible (install dialog may hide it)"
     },
     "gateway/gateway_restart": {
       "version": "3.4",
