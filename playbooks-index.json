@@ -49,19 +49,19 @@
       "release_notes": "Fix: removed unsupported timeout params from browser.navigate/screenshot, changed screenshot path→name, moved retry_count from parameters to step level"
     },
     "gateway/module_uninstall": {
-      "version": "4.2",
+      "version": "4.3",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Uninstall an existing module from the Gateway and restart",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_uninstall.yaml",
-      "checksum": "sha256:cf5266ed5cdbdf30c4aaa279ee9301e971d785118def00996d1f45b7fd82fcbc",
-      "size_bytes": 6949,
+      "checksum": "sha256:53a999f30c7902a8138068cf47c2b947becd0475bff73ac66e9803b441332365",
+      "size_bytes": 8369,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "uninstall", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: wait_for→wait_until in browser.navigate, removed unsupported timeout param, browser.verify→browser.verify_state for state checks"
+      "release_notes": "Fix: Navigate to modules page before restart to ensure banner is visible after uninstall dialog"
     },
     "gateway/backup_gateway": {
       "version": "5.0",
