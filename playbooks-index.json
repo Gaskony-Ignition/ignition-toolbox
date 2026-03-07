@@ -4,19 +4,19 @@
   "repository": "https://github.com/Gaskony-Ignition/ignition-toolbox",
   "playbooks": {
     "gateway/module_install": {
-      "version": "4.9",
+      "version": "5.0",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Install a new module - Upload, Install, and Restart (correct license dialog selectors for Ignition 8.3.3)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_install.yaml",
-      "checksum": "sha256:e569f7b358c7b306127b8f3bd416ae6e65bd33ee25458ce9748012b07d9b20a6",
-      "size_bytes": 19792,
+      "checksum": "sha256:6681bf0b333acb8bef4698646e8bc6f2100863019fdf7efd5f7e2f11dd99ef79",
+      "size_bytes": 19842,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "install", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: Remove double-toggle of license checkbox (was toggling ON then OFF). Make restart/login resilient when no restart needed. Click text label for checkbox toggle."
+      "release_notes": "Fix: Add on_failure: continue to screenshot steps to prevent browser crashes from aborting install"
     },
     "gateway/gateway_restart": {
       "version": "3.4",
