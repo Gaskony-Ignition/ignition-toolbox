@@ -336,6 +336,26 @@ class BrowserVerifyStateHandler(StepHandler):
             raise StepExecutionError("browser", f"State verification failed: {str(e)}")
 
 
+class BrowserKeyboardHandler(StepHandler):
+    """Handle browser.keyboard step - send keyboard input to the page"""
+
+    def __init__(self, manager: BrowserManager):
+        self.manager = manager
+
+    async def execute(self, params: dict[str, Any]) -> dict[str, Any]:
+        key = params.get("key")
+        if not key:
+            raise StepExecutionError("browser", "Key parameter is required")
+
+        try:
+            await self.manager.press_key(key)
+            return {"key": key, "status": "pressed"}
+        except Exception as e:
+            if isinstance(e, StepExecutionError):
+                raise
+            raise StepExecutionError("browser", f"Keyboard press failed: {str(e)}")
+
+
 class BrowserGetTextHandler(StepHandler):
     """Handle browser.get_text step - extract text content from an element"""
 

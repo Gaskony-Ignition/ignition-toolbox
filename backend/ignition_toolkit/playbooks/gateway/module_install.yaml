@@ -1,5 +1,5 @@
 name: "Module Install"
-version: "4.3"
+version: "4.9"
 description: "Install a new module - Upload, Install, and Restart"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -222,155 +222,235 @@ steps:
       full_page: false
 
   # ==========================================================================
-  # STEP 14: Click Acceptance Checkbox (if present)
-  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
+  # STEP 14: Click License Acceptance Checkbox (if license dialog present)
+  # NOTE: Ignition 8.3.3 shows a "License Agreement" dialog with an MUI
+  #       FormControlLabel "I accept the terms in the License Agreement".
+  #       Click the text label to toggle the checkbox.
   # ==========================================================================
-  - id: step14_click_cert_checkbox
-    name: "Step 14: Click acceptance checkbox (if present)"
+  - id: step14_click_license_checkbox
+    name: "Step 14: Click license checkbox"
     type: browser.click
     parameters:
-      selector: 'input[type="checkbox"], [role="checkbox"]'
+      selector: 'text=I accept the terms in the License Agreement'
       timeout: 5000
     on_failure: continue
 
   # ==========================================================================
-  # STEP 15: Verify Checkbox is Checked
+  # STEP 15: Wait for Accept License button to enable
   # ==========================================================================
-  - id: step15_verify_checkbox_checked
-    name: "Step 15: Verify acceptance checkbox is checked"
-    type: browser.verify_state
+  - id: step15_wait_for_accept
+    name: "Step 15: Wait for Accept License button"
+    type: utility.sleep
     parameters:
-      selector: 'input[type="checkbox"]:checked, [role="checkbox"][aria-checked="true"]'
-      state: "visible"
+      seconds: 1
+
+  # ==========================================================================
+  # STEP 16: Click Accept License Button (License Dialog)
+  # NOTE: Button has data-label="Accept License". Only click when enabled
+  #       (checkbox must be checked first).
+  # ==========================================================================
+  - id: step16_click_accept_license
+    name: "Step 16: Click Accept License"
+    type: browser.click
+    parameters:
+      selector: 'button[data-label="Accept License"]:not([disabled])'
+      timeout: 10000
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 17: Wait for Certificate Dialog or dialog dismissal
+  # ==========================================================================
+  - id: step17_wait_cert_dialog
+    name: "Step 17: Wait for Certificate Dialog"
+    type: utility.sleep
+    parameters:
+      seconds: 3
+
+  # ==========================================================================
+  # STEP 18: Close any remaining dialog (X button)
+  # NOTE: License dialog may stay open after acceptance (toast "EULA already
+  #       accepted") or after force-clicking disabled elements. Close it to
+  #       proceed to the next dialog or to the modules page.
+  # ==========================================================================
+  - id: step18_close_dialog
+    name: "Step 18: Close dialog if still open"
+    type: browser.click
+    parameters:
+      selector: '[class*="modal"] button:has-text("close"), [class*="Modal"] button:has-text("close")'
       timeout: 3000
     on_failure: continue
 
-  # ==========================================================================
-  # STEP 16: Verify Accept Button is Enabled (First Dialog)
-  # ==========================================================================
-  - id: step16_verify_accept_button_enabled
-    name: "Step 16: Verify Accept Button is Enabled"
-    type: browser.verify_state
-    parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
-      state: "visible"
-      timeout: 5000
-    on_failure: continue
-
-  # ==========================================================================
-  # STEP 17: Click Accept Button (First Dialog)
-  # ==========================================================================
-  - id: step17_click_accept_button
-    name: "Step 17: Click Accept Button (First Dialog)"
-    type: browser.click
-    parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept")'
-      timeout: 5000
-      force: true
-    on_failure: continue
-
-  # ==========================================================================
-  # STEP 18: Wait for Dialog Transition
-  # ==========================================================================
-  - id: step18_wait_dialog_transition
-    name: "Step 18: Wait for Dialog Transition"
+  - id: step18b_wait_after_close
+    name: "Step 18b: Wait after dialog close"
     type: utility.sleep
     parameters:
       seconds: 2
 
   # ==========================================================================
-  # STEP 19: Click License Checkbox (if second dialog appeared)
-  # NOTE: Uses generic checkbox selector — text labels changed between Ignition 8.3.1 and 8.3.3
+  # STEP 19: Click Certificate Acceptance Checkbox (if certificate dialog present)
+  # NOTE: After license dialog, a certificate acceptance dialog may appear.
+  #       Uses MUI checkbox — click label wrapper to toggle state.
   # ==========================================================================
-  - id: step19_click_license_checkbox_second
-    name: "Step 19: Click acceptance checkbox (second dialog)"
+  - id: step19_click_cert_checkbox
+    name: "Step 19: Click certificate checkbox (if present)"
     type: browser.click
     parameters:
-      selector: 'input[type="checkbox"], [role="checkbox"]'
+      selector: '[data-component="web-ui.checkbox"] label, label:has(input[type="checkbox"])'
       timeout: 5000
     on_failure: continue
 
   # ==========================================================================
-  # STEP 20: Verify Accept Button is Enabled (Second Dialog)
+  # STEP 20: Wait for Accept button to enable
   # ==========================================================================
-  - id: step20_verify_accept_button_enabled_second
-    name: "Step 20: Verify Accept Button is Enabled (Second Dialog)"
-    type: browser.verify_state
-    parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept"):not([disabled])'
-      state: "visible"
-      timeout: 5000
-    on_failure: continue
-
-  # ==========================================================================
-  # STEP 21: Click Accept Button (Second Dialog)
-  # ==========================================================================
-  - id: step21_click_accept_button_second
-    name: "Step 21: Click Accept Button (Second Dialog)"
-    type: browser.click
-    parameters:
-      selector: 'button[data-component="web-ui.button"]:has-text("Accept")'
-      timeout: 5000
-      force: true
-    on_failure: continue
-
-  # ==========================================================================
-  # STEP 22: Wait for Installation to Complete
-  # ==========================================================================
-  - id: step22_wait_for_installation
-    name: "Step 22: Wait for Installation to Complete"
+  - id: step20_wait_accept_enable
+    name: "Step 20: Wait for Accept button"
     type: utility.sleep
     parameters:
-      seconds: 15
+      seconds: 1
 
   # ==========================================================================
-  # STEP 23: Restart Gateway (Embedded Playbook)
+  # STEP 21: Click Accept Button (Certificate Dialog)
   # ==========================================================================
-  - id: step23_restart_gateway
-    name: "Step 23: Restart Gateway"
-    type: playbook.run
+  - id: step21_click_accept_cert
+    name: "Step 21: Click Accept button (certificate dialog)"
+    type: browser.click
     parameters:
-      playbook: "gateway/gateway_restart.yaml"
-      gateway_url: "{{ parameter.gateway_url }}"
-      username: "{{ parameter.username }}"
-      password: "{{ parameter.password }}"
+      selector: 'button:has-text("Accept"):not([disabled])'
+      timeout: 5000
+    on_failure: continue
 
   # ==========================================================================
-  # STEP 24: Login to Gateway After Restart
+  # STEP 22: Handle Restart Gateway button (if module already installed)
+  # NOTE: When re-installing same version, Ignition may show "Restart Gateway"
+  #       directly instead of license/certificate dialogs.
   # ==========================================================================
-  - id: step24_login_after_restart
-    name: "Step 24: Login to Gateway After Restart"
-    type: playbook.run
+  - id: step22_click_restart_if_present
+    name: "Step 22: Click Restart Gateway (if upgrade dialog)"
+    type: browser.click
     parameters:
-      playbook: "gateway/gateway_login.yaml"
-      gateway_url: "{{ parameter.gateway_url }}"
-      username: "{{ parameter.username }}"
-      password: "{{ parameter.password }}"
+      selector: 'button:has-text("Restart Gateway"), button:has-text("Restart")'
+      timeout: 5000
+    on_failure: continue
 
   # ==========================================================================
-  # STEP 25: Navigate to Modules Page to Verify
+  # STEP 23: Wait for Installation to Complete
   # ==========================================================================
-  - id: step25_navigate_modules
-    name: "Step 25: Navigate to Modules Page"
+  - id: step23_wait_for_installation
+    name: "Step 23: Wait for Installation to Complete"
+    type: utility.sleep
+    parameters:
+      seconds: 10
+
+  # ==========================================================================
+  # STEP 24: Screenshot Post-Install State (Diagnostic)
+  # ==========================================================================
+  - id: step24_screenshot_post_install
+    name: "Step 24: Screenshot - Post-Install State"
+    type: browser.screenshot
+    parameters:
+      name: "post_install_state"
+      full_page: false
+
+  # ==========================================================================
+  # STEP 25: Navigate to Modules Page (Ensure Restart Banner Visible)
+  # NOTE: After installation, a dialog may still be open hiding the restart
+  #       banner. Navigating to the modules page closes any dialog and
+  #       ensures the "Restart Required" banner is visible.
+  # ==========================================================================
+  - id: step25_navigate_modules_for_restart
+    name: "Step 25: Navigate to Modules Page for Restart"
     type: browser.navigate
     parameters:
       url: "{{ parameter.gateway_url }}/app/platform/system/modules"
       wait_until: "load"
 
   # ==========================================================================
-  # STEP 26: Wait for Modules Page to Load
+  # STEP 26: Wait for Modules Page and Restart Banner
   # ==========================================================================
-  - id: step26_wait_modules_load
-    name: "Step 26: Wait for Modules Page to Load"
+  - id: step26_wait_for_restart_banner
+    name: "Step 26: Wait for Modules Page and Restart Banner"
     type: utility.sleep
     parameters:
       seconds: 3
 
   # ==========================================================================
-  # STEP 27: Verify Module is Installed
+  # STEP 27: Restart Gateway (Embedded Playbook)
+  # NOTE: Restart may not be needed if re-installing same version (module
+  #       already ACTIVE). on_failure: continue allows the playbook to
+  #       proceed to verification even when no restart banner is present.
   # ==========================================================================
-  - id: step27_verify_installed
-    name: "Step 27: Verify Module is Installed"
+  - id: step27_restart_gateway
+    name: "Step 27: Restart Gateway"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/gateway_restart.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 28: Navigate to Gateway Home After Restart
+  # ==========================================================================
+  - id: step28_navigate_home
+    name: "Step 28: Navigate to Gateway Home After Restart"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}"
+      wait_until: "load"
+
+  # ==========================================================================
+  # STEP 29: Wait for Home Page Login Button Available
+  # NOTE: on_failure: continue — if no restart occurred, we're still logged
+  #       in and there's no login button to find.
+  # ==========================================================================
+  - id: step29_wait_login_ready
+    name: "Step 29: Wait for Home Page Login Button Available"
+    type: browser.wait
+    parameters:
+      selector: "a.login-link, a[href*='login'], button.login-button, #login-button, [data-testid='login'], nav a:has-text('Login')"
+      timeout: 15000
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 30: Login to Gateway After Restart
+  # NOTE: on_failure: continue — login may fail if already logged in
+  #       (no restart occurred).
+  # ==========================================================================
+  - id: step30_login_after_restart
+    name: "Step 30: Login to Gateway After Restart"
+    type: playbook.run
+    parameters:
+      playbook: "gateway/gateway_login.yaml"
+      gateway_url: "{{ parameter.gateway_url }}"
+      username: "{{ parameter.username }}"
+      password: "{{ parameter.password }}"
+    on_failure: continue
+
+  # ==========================================================================
+  # STEP 31: Navigate to Modules Page to Verify
+  # ==========================================================================
+  - id: step31_navigate_modules
+    name: "Step 31: Navigate to Modules Page"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/app/platform/system/modules"
+      wait_until: "load"
+
+  # ==========================================================================
+  # STEP 32: Wait for Modules Page to Load
+  # ==========================================================================
+  - id: step32_wait_modules_load
+    name: "Step 32: Wait for Modules Page to Load"
+    type: utility.sleep
+    parameters:
+      seconds: 3
+
+  # ==========================================================================
+  # STEP 33: Verify Module is Installed
+  # ==========================================================================
+  - id: step33_verify_installed
+    name: "Step 33: Verify Module is Installed"
     type: utility.python
     parameters:
       script: |
@@ -381,10 +461,10 @@ steps:
         print(f"✓ Successfully verified module '{module_name}' is installed")
 
   # ==========================================================================
-  # STEP 28: Execution Summary
+  # STEP 34: Execution Summary
   # ==========================================================================
-  - id: step28_summary
-    name: "Step 28: Execution Summary"
+  - id: step34_summary
+    name: "Step 34: Execution Summary"
     type: utility.python
     parameters:
       script: |

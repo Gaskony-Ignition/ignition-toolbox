@@ -205,6 +205,17 @@ class BrowserManager:
         logger.info(f"Clicking at coordinates: ({x}, {y})")
         await page.mouse.click(x, y)
 
+    async def press_key(self, key: str) -> None:
+        """
+        Press a key or key combination on the page.
+
+        Args:
+            key: Key to press (e.g., 'Enter', 'Tab', 'End', 'PageDown', 'Control+A')
+        """
+        page = await self.get_page()
+        logger.info(f"Pressing key: {key}")
+        await page.keyboard.press(key)
+
     async def fill(self, selector: str, value: str, timeout: int = 30000) -> None:
         """
         Fill input field

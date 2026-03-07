@@ -23,6 +23,7 @@ from ignition_toolkit.playbook.executors import (
     BrowserFileUploadHandler,
     BrowserFillHandler,
     BrowserGetTextHandler,
+    BrowserKeyboardHandler,
     BrowserNavigateHandler,
     BrowserScreenshotHandler,
     BrowserVerifyAttributeHandler,
@@ -162,6 +163,7 @@ class StepExecutor:
             handlers[StepType.BROWSER_NAVIGATE] = BrowserNavigateHandler(self.browser_manager)
             handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(self.browser_manager, default_timeout=browser_timeout)
             handlers[StepType.BROWSER_FILL] = BrowserFillHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_KEYBOARD] = BrowserKeyboardHandler(self.browser_manager)
             handlers[StepType.BROWSER_FILE_UPLOAD] = BrowserFileUploadHandler(self.browser_manager, default_timeout=browser_timeout)
             handlers[StepType.BROWSER_SCREENSHOT] = BrowserScreenshotHandler(self.browser_manager)
             handlers[StepType.BROWSER_WAIT] = BrowserWaitHandler(self.browser_manager, default_timeout=browser_timeout)
