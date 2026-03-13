@@ -1,12 +1,8 @@
 {
   "mcpServers": {
     "ignition-toolbox": {
-      "command": "python",
-      "args": ["-m", "ignition_toolkit.mcp_server"],
-      "cwd": "backend",
-      "env": {
-        "TOOLBOX_API_URL": "http://localhost:5000"
-      }
+      "command": "backend/mcp_wrapper.sh",
+      "args": []
     }
   }
 }

@@ -8,7 +8,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV_PYTHON="$SCRIPT_DIR/venv/bin/python"
+
+# Find the venv python (supports both venv/ and .venv/ conventions)
+if [ -x "$SCRIPT_DIR/.venv/bin/python" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/.venv/bin/python"
+elif [ -x "$SCRIPT_DIR/venv/bin/python" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/venv/bin/python"
+else
+  echo "ERROR: No Python venv found in $SCRIPT_DIR/{.venv,venv}" >&2
+  exit 1
+fi
 
 # Discover the Windows host IP (default gateway in WSL2)
 WIN_HOST=$(ip route show default 2>/dev/null | awk '{print $3}')
