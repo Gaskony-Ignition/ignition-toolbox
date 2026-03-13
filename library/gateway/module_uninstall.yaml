@@ -1,5 +1,5 @@
 name: "Module Uninstall"
-version: "4.4"
+version: "4.5"
 description: "Uninstall an existing module"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -91,7 +91,7 @@ steps:
     name: "Step 7: Click More Options for Module"
     type: browser.click
     parameters:
-      selector: 'button[aria-label*="more"]'
+      selector: 'button[data-label="show-more-button"], button[aria-label*="more"], button[aria-label*="More"]'
       timeout: 10000
 
   # ==========================================================================

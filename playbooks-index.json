@@ -49,19 +49,19 @@
       "release_notes": "Fix: removed unsupported timeout params from browser.navigate/screenshot, changed screenshot path→name, moved retry_count from parameters to step level"
     },
     "gateway/module_uninstall": {
-      "version": "4.4",
+      "version": "4.5",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Uninstall an existing module from the Gateway and restart",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_uninstall.yaml",
-      "checksum": "sha256:2bc01d88c351b080233850e2e5a194f36cc662796160481d118673892e740009",
-      "size_bytes": 8555,
+      "checksum": "sha256:ad9c405d0d0585bc3a9c1983add1c1535d91dd32761faea3c7caa62038390c5a",
+      "size_bytes": 8622,
       "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
       "author": "Nigel G",
       "tags": ["module", "uninstall", "gateway"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: Add login link to home page verification selectors for 8.3.3, add on_failure: continue to post-restart verification"
+      "release_notes": "Fix: More options button selector for Ignition 8.3.3 (data-label=\"show-more-button\")"
     },
     "gateway/backup_gateway": {
       "version": "5.0",
