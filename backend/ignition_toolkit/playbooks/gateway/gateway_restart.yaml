@@ -1,5 +1,5 @@
 name: "Gateway Restart"
-version: "3.4"
+version: "3.5"
 description: "Restart Ignition Gateway from notification banner (assumes already logged in)"
 domain: gateway
 group: "Gateway (Base Playbooks)"
@@ -36,19 +36,18 @@ steps:
       full_page: false
 
   # ==========================================================================
-  # STEP 2: Check if Restart Banner is Already Visible (not collapsed)
-  # NOTE: Ignition 8.3.x uses a multi-banner (<ul data-component="web-ui.multi-banner">).
-  #       When multiple banners exist (trial + restart), one is active and others
-  #       are collapsed with a small expand button (e.g. button#expand-restart-required-banner).
-  #       The restart banner has id="restart-required-banner".
+  # STEP 2: Wait for Restart Banner to Appear in DOM
+  # NOTE: After module install/uninstall, the restart banner can take up to
+  #       15s to register and appear. This step waits for the banner element
+  #       OR its collapsed expand button to exist in the DOM before proceeding.
+  #       on_failure: continue — banner may already be visible as a button.
   # ==========================================================================
-  - id: step2_check_restart_banner_visible
-    name: "Step 2: Check if Restart Banner is Visible"
-    type: browser.verify_state
+  - id: step2_wait_for_restart_banner
+    name: "Step 2: Wait for Restart Banner to Appear"
+    type: browser.wait
     parameters:
-      selector: 'button[data-label="Restart Gateway"], button:has-text("Restart Gateway"), button:has-text("Restart"), button:has-text("RESTART")'
-      state: "visible"
-      timeout: 5000
+      selector: '#restart-required-banner, button#expand-restart-required-banner, button[data-label="Restart Gateway"]'
+      timeout: 20000
     on_failure: continue
 
   # ==========================================================================
@@ -61,7 +60,7 @@ steps:
     name: "Step 3: Expand Restart Banner (if collapsed)"
     type: browser.click
     parameters:
-      selector: 'button#expand-restart-required-banner, #restart-required-banner.collapsed button, [data-component="web-ui.multi-banner"] li.collapsed button'
+      selector: 'button#expand-restart-required-banner, #restart-required-banner.collapsed button'
       timeout: 5000
       force: true
     on_failure: continue

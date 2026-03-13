@@ -19,19 +19,19 @@
       "release_notes": "Fix: Add on_failure: continue to screenshot steps to prevent browser crashes from aborting install"
     },
     "gateway/gateway_restart": {
-      "version": "3.4",
+      "version": "3.5",
       "domain": "gateway",
       "verified": true,
       "verified_by": "Nigel G",
       "description": "Restart Ignition Gateway from notification banner (assumes already logged in)",
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/gateway_restart.yaml",
-      "checksum": "sha256:eb2c6b126e67b2525da21d6c3cb1cff08a805e19854b304b1e5a4ac1542b3942",
-      "size_bytes": 12897,
+      "checksum": "sha256:1e492a709e0ccf5c40065f181eab7171a35de8b6b7844d7ee387c89eea909930",
+      "size_bytes": 12734,
       "dependencies": [],
       "author": "Nigel G",
       "tags": ["gateway", "restart"],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: browser.verify→browser.verify_state for state checks, removed invalid state param from browser.wait, wait_for→wait_until in browser.navigate"
+      "release_notes": "Fix: Remove broad banner selector that clicked trial banner instead of restart banner; wait up to 20s for restart banner to appear after module changes"
     },
     "gateway/gateway_login": {
       "version": "2.1",
