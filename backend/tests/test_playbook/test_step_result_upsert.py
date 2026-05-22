@@ -27,7 +27,10 @@ from ignition_toolkit.storage.models import ExecutionModel, StepResultModel
 @pytest.fixture
 def temp_db():
     with tempfile.TemporaryDirectory() as tmp:
-        yield Database(Path(tmp) / "test.db")
+        db = Database(Path(tmp) / "test.db")
+        yield db
+        # Close DB engine before tmpdir cleanup (prevents Windows file-locking errors)
+        db.engine.dispose()
 
 
 @pytest.mark.asyncio
