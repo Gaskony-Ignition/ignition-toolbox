@@ -31,6 +31,26 @@ SCREENSHOT_ENABLED = os.getenv("SCREENSHOT_STREAMING", "true").lower() == "true"
 SCREENSHOT_FORMAT = os.getenv("SCREENSHOT_FORMAT", "webp").lower()
 SCREENSHOT_WEBP_QUALITY = int(os.getenv("SCREENSHOT_WEBP_QUALITY", "85"))  # WebP quality 0-100
 
+# Substrings identifying a Playwright/CDP failure where the underlying browser
+# connection is gone (not a recoverable per-call timeout). When one of these is
+# seen in the screenshot-streaming loop, the loop stops instead of hammering a
+# dead pipe every frame — that hammering flooded logs and could aggravate the
+# "Connection closed while reading from the driver" crashes seen mid-install.
+_FATAL_CONNECTION_MARKERS = (
+    "connection closed",
+    "target closed",
+    "target page, context or browser has been closed",
+    "browser has been closed",
+    "browser has disconnected",
+    "page has been closed",
+)
+
+
+def _is_fatal_connection_error(exc: Exception) -> bool:
+    """True if the exception indicates the browser/CDP connection is gone."""
+    message = str(exc).lower()
+    return any(marker in message for marker in _FATAL_CONNECTION_MARKERS)
+
 
 class BrowserManager:
     """
@@ -240,7 +260,18 @@ class BrowserManager:
         """
         page = await self.get_page()
         logger.info(f"Uploading file {file_path} to {selector}")
-        await page.set_input_files(selector, file_path, timeout=timeout)
+        # Large module uploads (100MB+) push a lot of data over the single CDP
+        # pipe. Concurrent screenshot frames competing for that pipe is the most
+        # likely trigger for the "Connection closed" crashes seen mid-install,
+        # so pause streaming for the duration of the upload and restore after.
+        was_paused = self._streaming_paused
+        if self._streaming_active and not was_paused:
+            self._streaming_paused = True
+        try:
+            await page.set_input_files(selector, file_path, timeout=timeout)
+        finally:
+            if self._streaming_active and not was_paused:
+                self._streaming_paused = False
 
     async def wait_for_selector(self, selector: str, timeout: int = 30000) -> None:
         """
@@ -457,9 +488,20 @@ class BrowserManager:
                 logger.info("Screenshot streaming loop cancelled")
                 break
             except Exception as e:
+                if _is_fatal_connection_error(e):
+                    # The browser/page is gone (e.g. gateway restart closed the
+                    # page). Stop the loop rather than spinning every frame on a
+                    # dead connection — continuing only floods logs and adds CDP
+                    # contention that can aggravate the disconnect.
+                    logger.warning(
+                        f"Screenshot streaming stopping — browser connection lost: {e}"
+                    )
+                    self._streaming_active = False
+                    break
+                # Transient error (e.g. a single dropped frame): back off a few
+                # frames before retrying instead of tight-looping.
                 logger.error(f"Error in screenshot streaming: {e}")
-                # Continue streaming despite errors
-                await asyncio.sleep(frame_interval)
+                await asyncio.sleep(frame_interval * 3)
 
     def _download_started(self, download) -> None:
         """

@@ -43,9 +43,12 @@ TOOLBOX_API_URL = os.environ.get("TOOLBOX_API_URL", "http://localhost:5000")
 # HTTP client timeout
 HTTP_TIMEOUT = 30.0
 
-# Polling timeout for wait_for_execution
-EXECUTION_POLL_TIMEOUT = 600.0
+# Polling defaults for wait_for_execution
+EXECUTION_POLL_TIMEOUT = 600.0  # default when caller omits timeout
+EXECUTION_POLL_MAX_TIMEOUT = 1800.0  # hard ceiling on a caller-supplied timeout
 EXECUTION_POLL_INTERVAL = 3.0
+# Consecutive failed status polls tolerated before giving up the wait.
+MAX_POLL_ERRORS = 5
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +71,15 @@ async def _request(
             return resp.json()
     except httpx.ConnectError:
         return {"error": f"Cannot connect to Toolbox backend at {TOOLBOX_API_URL}. Is it running?"}
+    except httpx.TimeoutException as exc:
+        # Timeout exceptions frequently stringify to an empty message, which
+        # previously surfaced as a useless {"error": ""}. Name the cause.
+        return {
+            "error": (
+                f"Request to {method} {path} timed out after {HTTP_TIMEOUT}s "
+                f"({exc.__class__.__name__})"
+            )
+        }
     except httpx.HTTPStatusError as exc:
         try:
             detail = exc.response.json()
@@ -75,7 +87,11 @@ async def _request(
             detail = exc.response.text
         return {"error": f"HTTP {exc.response.status_code}", "detail": detail}
     except Exception as exc:
-        return {"error": str(exc)}
+        # Never return an empty/uninformative error: many httpx/network
+        # exceptions stringify to "" (e.g. some ReadError/ProtocolError cases),
+        # which produced the opaque {"error": ""} seen for list endpoints.
+        message = str(exc).strip() or repr(exc).strip() or exc.__class__.__name__
+        return {"error": f"{exc.__class__.__name__}: {message}", "request": f"{method} {path}"}
 
 
 async def _get(path: str, **params: Any) -> dict[str, Any]:
@@ -94,6 +110,54 @@ async def _put(path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
 async def _delete(path: str, **params: Any) -> dict[str, Any]:
     filtered = {k: v for k, v in params.items() if v is not None}
     return await _request("DELETE", path, params=filtered or None)
+
+
+# ---------------------------------------------------------------------------
+# Path translation (WSL → Windows)
+# ---------------------------------------------------------------------------
+
+# Parameter names whose values are filesystem paths the Windows-side backend
+# must be able to open. WSL absolute paths are invisible to Windows, so these
+# are rewritten to \\wsl.localhost\<distro>\... UNC paths.
+_PATH_PARAM_HINTS = ("folder", "path", "dir", "file")
+
+
+def _to_windows_path_if_wsl(value: str) -> str:
+    """Translate a WSL absolute path to a \\wsl.localhost UNC path.
+
+    The Toolbox backend runs on Windows and cannot read Linux paths like
+    /modules/... directly. Returns the value unchanged when it isn't a WSL
+    path or when the distro name is unknown (no WSL_DISTRO_NAME).
+    """
+    if not isinstance(value, str):
+        return value
+    # Only translate genuine WSL absolute paths: leading single "/", not "//"
+    # (already-UNC), and not a URL (http://, file://, etc.).
+    if not value.startswith("/") or value.startswith("//"):
+        return value
+    if "://" in value:
+        return value
+    wsl_distro = os.environ.get("WSL_DISTRO_NAME", "")
+    if not wsl_distro:
+        return value
+    return f"\\\\wsl.localhost\\{wsl_distro}{value}".replace("/", "\\")
+
+
+def _translate_path_parameters(parameters: dict[str, Any]) -> dict[str, Any]:
+    """Rewrite WSL path values for parameters that look like filesystem paths.
+
+    Targets keys containing folder/path/dir/file (e.g. module_folder,
+    download_path, designer_install_path) so a caller in WSL can pass a native
+    /linux/path and have it reach the Windows backend transparently — matching
+    what upgrade_module already does for module_folder.
+    """
+    translated: dict[str, Any] = {}
+    for key, val in parameters.items():
+        if isinstance(val, str) and any(h in key.lower() for h in _PATH_PARAM_HINTS):
+            translated[key] = _to_windows_path_if_wsl(val)
+        else:
+            translated[key] = val
+    return translated
 
 
 # ---------------------------------------------------------------------------
@@ -441,9 +505,13 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
 
     # ── Execution ────────────────────────────────────────────────────
     elif name == "run_playbook":
+        # Translate any WSL filesystem paths in parameters (module_folder,
+        # download_path, …) to Windows UNC so the Windows-side backend can read
+        # them. Without this, e.g. module_install's detect_module step failed
+        # opaquely on a /modules/... path.
         body = {
             "playbook_path": arguments["playbook_path"],
-            "parameters": arguments.get("parameters", {}),
+            "parameters": _translate_path_parameters(arguments.get("parameters", {})),
         }
         if arguments.get("credential_name"):
             body["credential_name"] = arguments["credential_name"]
@@ -455,25 +523,42 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
 
     elif name == "wait_for_execution":
         execution_id = arguments["execution_id"]
-        timeout = min(arguments.get("timeout", EXECUTION_POLL_TIMEOUT), EXECUTION_POLL_TIMEOUT)
+        # Honour the caller's timeout up to a generous hard ceiling. Previously
+        # this silently min()-clamped to EXECUTION_POLL_TIMEOUT, so asking to
+        # wait longer was ignored without any signal.
+        requested_timeout = float(arguments.get("timeout", EXECUTION_POLL_TIMEOUT))
+        timeout = min(requested_timeout, EXECUTION_POLL_MAX_TIMEOUT)
         poll_interval = max(arguments.get("poll_interval", EXECUTION_POLL_INTERVAL), 1.0)
         elapsed = 0.0
+        consecutive_errors = 0
 
         result = await _get(f"/api/executions/{execution_id}")
         while elapsed < timeout:
-            if "error" in result:
-                break
-            status = result.get("status", "")
-            if status in TERMINAL_STATUSES:
-                break
+            if isinstance(result, dict) and "error" in result:
+                # Tolerate transient fetch errors (network blips, backend busy
+                # during a gateway restart) rather than abandoning the wait.
+                consecutive_errors += 1
+                if consecutive_errors >= MAX_POLL_ERRORS:
+                    break
+            else:
+                consecutive_errors = 0
+                if result.get("status", "") in TERMINAL_STATUSES:
+                    break
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
             result = await _get(f"/api/executions/{execution_id}")
 
-        if elapsed >= timeout and result.get("status") not in TERMINAL_STATUSES:
+        # Always return the freshest snapshot we have.
+        status = result.get("status") if isinstance(result, dict) else None
+        if status not in TERMINAL_STATUSES:
+            note = (
+                f"requested {requested_timeout}s, capped at {timeout}s"
+                if requested_timeout > timeout
+                else f"after {timeout}s"
+            )
             result = {
-                "error": f"Timed out after {timeout}s waiting for execution {execution_id}",
-                "last_status": result.get("status"),
+                "error": f"Still running: timed out waiting for execution {execution_id} ({note})",
+                "last_status": status,
                 "execution": result,
             }
 
@@ -566,16 +651,11 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
     elif name == "upgrade_module":
         module_folder = arguments["module_folder"]
         prefer_unsigned = arguments.get("prefer_unsigned", False)
-        timeout = min(arguments.get("timeout", EXECUTION_POLL_TIMEOUT), EXECUTION_POLL_TIMEOUT)
+        timeout = min(float(arguments.get("timeout", EXECUTION_POLL_TIMEOUT)), EXECUTION_POLL_MAX_TIMEOUT)
 
-        # Translate WSL absolute paths to Windows UNC paths.
-        # The Toolbox backend runs on Windows and cannot access /linux/paths directly.
-        # WSL paths like /modules/... become \\wsl.localhost\<distro>\modules\...
-        if module_folder.startswith("/") and not module_folder.startswith("//"):
-            wsl_distro = os.environ.get("WSL_DISTRO_NAME", "")
-            if wsl_distro:
-                win_path = f"\\\\wsl.localhost\\{wsl_distro}{module_folder}"
-                module_folder = win_path.replace("/", "\\")
+        # Translate WSL absolute paths to Windows UNC paths. The Toolbox backend
+        # runs on Windows and cannot access /linux/paths directly (shared helper).
+        module_folder = _to_windows_path_if_wsl(module_folder)
 
         # Resolve credential: use provided name, or find first available
         credential_name = arguments.get("credential_name")
