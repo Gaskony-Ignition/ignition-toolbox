@@ -861,23 +861,49 @@ class PlaybookEngine:
     async def _save_step_result(
         self, execution_state: ExecutionState, step_result: StepResult
     ) -> None:
-        """Save step result to database"""
+        """Persist a step's latest state to the database.
+
+        _save_execution_start already inserted one PENDING row per step, so we
+        UPDATE that row in place (matched by execution_id + step_id) as the step
+        moves PENDING → RUNNING → completed/failed. Previously this always
+        INSERTed a new row, leaving the initial pending rows orphaned alongside
+        the real results — get_execution then returned every step twice (all
+        pending, then the actual outcomes).
+        """
         try:
             if not hasattr(execution_state, "db_execution_id"):
                 logger.warning("No database execution ID found, skipping step result save")
                 return
             with self.database.session_scope() as session:
-                step_model = StepResultModel(
-                    execution_id=execution_state.db_execution_id,
-                    step_id=step_result.step_id,
-                    step_name=step_result.step_name,
-                    status=step_result.status.value,
-                    started_at=step_result.started_at,
-                    completed_at=step_result.completed_at,
-                    output=step_result.output,
-                    error_message=step_result.error,
+                step_model = (
+                    session.query(StepResultModel)
+                    .filter_by(
+                        execution_id=execution_state.db_execution_id,
+                        step_id=step_result.step_id,
+                    )
+                    .first()
                 )
-                session.add(step_model)
+                if step_model is not None:
+                    step_model.step_name = step_result.step_name
+                    step_model.status = step_result.status.value
+                    step_model.started_at = step_result.started_at
+                    step_model.completed_at = step_result.completed_at
+                    step_model.output = step_result.output
+                    step_model.error_message = step_result.error
+                else:
+                    # No pre-seeded row (e.g. dynamically added step) — insert.
+                    session.add(
+                        StepResultModel(
+                            execution_id=execution_state.db_execution_id,
+                            step_id=step_result.step_id,
+                            step_name=step_result.step_name,
+                            status=step_result.status.value,
+                            started_at=step_result.started_at,
+                            completed_at=step_result.completed_at,
+                            output=step_result.output,
+                            error_message=step_result.error,
+                        )
+                    )
         except Exception as e:
             logger.exception(f"Error saving step result to database: {e}")
 
