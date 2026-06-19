@@ -419,7 +419,7 @@ TOOLS: list[Tool] = [
                     "type": "string",
                     "description": (
                         "Path to the folder containing the .modl file "
-                        "(e.g. '/modules/ignition-module-ai-terminal/build')"
+                        "(e.g. '/git/modules/ignition-module-camera-driver/build')"
                     ),
                 },
                 "credential_name": {
