@@ -94,6 +94,13 @@ class BrowserManager:
         self._context: BrowserContext | None = None
         self._page: Page | None = None
 
+        # Recovery state: the last URL we navigated to and a snapshot of the
+        # session (cookies/localStorage). Captured while the connection is
+        # healthy so recover() can rebuild a logged-in browser if the CDP pipe
+        # dies (e.g. after a large module install). See recover().
+        self._last_url: str | None = None
+        self._storage_state: Any | None = None
+
         # Screenshot streaming state
         self._streaming_task: asyncio.Task | None = None
         self._streaming_active = False
@@ -118,6 +125,17 @@ class BrowserManager:
             return
 
         logger.info("[BROWSER] Starting Playwright browser...")
+        await self._launch_browser()
+        logger.info("[BROWSER] Browser started successfully")
+
+    async def _launch_browser(self, storage_state: Any | None = None) -> None:
+        """
+        Create the Playwright instance, browser, context and page.
+
+        Shared by start() and recover(). When ``storage_state`` is provided the
+        new context is seeded with it so a recovered browser keeps the prior
+        session (cookies/localStorage).
+        """
         logger.debug("Starting Playwright initialization")
 
         # CRITICAL FIX: Run browser initialization without await to avoid event loop conflicts
@@ -131,11 +149,14 @@ class BrowserManager:
         )
         logger.debug("Browser launched")
 
-        self._context = await self._browser.new_context(
-            viewport={"width": 1920, "height": 1080},
-            ignore_https_errors=True,
-            accept_downloads=True,
-        )
+        context_kwargs: dict[str, Any] = {
+            "viewport": {"width": 1920, "height": 1080},
+            "ignore_https_errors": True,
+            "accept_downloads": True,
+        }
+        if storage_state is not None:
+            context_kwargs["storage_state"] = storage_state
+        self._context = await self._browser.new_context(**context_kwargs)
         logger.debug("Context created")
 
         # WORKAROUND: new_page() hangs in FastAPI - create page synchronously then await
@@ -148,7 +169,89 @@ class BrowserManager:
         # Set up download handler
         self._page.on("download", self._download_started)
 
-        logger.info("[BROWSER] Browser started successfully")
+    def is_connected(self) -> bool:
+        """
+        True if the browser process and current page are both alive.
+
+        Used to detect a severed CDP connection (e.g. after a large module
+        upload/install) before issuing the next driver call.
+        """
+        try:
+            return (
+                self._browser is not None
+                and self._browser.is_connected()
+                and self._page is not None
+                and not self._page.is_closed()
+            )
+        except Exception:
+            return False
+
+    async def _capture_storage_state(self) -> None:
+        """
+        Snapshot cookies/localStorage so a recovered browser can restore the
+        session. Best-effort: failures are logged and ignored (the connection
+        may already be degrading).
+        """
+        try:
+            if self._context is not None:
+                self._storage_state = await self._context.storage_state()
+        except Exception as e:
+            logger.debug(f"Could not capture storage state: {e}")
+
+    async def recover(self) -> bool:
+        """
+        Rebuild the browser/context/page after the CDP connection was lost.
+
+        A large module install pushes the browser hard and can sever the single
+        CDP pipe; the failure surfaces on the next driver read (typically the
+        post-install navigate) as "Connection closed while reading from the
+        driver". This tears down the dead objects and relaunches a fresh
+        browser, restoring the captured session so the playbook can continue.
+        Callers are responsible for re-navigating to the page they need.
+
+        Returns:
+            True if a healthy browser/page is available afterwards.
+        """
+        logger.warning("[BROWSER] Recovering browser after lost connection...")
+
+        # Whether streaming was running before the disconnect (the loop may have
+        # already self-stopped on the fatal error, leaving a finished task).
+        streaming_was_active = self._streaming_active or self._streaming_task is not None
+        await self.stop_screenshot_streaming()
+
+        # Best-effort teardown of the dead objects; errors are expected because
+        # the connection is gone, so swallow them.
+        for closer in (
+            lambda: self._context.close() if self._context else None,
+            lambda: self._browser.close() if self._browser else None,
+            lambda: self._playwright.stop() if self._playwright else None,
+        ):
+            try:
+                result = closer()
+                if result is not None:
+                    await result
+            except Exception as e:
+                logger.debug(f"Ignoring error during recovery teardown: {e}")
+        self._page = None
+        self._context = None
+        self._browser = None
+        self._playwright = None
+
+        try:
+            await self._launch_browser(storage_state=self._storage_state)
+        except Exception as e:
+            logger.error(f"[BROWSER] Recovery failed to relaunch browser: {e}")
+            return False
+
+        if streaming_was_active and self.screenshot_callback:
+            await self.start_screenshot_streaming()
+
+        recovered = self.is_connected()
+        if recovered:
+            logger.info("[BROWSER] Browser recovered successfully")
+        else:
+            logger.error("[BROWSER] Browser recovery did not yield a live page")
+        return recovered
 
     async def stop(self) -> None:
         """Stop browser instance"""
@@ -198,7 +301,27 @@ class BrowserManager:
         """
         page = await self.get_page()
         logger.info(f"Navigating to: {url}")
-        await page.goto(url, wait_until=wait_until)
+        try:
+            await page.goto(url, wait_until=wait_until)
+        except Exception as e:
+            if not _is_fatal_connection_error(e):
+                raise
+            # The CDP pipe died (commonly right after a large module install).
+            # Rebuild the browser, restoring the session, and retry the
+            # navigate once before giving up.
+            logger.warning(
+                f"[BROWSER] Navigate to {url} hit a lost connection ({e}); "
+                "recovering browser and retrying once"
+            )
+            if not await self.recover():
+                raise
+            page = await self.get_page()
+            await page.goto(url, wait_until=wait_until)
+
+        self._last_url = url
+        # Refresh the session snapshot now that we're on a known-good page, so a
+        # later recovery can restore a logged-in browser.
+        await self._capture_storage_state()
 
     async def click(self, selector: str, timeout: int = 30000, force: bool = False) -> None:
         """
@@ -264,6 +387,10 @@ class BrowserManager:
         # pipe. Concurrent screenshot frames competing for that pipe is the most
         # likely trigger for the "Connection closed" crashes seen mid-install,
         # so pause streaming for the duration of the upload and restore after.
+        # Snapshot the session before the risky upload so that, if it (or the
+        # install that follows) severs the CDP pipe, recover() can rebuild a
+        # logged-in browser.
+        await self._capture_storage_state()
         was_paused = self._streaming_paused
         if self._streaming_active and not was_paused:
             self._streaming_paused = True

@@ -1,0 +1,3 @@
+"""
+Browser manager tests package
+"""
