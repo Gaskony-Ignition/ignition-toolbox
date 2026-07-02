@@ -311,6 +311,7 @@ export interface ExchangeItem {
   version: string;
   updated_date: string;
   tagline: string;
+  description?: string;
   image_url?: string;
   resource_type?: string;
   ignition_version?: string;

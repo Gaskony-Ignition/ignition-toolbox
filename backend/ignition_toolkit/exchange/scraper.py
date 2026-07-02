@@ -25,6 +25,7 @@ import sys
 import threading
 from collections.abc import Callable
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -100,6 +101,58 @@ def decode_version(raw: Any) -> str:
     return f"{major}.{minor}.{patch}"
 
 
+class _HTMLToText(HTMLParser):
+    """
+    Convert the Exchange's simple description HTML into readable plain text.
+
+    Exchange descriptions only use basic formatting tags (p, br, strong, em,
+    ul, ol, li). We turn block boundaries into blank lines and list items into
+    bullet lines, and drop all tags/attributes — so nothing executable or
+    injectable survives (the frontend renders the result as plain text).
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: Any) -> None:
+        if tag in ("br", "p", "div", "ul", "ol"):
+            self._parts.append("\n")
+        elif tag == "li":
+            self._parts.append("\n• ")
+
+    def handle_endtag(self, tag: str) -> None:
+        # List items stay on their own single line; block tags get a blank line.
+        if tag in ("p", "div", "ul", "ol"):
+            self._parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        self._parts.append(data)
+
+    def get_text(self) -> str:
+        text = "".join(self._parts)
+        # Collapse runs of blank lines and trim trailing spaces per line.
+        lines = [ln.strip() for ln in text.splitlines()]
+        out: list[str] = []
+        for ln in lines:
+            if not ln and (not out or not out[-1]):
+                continue
+            out.append(ln)
+        return "\n".join(out).strip()
+
+
+def html_to_text(html: str) -> str:
+    """Best-effort conversion of description HTML to plain text."""
+    if not html:
+        return ""
+    try:
+        parser = _HTMLToText()
+        parser.feed(html)
+        return parser.get_text()
+    except Exception:  # noqa: BLE001 - never fail a scrape over one description
+        return ""
+
+
 def _category_map(initialize_data: dict) -> dict[str, str]:
     """Build an {id: title} map from the initialize endpoint's categories list."""
     result: dict[str, str] = {}
@@ -162,6 +215,7 @@ def transform_resource(
         "version": decode_version(raw.get("version")),
         "updated_date": updated_date,
         "tagline": (raw.get("tagline") or "").strip(),
+        "description": html_to_text(raw.get("description") or ""),
         "image_url": _pick_image(raw),
         "resource_type": (raw.get("type_title") or "").strip(),
         "ignition_version": (raw.get("ignition_version_title") or "").strip(),

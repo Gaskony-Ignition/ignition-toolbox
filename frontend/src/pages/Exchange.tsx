@@ -4,7 +4,7 @@
  * Five-tab layout: Results | Changes | History | Logs | Settings
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
@@ -35,11 +35,15 @@ import {
   Stack,
   Link,
   Tooltip,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   PlayArrow as RunIcon,
   Stop as StopIcon,
   ExpandMore as ExpandMoreIcon,
+  KeyboardArrowDown as RowExpandIcon,
+  KeyboardArrowUp as RowCollapseIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { api } from '../api/client';
@@ -210,6 +214,16 @@ function ChangeSummaryRow() {
 function ResultsTab() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['exchange-results'],
@@ -287,6 +301,7 @@ function ResultsTab() {
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell sx={{ width: 40 }} />
               <TableCell sx={{ width: 72 }}>Image</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Contributor</TableCell>
@@ -298,8 +313,22 @@ function ResultsTab() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((item) => (
-              <TableRow key={item.id} hover>
+            {filtered.map((item) => {
+              const isOpen = expanded.has(item.id);
+              const hasDetail = Boolean(item.description || item.tagline);
+              return (
+              <Fragment key={item.id}>
+              <TableRow hover sx={{ '& > *': { borderBottom: isOpen ? 'unset' : undefined } }}>
+                <TableCell>
+                  <IconButton
+                    size="small"
+                    onClick={() => toggleExpanded(item.id)}
+                    disabled={!hasDetail}
+                    aria-label={isOpen ? 'Collapse details' : 'Expand details'}
+                  >
+                    {isOpen ? <RowCollapseIcon fontSize="small" /> : <RowExpandIcon fontSize="small" />}
+                  </IconButton>
+                </TableCell>
                 <TableCell>
                   {item.image_url ? (
                     <Box
@@ -362,7 +391,47 @@ function ResultsTab() {
                 <TableCell>{item.version || '—'}</TableCell>
                 <TableCell>{item.updated_date || '—'}</TableCell>
               </TableRow>
-            ))}
+              <TableRow>
+                <TableCell sx={{ py: 0, borderBottom: isOpen ? undefined : 'none' }} colSpan={9}>
+                  <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                    <Box sx={{ py: 2, px: 1, maxWidth: 900 }}>
+                      {item.tagline && (
+                        <Typography variant="subtitle2" gutterBottom>
+                          {item.tagline}
+                        </Typography>
+                      )}
+                      {item.description && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ whiteSpace: 'pre-line', mb: 1.5 }}
+                        >
+                          {item.description}
+                        </Typography>
+                      )}
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center' }}>
+                        {item.ignition_version && (
+                          <Chip label={`Ignition ${item.ignition_version}`} size="small" variant="outlined" />
+                        )}
+                        {item.skill_level && (
+                          <Chip label={item.skill_level} size="small" variant="outlined" />
+                        )}
+                        {(item.tags ?? []).map((tag) => (
+                          <Chip key={tag} label={tag} size="small" />
+                        ))}
+                      </Box>
+                      <Box sx={{ mt: 1.5 }}>
+                        <Link href={item.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                          View on Ignition Exchange →
+                        </Link>
+                      </Box>
+                    </Box>
+                  </Collapse>
+                </TableCell>
+              </TableRow>
+              </Fragment>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
