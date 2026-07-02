@@ -134,7 +134,7 @@ app.whenReady().then(async () => {
           "script-src 'self' 'unsafe-inline'; " +
           "style-src 'self' 'unsafe-inline'; " +
           "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:*; " +
-          "img-src 'self' data: blob:; " +
+          "img-src 'self' data: blob: https://files.inductiveautomation.com https://inductiveautomation.com https://assets.inductiveautomation.com; " +
           "font-src 'self' data:;"
         ],
       },

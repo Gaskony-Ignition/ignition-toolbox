@@ -4,7 +4,7 @@
  * Five-tab layout: Results | Changes | History | Logs | Settings
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
@@ -69,6 +69,19 @@ function StatusHeader() {
   });
 
   const isRunning = status?.is_running ?? false;
+
+  // When a scrape finishes (running -> not running), refresh the data-backed
+  // queries so the Results/Changes/History tabs reflect the new run instead of
+  // showing stale (staleTime-cached) data.
+  const wasRunning = useRef(isRunning);
+  useEffect(() => {
+    if (wasRunning.current && !isRunning) {
+      queryClient.invalidateQueries({ queryKey: ['exchange-results'] });
+      queryClient.invalidateQueries({ queryKey: ['exchange-changes'] });
+      queryClient.invalidateQueries({ queryKey: ['exchange-history'] });
+    }
+    wasRunning.current = isRunning;
+  }, [isRunning, queryClient]);
 
   const formatRelativeTime = (iso: string | null) => {
     if (!iso) return 'Never';
