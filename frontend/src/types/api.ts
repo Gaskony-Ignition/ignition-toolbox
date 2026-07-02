@@ -306,10 +306,17 @@ export interface ExchangeItem {
   title: string;
   contributor: string;
   category: string;
+  categories?: string[];
   download_count: number;
   version: string;
   updated_date: string;
   tagline: string;
+  image_url?: string;
+  resource_type?: string;
+  ignition_version?: string;
+  skill_level?: string;
+  tags?: string[];
+  scope?: string;
   scraped_at: string;
 }
 

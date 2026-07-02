@@ -274,9 +274,11 @@ function ResultsTab() {
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell sx={{ width: 72 }}>Image</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Contributor</TableCell>
               <TableCell>Category</TableCell>
+              <TableCell>Type</TableCell>
               <TableCell align="right">Downloads</TableCell>
               <TableCell>Version</TableCell>
               <TableCell>Updated</TableCell>
@@ -285,6 +287,42 @@ function ResultsTab() {
           <TableBody>
             {filtered.map((item) => (
               <TableRow key={item.id} hover>
+                <TableCell>
+                  {item.image_url ? (
+                    <Box
+                      component="img"
+                      src={item.image_url}
+                      alt={item.title}
+                      loading="lazy"
+                      sx={{
+                        width: 56,
+                        height: 40,
+                        objectFit: 'cover',
+                        borderRadius: 0.5,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'block',
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 56,
+                        height: 40,
+                        borderRadius: 0.5,
+                        border: '1px dashed',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.6rem',
+                        color: 'text.disabled',
+                      }}
+                    >
+                      —
+                    </Box>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Tooltip title={item.tagline || item.title} arrow placement="top">
                     <Link href={item.url} target="_blank" rel="noopener noreferrer" underline="hover">
@@ -297,6 +335,13 @@ function ResultsTab() {
                   {item.category && (
                     <Chip label={item.category} size="small" variant="outlined" />
                   )}
+                </TableCell>
+                <TableCell>
+                  {item.resource_type ? (
+                    <Typography variant="caption" color="text.secondary">
+                      {item.resource_type}
+                    </Typography>
+                  ) : '—'}
                 </TableCell>
                 <TableCell align="right">
                   {item.download_count > 0 ? item.download_count.toLocaleString() : '—'}
@@ -594,7 +639,7 @@ function SettingsTab() {
             value={effective.max_resources}
             onChange={(e) => update({ max_resources: Math.max(0, parseInt(e.target.value) || 0) })}
             inputProps={{ min: 0 }}
-            helperText="0 = scrape all resources (~530)"
+            helperText="0 = scrape all resources (~560)"
             sx={{ width: 180 }}
           />
         </Box>

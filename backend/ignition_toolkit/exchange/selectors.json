@@ -1,42 +1,18 @@
 {
   "_meta": {
-    "version": "1.0.0",
-    "schema_version": 1,
-    "updated_at": "2026-02-23T00:00:00Z"
+    "version": "2.0.0",
+    "schema_version": 2,
+    "updated_at": "2026-07-02T00:00:00Z",
+    "notes": "v2 uses the Ignition Exchange JSON API instead of DOM scraping. The old CSS-selector fields (resource_page/listing_page) are no longer used but kept for backward compatibility with any cached v1 config."
   },
-  "exchange_url": "https://inductiveautomation.com/exchange",
-  "listing_page": {
-    "resource_link_selector": "a[href*='/exchange/']",
-    "min_path_segments": 3
-  },
-  "resource_page": {
-    "title": {
-      "primary": ["h1", "h2"],
-      "fallback_meta": "og:title"
-    },
-    "tagline": {
-      "meta_name": "description",
-      "fallback_meta": "og:description"
-    },
-    "contributor": {
-      "class_patterns": ["contributor", "author", "creator"],
-      "itemprop": "author"
-    },
-    "category": {
-      "class_patterns": ["category", "tag", "type"],
-      "itemprop": "category"
-    },
-    "download_count": {
-      "class_patterns": ["download"],
-      "data_attr": "downloads"
-    },
-    "version": {
-      "class_patterns": ["version"],
-      "itemprop": "softwareVersion"
-    },
-    "updated_date": {
-      "element": "time",
-      "attr": "datetime"
-    }
-  }
+
+  "api_base": "https://inductiveautomation.com",
+  "search_path": "/exchange/api/search",
+  "initialize_path": "/exchange/api/initialize",
+  "resource_url_template": "https://inductiveautomation.com/exchange/{id}",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+
+  "scope_filter": ["Public"],
+
+  "exchange_url": "https://inductiveautomation.com/exchange"
 }
