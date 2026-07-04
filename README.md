@@ -1,6 +1,18 @@
 # Ignition Toolbox
 
-A distributable desktop application for visual acceptance testing of Ignition SCADA systems. Run playbooks against Gateways, Perspective sessions, and Designers with real-time browser streaming, encrypted credentials, and full execution history.
+## Why this exists
+
+Ignition acceptance testing is done by hand or with throwaway scripts: results
+aren't repeatable, visual UI problems slip past blind scripts, the same login
+and navigation flows get rewritten for every job, and the knowledge walks out
+the door with whoever wrote them. **The Toolbox makes gateway and Perspective
+acceptance testing repeatable and visible**: a library of reusable,
+domain-separated playbooks runs against Gateways, Perspective sessions, and
+Designers with real-time browser streaming — the tester *sees* what happened —
+plus encrypted credentials and full execution history.
+
+The full problem statement, target users, and decision framework live in
+[PROJECT_GOALS.md](PROJECT_GOALS.md) — goals drive every feature decision.
 
 ## Architecture
 
@@ -72,7 +84,7 @@ graph TB
 ## Features
 
 | Page | Description |
-|------|-------------|
+| ------ | ------------- |
 | **Playbooks** | Browse, duplicate, edit, and run YAML playbook library |
 | **Executions** | Live execution monitoring with pause/resume/skip/cancel |
 | **Execution Detail** | Step-by-step results, screenshots, and log output |
@@ -213,7 +225,7 @@ ignition-toolbox/
 ## Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Setup, development workflow, testing |
 | [Architecture](ARCHITECTURE.md) | System design and ADRs |
 | [Project Goals](PROJECT_GOALS.md) | Vision and decision framework |

@@ -8,7 +8,10 @@ This file provides guidance to Claude Code when working with the Ignition Toolbo
 
 **Ignition Toolbox** is a distributable desktop application for visual acceptance testing of Ignition SCADA systems. It packages the Ignition Automation Toolkit as a standalone Electron app with an embedded Python backend.
 
-**Current Version:** 3.2.1
+**Read `PROJECT_GOALS.md` first** — problem statement, target users, "what this
+is NOT", and the decision framework. Goals drive every feature decision.
+
+**Current Version:** see `package.json` (single source of truth — do not record it here)
 **Architecture:** Electron + Python subprocess
 **Target Platform:** Windows, macOS, Linux
 **Key Technologies:** Electron, TypeScript, React 19, FastAPI, Playwright, SQLite
@@ -80,13 +83,15 @@ ignition-toolbox/
 ## Development Workflow
 
 ### Prerequisites
+
 - Node.js 22+
 - Python 3.13+
 - npm
 
 ### Setup
+
 ```bash
-cd /git/ignition-toolbox
+cd /home/nigel/ignition/ignition-toolbox
 
 # Install Node.js dependencies
 npm install
@@ -103,6 +108,7 @@ cd ..
 ```
 
 ### Running in Development
+
 ```bash
 # Start both frontend and Electron (requires display)
 npm run dev
@@ -144,7 +150,7 @@ git push origin v3.2.1
 ### Electron Main Process (`electron/`)
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `main.ts` | App entry, window creation, lifecycle |
 | `preload.ts` | Context bridge exposing IPC to renderer |
 | `services/python-backend.ts` | Spawns/monitors Python subprocess |
@@ -157,7 +163,7 @@ git push origin v3.2.1
 The Python backend is the full Ignition Automation Toolkit:
 
 | Module | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `ignition_toolkit/api/` | FastAPI REST API and WebSocket |
 | `ignition_toolkit/playbook/` | Playbook engine with 44 step types |
 | `ignition_toolkit/browser/` | Playwright browser automation |
@@ -182,7 +188,7 @@ The Python backend is the full Ignition Automation Toolkit:
 React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
-|-----------|---------|
+| ----------- | --------- |
 | `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Exchange, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
@@ -191,7 +197,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 | `src/store/` | Zustand global state |
 | `src/api/` | HTTP API client |
 
-> **Docker features vs Docker deployment:** CloudDesigner and StackBuilder are *features* that manage Docker containers for Ignition infrastructure. The `docker-compose.yml` at project root is for *deploying* the Toolbox itself in containers. These are independent concerns.
+> **Docker features:** CloudDesigner and StackBuilder are *features* that manage Docker containers for Ignition infrastructure — the Toolbox itself is a desktop app, not deployed via Docker.
 
 ## Core Principles
 
@@ -210,7 +216,7 @@ Detailed explanation:
 - What changed
 - Why it changed
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
 # Create release
 git tag v3.2.1
@@ -229,6 +235,7 @@ GitHub Actions workflows in `.github/workflows/`:
 | `build.yml` | Tag push (`v*`) or manual | **Production multi-platform build** (Windows, Linux, macOS x64/arm64) |
 
 ### Release Process
+
 1. Make code changes and test locally (Python backend, frontend)
 2. Update version in `package.json` and `frontend/package.json`
 3. Commit all changes to main branch
@@ -242,7 +249,9 @@ GitHub Actions workflows in `.github/workflows/`:
    - Users get auto-update notification
 
 ### Manual Build Trigger
+
 You can also trigger builds from GitHub Actions UI:
+
 1. Go to Actions → Build
 2. Click "Run workflow"
 3. Optionally specify version
@@ -258,7 +267,7 @@ You can also trigger builds from GitHub Actions UI:
 ## Important Files
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `package.json` | Electron config, scripts, dependencies |
 | `electron-builder.yml` | Distribution configuration |
 | `backend/requirements.txt` | Python dependencies |
@@ -266,15 +275,24 @@ You can also trigger builds from GitHub Actions UI:
 | `PROJECT_GOALS.md` | Project goals and decision framework |
 | `ARCHITECTURE.md` | Architecture decision records |
 
+## Skills (load before the matching task)
+
+| Task                                                                       | Skill                 |
+|----------------------------------------------------------------------------|-----------------------|
+| Writing/reviewing Python or TS code, commits, releases                     | `toolbox-conventions` |
+| Anything touching credentials, auth, inputs, subprocess, or file handling  | `security-checking`   |
+
+Skills live in `.claude/skills/`. Load them — don't work from memory.
+
 ---
 
-**Last Updated**: 2026-05-22
 **Maintainer**: Nigel G
-**Status**: Production Ready (v3.2.1) - All Development Phases Complete
+**Status**: Production ready, maintenance mode - all development phases complete
 
 ## Development Phases
 
 See `ROADMAP_PHASES.md` for the detailed development roadmap with phases:
+
 - Phase 0: Critical Updates (Electron v40) ✅ COMPLETE
 - Phase 1: Code Quality & Stability ✅ COMPLETE
 - Phase 2: Testing Foundation ✅ COMPLETE
