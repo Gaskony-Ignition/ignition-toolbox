@@ -1,0 +1,85 @@
+{
+  "name": "Motor",
+  "tagType": "UdtType",
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": "[default]PLC1/Motors/M101"
+    },
+    "HighSpeedSetpoint": {
+      "dataType": "Float4",
+      "value": 1800.0
+    }
+  },
+  "tags": [
+    {
+      "name": "running",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Running",
+      "documentation": "Motor running status feedback.",
+      "readOnly": true,
+      "historyEnabled": false
+    },
+    {
+      "name": "start",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Start",
+      "documentation": "Motor start command.",
+      "readOnly": false,
+      "historyEnabled": false
+    },
+    {
+      "name": "speed",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Float4",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Speed",
+      "engUnit": "RPM",
+      "engLow": 0.0,
+      "engHigh": 3600.0,
+      "documentation": "Motor shaft speed feedback.",
+      "readOnly": true,
+      "historyEnabled": false,
+      "alarms": [
+        {
+          "name": "HiHi",
+          "mode": "AboveValue",
+          "priority": "High",
+          "setpointA": "{HighSpeedSetpoint}",
+          "deadband": 25.0,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "name": "fault",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Fault",
+      "documentation": "Motor drive/starter fault status.",
+      "readOnly": true,
+      "historyEnabled": false,
+      "alarms": [
+        {
+          "name": "Fault",
+          "mode": "BooleanTrue",
+          "priority": "High",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

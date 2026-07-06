@@ -1,0 +1,207 @@
+{
+  "id": "valve",
+  "label": "Valve",
+  "description": "On/off or modulating valve with status/command/config folder structure: open/closed limit switches, optional analog position feedback, an optional travel-time fault, and a config folder holding the travel-time setpoint.",
+  "type_name": "Valve",
+  "questionnaire": [
+    {
+      "name": "opc_server",
+      "type": "string",
+      "required": false,
+      "default": "Ignition OPC UA Server",
+      "description": "OPC UA connection name configured in the Gateway."
+    },
+    {
+      "name": "device_path",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "description": "OPC device path root for this valve instance, e.g. '[default]PLC1/Valves/V101'."
+    },
+    {
+      "name": "has_position_feedback",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Does the valve report an analog position (0-100%) feedback signal, e.g. a modulating actuator?"
+    },
+    {
+      "name": "position_eng_unit",
+      "type": "string",
+      "required": false,
+      "default": "%",
+      "description": "Engineering unit for the position member (used only if has_position_feedback)."
+    },
+    {
+      "name": "position_eng_low",
+      "type": "float",
+      "required": false,
+      "default": 0.0,
+      "description": "Position member engineering range low (used only if has_position_feedback)."
+    },
+    {
+      "name": "position_eng_high",
+      "type": "float",
+      "required": false,
+      "default": 100.0,
+      "description": "Position member engineering range high (used only if has_position_feedback)."
+    },
+    {
+      "name": "enable_position_history",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable tag history on the position member. Deliberate opt-in per the history convention."
+    },
+    {
+      "name": "position_history_deadband",
+      "type": "float",
+      "required": false,
+      "default": 1.0,
+      "description": "Historical deadband for position, in engineering units (used only if enable_position_history)."
+    },
+    {
+      "name": "has_fault_detection",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Does the actuator report a travel-time/mismatch fault (commanded but neither limit switch made)?"
+    },
+    {
+      "name": "travel_time_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 10.0,
+      "description": "Expected full-travel time in seconds, held as a tunable config tag (not a UDT parameter, so it can be adjusted at runtime without editing the type)."
+    }
+  ],
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": { "$ref": "opc_server" }
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": { "$ref": "device_path" }
+    }
+  },
+  "tags": [
+    {
+      "name": "status",
+      "tagType": "Folder",
+      "documentation": "Valve status feedback signals.",
+      "tags": [
+        {
+          "name": "open",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Open",
+          "documentation": "Valve fully-open limit switch.",
+          "readOnly": true,
+          "historyEnabled": false
+        },
+        {
+          "name": "closed",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Closed",
+          "documentation": "Valve fully-closed limit switch.",
+          "readOnly": true,
+          "historyEnabled": false
+        },
+        {
+          "$if": "has_position_feedback",
+          "name": "position",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Float4",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Position",
+          "engUnit": { "$ref": "position_eng_unit" },
+          "engLow": { "$ref": "position_eng_low" },
+          "engHigh": { "$ref": "position_eng_high" },
+          "documentation": "Valve actuator position feedback.",
+          "readOnly": true,
+          "historyEnabled": { "$ref": "enable_position_history" },
+          "historyProvider": { "$if": "enable_position_history", "$then": "default" },
+          "historicalDeadband": {
+            "$if": "enable_position_history",
+            "$then": { "$ref": "position_history_deadband" }
+          },
+          "sampleMode": { "$if": "enable_position_history", "$then": "OnChange" }
+        },
+        {
+          "$if": "has_fault_detection",
+          "name": "fault",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Fault",
+          "documentation": "Valve travel-time/mismatch fault: commanded but neither limit switch made within the travel-time setpoint.",
+          "readOnly": true,
+          "historyEnabled": false,
+          "alarms": [
+            {
+              "name": "Fault",
+              "mode": "BooleanTrue",
+              "priority": "High",
+              "enabled": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command",
+      "tagType": "Folder",
+      "documentation": "Valve operator/control commands.",
+      "tags": [
+        {
+          "name": "openCmd",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/OpenCmd",
+          "documentation": "Command to drive the valve open.",
+          "readOnly": false,
+          "historyEnabled": false
+        },
+        {
+          "name": "closeCmd",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/CloseCmd",
+          "documentation": "Command to drive the valve closed.",
+          "readOnly": false,
+          "historyEnabled": false
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "tagType": "Folder",
+      "documentation": "Valve tuning/configuration values, adjustable at runtime.",
+      "tags": [
+        {
+          "name": "travelTimeSetpoint",
+          "tagType": "AtomicTag",
+          "valueSource": "memory",
+          "dataType": "Float4",
+          "value": { "$ref": "travel_time_setpoint" },
+          "engUnit": "s",
+          "documentation": "Expected full-travel time; used by the fault-detection logic upstream of this tag.",
+          "readOnly": false,
+          "historyEnabled": false
+        }
+      ]
+    }
+  ]
+}

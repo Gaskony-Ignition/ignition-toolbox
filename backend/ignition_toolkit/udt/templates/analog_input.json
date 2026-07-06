@@ -1,0 +1,239 @@
+{
+  "id": "analog_input",
+  "label": "Analog Input",
+  "description": "Generic scaled analog process value (level, pressure, temperature, flow, ...) with the full ISA-18.2-aligned HiHi/Hi/Lo/LoLo alarm ladder, each independently enabled with its own setpoint and mandatory deadband.",
+  "type_name": "AnalogInput",
+  "questionnaire": [
+    {
+      "name": "opc_server",
+      "type": "string",
+      "required": false,
+      "default": "Ignition OPC UA Server",
+      "description": "OPC UA connection name configured in the Gateway."
+    },
+    {
+      "name": "device_path",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "description": "OPC device path root for this analog input instance, e.g. '[default]PLC1/AI/LT101'."
+    },
+    {
+      "name": "eng_unit",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "description": "Engineering unit for the process value, e.g. 'kPa', 'degC', 'm3/h'."
+    },
+    {
+      "name": "eng_low",
+      "type": "float",
+      "required": false,
+      "default": 0.0,
+      "description": "Engineering range low."
+    },
+    {
+      "name": "eng_high",
+      "type": "float",
+      "required": false,
+      "default": 100.0,
+      "description": "Engineering range high."
+    },
+    {
+      "name": "value_deadband",
+      "type": "float",
+      "required": false,
+      "default": 0.1,
+      "description": "Tag-level (scan/update) deadband in engineering units — separate from any alarm deadband."
+    },
+    {
+      "name": "enable_hihi_alarm",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable the HiHi (High priority) alarm."
+    },
+    {
+      "name": "hihi_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 90.0,
+      "description": "HiHi alarm setpoint, in engineering units (used only if enable_hihi_alarm)."
+    },
+    {
+      "name": "hihi_deadband",
+      "type": "float",
+      "required": false,
+      "default": 5.0,
+      "description": "HiHi alarm deadband, in engineering units (used only if enable_hihi_alarm)."
+    },
+    {
+      "name": "enable_hi_alarm",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable the Hi (Medium priority) alarm."
+    },
+    {
+      "name": "hi_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 75.0,
+      "description": "Hi alarm setpoint, in engineering units (used only if enable_hi_alarm)."
+    },
+    {
+      "name": "hi_deadband",
+      "type": "float",
+      "required": false,
+      "default": 5.0,
+      "description": "Hi alarm deadband, in engineering units (used only if enable_hi_alarm)."
+    },
+    {
+      "name": "enable_lo_alarm",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable the Lo (Medium priority) alarm."
+    },
+    {
+      "name": "lo_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 25.0,
+      "description": "Lo alarm setpoint, in engineering units (used only if enable_lo_alarm)."
+    },
+    {
+      "name": "lo_deadband",
+      "type": "float",
+      "required": false,
+      "default": 5.0,
+      "description": "Lo alarm deadband, in engineering units (used only if enable_lo_alarm)."
+    },
+    {
+      "name": "enable_lolo_alarm",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable the LoLo (High priority) alarm."
+    },
+    {
+      "name": "lolo_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 10.0,
+      "description": "LoLo alarm setpoint, in engineering units (used only if enable_lolo_alarm)."
+    },
+    {
+      "name": "lolo_deadband",
+      "type": "float",
+      "required": false,
+      "default": 5.0,
+      "description": "LoLo alarm deadband, in engineering units (used only if enable_lolo_alarm)."
+    },
+    {
+      "name": "enable_history",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable tag history on the process value. Deliberate opt-in per the history convention."
+    },
+    {
+      "name": "history_deadband",
+      "type": "float",
+      "required": false,
+      "default": 0.5,
+      "description": "Historical deadband, in engineering units (used only if enable_history)."
+    }
+  ],
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": { "$ref": "opc_server" }
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": { "$ref": "device_path" }
+    },
+    "HiHiSetpoint": {
+      "$if": "enable_hihi_alarm",
+      "dataType": "Float4",
+      "value": { "$ref": "hihi_setpoint" }
+    },
+    "HiSetpoint": {
+      "$if": "enable_hi_alarm",
+      "dataType": "Float4",
+      "value": { "$ref": "hi_setpoint" }
+    },
+    "LoSetpoint": {
+      "$if": "enable_lo_alarm",
+      "dataType": "Float4",
+      "value": { "$ref": "lo_setpoint" }
+    },
+    "LoLoSetpoint": {
+      "$if": "enable_lolo_alarm",
+      "dataType": "Float4",
+      "value": { "$ref": "lolo_setpoint" }
+    }
+  },
+  "tags": [
+    {
+      "name": "value",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Float4",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Value",
+      "engUnit": { "$ref": "eng_unit" },
+      "engLow": { "$ref": "eng_low" },
+      "engHigh": { "$ref": "eng_high" },
+      "deadband": { "$ref": "value_deadband" },
+      "documentation": "Scaled analog process value.",
+      "readOnly": true,
+      "historyEnabled": { "$ref": "enable_history" },
+      "historyProvider": { "$if": "enable_history", "$then": "default" },
+      "historicalDeadband": {
+        "$if": "enable_history",
+        "$then": { "$ref": "history_deadband" }
+      },
+      "sampleMode": { "$if": "enable_history", "$then": "OnChange" },
+      "alarms": [
+        {
+          "$if": "enable_hihi_alarm",
+          "name": "HiHi",
+          "mode": "AboveValue",
+          "priority": "High",
+          "setpointA": "{HiHiSetpoint}",
+          "deadband": { "$ref": "hihi_deadband" },
+          "enabled": true
+        },
+        {
+          "$if": "enable_hi_alarm",
+          "name": "Hi",
+          "mode": "AboveValue",
+          "priority": "Medium",
+          "setpointA": "{HiSetpoint}",
+          "deadband": { "$ref": "hi_deadband" },
+          "enabled": true
+        },
+        {
+          "$if": "enable_lo_alarm",
+          "name": "Lo",
+          "mode": "BelowValue",
+          "priority": "Medium",
+          "setpointA": "{LoSetpoint}",
+          "deadband": { "$ref": "lo_deadband" },
+          "enabled": true
+        },
+        {
+          "$if": "enable_lolo_alarm",
+          "name": "LoLo",
+          "mode": "BelowValue",
+          "priority": "High",
+          "setpointA": "{LoLoSetpoint}",
+          "deadband": { "$ref": "lolo_deadband" },
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

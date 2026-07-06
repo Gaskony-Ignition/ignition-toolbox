@@ -1,0 +1,175 @@
+{
+  "id": "motor",
+  "label": "Motor",
+  "description": "Rotating equipment (motor/pump/fan) with run/stop command, running feedback, optional analog speed feedback with a HiHi overspeed alarm, and an optional drive fault input.",
+  "type_name": "Motor",
+  "questionnaire": [
+    {
+      "name": "opc_server",
+      "type": "string",
+      "required": false,
+      "default": "Ignition OPC UA Server",
+      "description": "OPC UA connection name configured in the Gateway."
+    },
+    {
+      "name": "device_path",
+      "type": "string",
+      "required": true,
+      "default": null,
+      "description": "OPC device path root for this motor instance, e.g. '[default]PLC1/Motors/M101'."
+    },
+    {
+      "name": "has_speed_feedback",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Does the motor report an analog speed/RPM feedback signal?"
+    },
+    {
+      "name": "speed_eng_unit",
+      "type": "string",
+      "required": false,
+      "default": "RPM",
+      "description": "Engineering unit for the speed member (used only if has_speed_feedback)."
+    },
+    {
+      "name": "speed_eng_low",
+      "type": "float",
+      "required": false,
+      "default": 0.0,
+      "description": "Speed member engineering range low (used only if has_speed_feedback)."
+    },
+    {
+      "name": "speed_eng_high",
+      "type": "float",
+      "required": false,
+      "default": 3600.0,
+      "description": "Speed member engineering range high (used only if has_speed_feedback)."
+    },
+    {
+      "name": "high_speed_setpoint",
+      "type": "float",
+      "required": false,
+      "default": 1800.0,
+      "description": "HiHi (overspeed) alarm setpoint for speed, exposed as a UDT parameter so it can be tuned per instance (used only if has_speed_feedback)."
+    },
+    {
+      "name": "speed_alarm_deadband",
+      "type": "float",
+      "required": false,
+      "default": 25.0,
+      "description": "Deadband for the overspeed alarm, in the same engineering units as speed (used only if has_speed_feedback)."
+    },
+    {
+      "name": "enable_speed_history",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable tag history on the speed member. Deliberate opt-in per the history convention — not enabled by default."
+    },
+    {
+      "name": "speed_history_deadband",
+      "type": "float",
+      "required": false,
+      "default": 1.0,
+      "description": "Historical deadband for speed, in RPM (used only if enable_speed_history)."
+    },
+    {
+      "name": "has_fault_input",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Does the motor drive/starter report a fault/trip status?"
+    }
+  ],
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": { "$ref": "opc_server" }
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": { "$ref": "device_path" }
+    },
+    "HighSpeedSetpoint": {
+      "$if": "has_speed_feedback",
+      "dataType": "Float4",
+      "value": { "$ref": "high_speed_setpoint" }
+    }
+  },
+  "tags": [
+    {
+      "name": "running",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Running",
+      "documentation": "Motor running status feedback.",
+      "readOnly": true,
+      "historyEnabled": false
+    },
+    {
+      "name": "start",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Start",
+      "documentation": "Motor start command.",
+      "readOnly": false,
+      "historyEnabled": false
+    },
+    {
+      "$if": "has_speed_feedback",
+      "name": "speed",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Float4",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Speed",
+      "engUnit": { "$ref": "speed_eng_unit" },
+      "engLow": { "$ref": "speed_eng_low" },
+      "engHigh": { "$ref": "speed_eng_high" },
+      "documentation": "Motor shaft speed feedback.",
+      "readOnly": true,
+      "historyEnabled": { "$ref": "enable_speed_history" },
+      "historyProvider": { "$if": "enable_speed_history", "$then": "default" },
+      "historicalDeadband": {
+        "$if": "enable_speed_history",
+        "$then": { "$ref": "speed_history_deadband" }
+      },
+      "sampleMode": { "$if": "enable_speed_history", "$then": "OnChange" },
+      "alarms": [
+        {
+          "name": "HiHi",
+          "mode": "AboveValue",
+          "priority": "High",
+          "setpointA": "{HighSpeedSetpoint}",
+          "deadband": { "$ref": "speed_alarm_deadband" },
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "$if": "has_fault_input",
+      "name": "fault",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Fault",
+      "documentation": "Motor drive/starter fault status.",
+      "readOnly": true,
+      "historyEnabled": false,
+      "alarms": [
+        {
+          "name": "Fault",
+          "mode": "BooleanTrue",
+          "priority": "High",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}
