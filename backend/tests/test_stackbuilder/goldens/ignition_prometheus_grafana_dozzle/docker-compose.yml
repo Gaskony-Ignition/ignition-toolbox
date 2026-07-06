@@ -1,0 +1,70 @@
+name: iiot-stack
+services:
+  ignition:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8088:8088
+    - 8043:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-data:/usr/local/bin/ignition/data
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: iiot-stack-prometheus
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 9090:9090
+    environment:
+      TZ: UTC
+    volumes:
+    - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - prometheus-data:/prometheus
+  grafana:
+    image: grafana/grafana:latest
+    container_name: iiot-stack-grafana
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      TZ: UTC
+    volumes:
+    - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: iiot-stack-dozzle
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8888:8080
+    environment:
+      TZ: UTC
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  grafana-data: null
+  ignition-data: null
+  prometheus-data: null

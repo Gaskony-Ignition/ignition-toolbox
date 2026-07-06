@@ -1,0 +1,63 @@
+name: iiot-stack
+services:
+  ignition-primary:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition-primary
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8088:8088
+    - 8043:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-primary-data:/usr/local/bin/ignition/data
+  ignition-secondary:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition-secondary
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8089:8088
+    - 8044:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-secondary-data:/usr/local/bin/ignition/data
+  mariadb:
+    image: mariadb:latest
+    container_name: iiot-stack-mariadb
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: iiot_db
+      MYSQL_USER: mariadb
+      MYSQL_PASSWORD: mariadb
+      TZ: UTC
+    volumes:
+    - mariadb-data:/var/lib/mysql
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  ignition-primary-data: null
+  ignition-secondary-data: null
+  mariadb-data: null

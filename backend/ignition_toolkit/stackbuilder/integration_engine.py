@@ -483,15 +483,21 @@ class IntegrationEngine:
         self, providers: list[str], selected_services: list[str], instances: list[dict]
     ) -> dict:
         """Detect visualization (Grafana) datasource integrations"""
-        integration: dict[str, Any] = {
-            "provider": providers[0] if providers else None,
-            "datasources": [],
-        }
+        integration: dict[str, Any] = {"provider": None, "datasources": []}
 
-        if not integration["provider"]:
+        if not providers:
             return integration
 
-        provider_caps = self.service_capabilities.get(integration["provider"], {})
+        # `providers` holds app_ids (e.g. "grafana"); resolve the actual instance_name
+        # so downstream config-file paths and hostnames use the real container name,
+        # not the catalog id (which breaks whenever the instance isn't named "grafana").
+        provider_app_id = providers[0]
+        provider_instance = next((i for i in instances if i["app_id"] == provider_app_id), None)
+        integration["provider"] = (
+            provider_instance.get("instance_name") if provider_instance else provider_app_id
+        )
+
+        provider_caps = self.service_capabilities.get(provider_app_id, {})
         provider_integration = provider_caps.get("integrations", {}).get("visualization", {})
         datasource_types = provider_integration.get("datasource_types", {})
 
@@ -513,13 +519,20 @@ class IntegrationEngine:
         self, providers: list[str], selected_services: list[str], instances: list[dict]
     ) -> dict:
         """Detect email testing (MailHog) integrations"""
-        integration: dict[str, Any] = {
-            "provider": providers[0] if providers else None,
-            "clients": [],
-        }
+        integration: dict[str, Any] = {"provider": None, "clients": []}
 
-        if not integration["provider"]:
+        if not providers:
             return integration
+
+        # `providers` holds app_ids (e.g. "mailhog"); resolve the actual instance_name
+        # so the SMTP host env vars generated for clients point at the real container
+        # name, not the catalog id (which breaks whenever the instance isn't named
+        # "mailhog").
+        provider_app_id = providers[0]
+        provider_instance = next((i for i in instances if i["app_id"] == provider_app_id), None)
+        integration["provider"] = (
+            provider_instance.get("instance_name") if provider_instance else provider_app_id
+        )
 
         for service_id in selected_services:
             service_caps = self.service_capabilities.get(service_id, {})

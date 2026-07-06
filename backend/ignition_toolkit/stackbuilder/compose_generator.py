@@ -25,6 +25,7 @@ from ignition_toolkit.stackbuilder.config_generators import (
     generate_traefik_dynamic_config,
     generate_traefik_static_config,
 )
+from ignition_toolkit.stackbuilder.exceptions import IntegrationConflictError
 from ignition_toolkit.stackbuilder.ignition_db_registration import (
     generate_ignition_db_readme_section,
     generate_ignition_db_registration_script,
@@ -140,6 +141,17 @@ class ComposeGenerator:
         ]
         integration_results = self.engine.detect_integrations(instances_for_detection)
         integrations = integration_results.get("integrations", {})
+
+        # Fail fast on hard (error-level) mutual-exclusivity conflicts, e.g. two
+        # reverse proxies selected at once. Warning-level conflicts (e.g. multiple
+        # OAuth providers) are allowed through - they're informational only.
+        error_conflicts = [
+            c
+            for c in integration_results.get("conflicts", [])
+            if c.get("level", "error") == "error"
+        ]
+        if error_conflicts:
+            raise IntegrationConflictError(error_conflicts)
 
         # Build docker compose structure
         stack_name = global_settings.stack_name
@@ -471,28 +483,37 @@ class ComposeGenerator:
         # Traefik should start before web services
         # (but we don't add dependency from services TO traefik, traefik handles late starts)
 
-        return list(set(dependencies))  # Remove duplicates
+        # Deduplicate while preserving insertion order. A plain `set()` here previously
+        # made `depends_on` key order vary run-to-run (Python randomises str hashing
+        # per process), producing a different-but-equivalent docker-compose.yml on every
+        # generation - harmless to Compose, but it broke reproducibility/diffability of
+        # generated output. See docs/plans/stackbuilder-test-strategy.md (T4).
+        return list(dict.fromkeys(dependencies))
 
     def _get_host_port(self, app_id: str, config: dict, port_mapping: str) -> str:
-        """Get host port for a service based on config and app type"""
-        container_port = port_mapping.split(":")[1]
+        """
+        Get host port for a service based on config and app type.
+
+        Resolves the configurable option that controls this port mapping by
+        matching the mapping's default host port against each of the app's
+        number-typed `configurable_options` defaults (e.g. "http_port" defaults
+        to 8088, matching default port mapping "8088:8088"). This is data-driven
+        off catalog.json so every service's port options are honoured, not just
+        a hardcoded subset of app IDs.
+        """
         default_port = port_mapping.split(":")[0]
 
-        if app_id == "ignition":
-            if container_port == "8088":
-                return str(config.get("http_port", default_port))
-            elif container_port == "8043":
-                return str(config.get("https_port", default_port))
-        elif app_id == "traefik":
-            if container_port == "80":
-                return str(config.get("http_port", 80))
-            elif container_port == "443":
-                return str(config.get("https_port", 443))
-            elif container_port == "8080":
-                return str(config.get("dashboard_port", 8080))
-        elif app_id == "keycloak":
-            return str(config.get("port", default_port))
+        app = self.catalog.get_application_by_id(app_id)
+        configurable_options = app.get("configurable_options", {}) if app else {}
 
+        for option_name, option_schema in configurable_options.items():
+            if option_schema.get("type") != "number":
+                continue
+            if str(option_schema.get("default")) == default_port:
+                return str(config.get(option_name, default_port))
+
+        # Fall back to the generic "port" option for single-port services
+        # whose catalog entry doesn't define a number option (or none matched).
         return str(config.get("port", default_port))
 
     def _apply_app_config(

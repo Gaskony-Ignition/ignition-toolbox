@@ -197,6 +197,26 @@ class TestStackGeneration:
         assert "ignition-gateway" in data["docker_compose"]
         assert "postgres-db" in data["docker_compose"]
 
+    def test_generate_conflicting_stack_returns_422(self, sample_traefik_instance):
+        """A hard mutual-exclusivity conflict must surface as a clean 422, not a 500.
+
+        ComposeGenerator raises IntegrationConflictError for error-level
+        conflicts (e.g. two reverse proxies); the router maps StackBuilderError
+        to HTTP 422 so the UI can show a validation message.
+        """
+        nginx_instance = {
+            "app_id": "nginx-proxy-manager",
+            "instance_name": "nginx",
+            "config": {},
+        }
+        stack_config = {
+            "instances": [sample_traefik_instance, nginx_instance],
+            "global_settings": {"stack_name": "conflict-stack"},
+        }
+        response = client.post("/api/stackbuilder/generate", json=stack_config)
+        assert response.status_code == 422
+        assert "conflict" in response.json()["detail"].lower()
+
     def test_generate_stack_with_traefik(
         self, sample_ignition_instance, sample_traefik_instance
     ):

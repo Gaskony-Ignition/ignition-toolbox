@@ -1,0 +1,42 @@
+name: iiot-stack
+services:
+  ignition:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8088:8088
+    - 8043:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-data:/usr/local/bin/ignition/data
+  postgres:
+    image: postgres:latest
+    container_name: iiot-stack-postgres
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_DB: iiot_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: UTC
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  ignition-data: null
+  postgres-data: null

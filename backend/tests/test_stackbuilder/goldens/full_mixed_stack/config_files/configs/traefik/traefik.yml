@@ -1,0 +1,17 @@
+api:
+  dashboard: true
+  insecure: false
+entryPoints:
+  web:
+    address: :80
+  traefik:
+    address: :8080
+providers:
+  docker:
+    exposedByDefault: false
+    network: iiot-stack-network
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+log:
+  level: INFO

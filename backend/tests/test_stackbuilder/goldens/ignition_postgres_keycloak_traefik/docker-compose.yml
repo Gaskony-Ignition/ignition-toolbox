@@ -1,0 +1,91 @@
+name: iiot-stack
+services:
+  ignition:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8088:8088
+    - 8043:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-data:/usr/local/bin/ignition/data
+    labels:
+    - traefik.enable=true
+    - traefik.http.routers.ignition.rule=Host(`ignition.localhost`)
+    - traefik.http.routers.ignition.entrypoints=web
+    - traefik.http.services.ignition.loadbalancer.server.port=8088
+  postgres:
+    image: postgres:latest
+    container_name: iiot-stack-postgres
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_DB: iiot_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: UTC
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: iiot-stack-keycloak
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8180:8080
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      TZ: UTC
+    volumes:
+    - keycloak-data:/opt/keycloak/data
+    command: start-dev
+    labels:
+    - traefik.enable=true
+    - traefik.http.routers.keycloak.rule=Host(`keycloak.localhost`)
+    - traefik.http.routers.keycloak.entrypoints=web
+    - traefik.http.services.keycloak.loadbalancer.server.port=8080
+    depends_on:
+      postgres:
+        condition: service_started
+  traefik:
+    image: traefik:latest
+    container_name: iiot-stack-traefik
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 80:80
+    - 443:443
+    - 8080:8080
+    environment:
+      TZ: UTC
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - ./configs/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    - ./configs/traefik/dynamic:/etc/traefik/dynamic:ro
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  ignition-data: null
+  keycloak-data: null
+  postgres-data: null

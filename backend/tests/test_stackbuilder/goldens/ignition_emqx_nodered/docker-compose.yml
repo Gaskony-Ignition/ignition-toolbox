@@ -1,0 +1,63 @@
+name: iiot-stack
+services:
+  ignition:
+    image: inductiveautomation/ignition:latest
+    container_name: iiot-stack-ignition
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8088:8088
+    - 8043:8043
+    environment:
+      ACCEPT_IGNITION_EULA: Y
+      GATEWAY_ADMIN_USERNAME: admin
+      GATEWAY_ADMIN_PASSWORD: password
+      IGNITION_EDITION: standard
+      IGNITION_MEMORY_MAX: 2048m
+      IGNITION_MEMORY_INIT: 512m
+      TZ: UTC
+    volumes:
+    - ignition-data:/usr/local/bin/ignition/data
+    depends_on:
+      emqx:
+        condition: service_started
+  emqx:
+    image: emqx/emqx:latest
+    container_name: iiot-stack-emqx
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 1883:1883
+    - 8083:8083
+    - 8084:8084
+    - 8883:8883
+    - 18083:18083
+    environment:
+      EMQX_NAME: emqx
+      EMQX_HOST: 127.0.0.1
+      TZ: UTC
+    volumes:
+    - emqx-data:/opt/emqx/data
+    - emqx-log:/opt/emqx/log
+  nodered:
+    image: nodered/node-red:latest
+    container_name: iiot-stack-nodered
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 1880:1880
+    environment:
+      TZ: UTC
+    volumes:
+    - nodered-data:/data
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  emqx-data: null
+  emqx-log: null
+  ignition-data: null
+  nodered-data: null

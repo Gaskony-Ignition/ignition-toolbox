@@ -33,6 +33,7 @@ from ignition_toolkit.stackbuilder.compose_generator import (
     GlobalSettings,
     IntegrationSettings,
 )
+from ignition_toolkit.stackbuilder.exceptions import StackBuilderError
 from ignition_toolkit.stackbuilder.integration_engine import get_integration_engine
 from ignition_toolkit.stackbuilder.stack_runner import get_stack_runner
 from ignition_toolkit.storage.database import get_database
@@ -246,6 +247,11 @@ async def generate_stack(stack_config: StackConfig):
             "config_files": result["config_files"],
         }
 
+    except StackBuilderError as e:
+        # Validation problem with the requested stack (e.g. two reverse
+        # proxies selected) - the client's config is at fault, not the server.
+        logger.info(f"Rejected invalid stack configuration: {e}")
+        raise HTTPException(status_code=422, detail=e.message)
     except Exception as e:
         logger.error(f"Error generating stack: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -269,6 +275,9 @@ async def download_stack(stack_config: StackConfig):
             },
         )
 
+    except StackBuilderError as e:
+        logger.info(f"Rejected invalid stack configuration: {e}")
+        raise HTTPException(status_code=422, detail=e.message)
     except Exception as e:
         logger.error(f"Error downloading stack: {e}")
         raise HTTPException(status_code=500, detail=str(e))

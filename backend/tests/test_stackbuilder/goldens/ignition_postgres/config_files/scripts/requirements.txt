@@ -1,0 +1,2 @@
+# Requirements for Ignition database auto-registration script
+requests>=2.31.0

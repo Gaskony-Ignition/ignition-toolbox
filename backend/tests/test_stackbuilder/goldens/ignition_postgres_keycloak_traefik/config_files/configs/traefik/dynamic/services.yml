@@ -1,0 +1,21 @@
+http:
+  routers:
+    ignition-router:
+      rule: Host(`ignition.localhost`)
+      service: ignition
+      entryPoints:
+      - web
+    keycloak-router:
+      rule: Host(`keycloak.localhost`)
+      service: keycloak
+      entryPoints:
+      - web
+  services:
+    ignition:
+      loadBalancer:
+        servers:
+        - url: http://ignition:8088
+    keycloak:
+      loadBalancer:
+        servers:
+        - url: http://keycloak:8080

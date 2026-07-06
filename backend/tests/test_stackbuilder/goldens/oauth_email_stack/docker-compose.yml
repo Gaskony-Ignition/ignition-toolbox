@@ -1,0 +1,95 @@
+name: iiot-stack
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: iiot-stack-keycloak
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 8180:8080
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      TZ: UTC
+      KC_SMTP_HOST: mailhog
+      KC_SMTP_PORT: '1025'
+      KC_SMTP_FROM: noreply@iiot.local
+    volumes:
+    - keycloak-data:/opt/keycloak/data
+    - ./configs/keycloak/import:/opt/keycloak/data/import:ro
+    command: start-dev --import-realm
+    depends_on:
+      postgres:
+        condition: service_started
+  grafana:
+    image: grafana/grafana:latest
+    container_name: iiot-stack-grafana
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      TZ: UTC
+      GF_AUTH_GENERIC_OAUTH_ENABLED: 'true'
+      GF_AUTH_GENERIC_OAUTH_NAME: Keycloak
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: grafana
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: NORMALIZED_SECRET
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://keycloak:8080/realms/iiot/protocol/openid-connect/auth
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://keycloak:8080/realms/iiot/protocol/openid-connect/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: http://keycloak:8080/realms/iiot/protocol/openid-connect/userinfo
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: 'true'
+      GF_SMTP_ENABLED: 'true'
+      GF_SMTP_HOST: mailhog:1025
+      GF_SMTP_FROM_ADDRESS: noreply@iiot.local
+      GF_SMTP_FROM_NAME: Grafana
+      GF_SMTP_SKIP_VERIFY: 'true'
+    volumes:
+    - grafana-data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_started
+      keycloak:
+        condition: service_started
+  postgres:
+    image: postgres:latest
+    container_name: iiot-stack-postgres
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_DB: iiot_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: UTC
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: iiot-stack-mailhog
+    networks:
+    - iiot-stack-network
+    restart: unless-stopped
+    ports:
+    - 1025:1025
+    - 8025:8025
+    environment:
+      TZ: UTC
+    volumes: []
+networks:
+  iiot-stack-network:
+    driver: bridge
+volumes:
+  grafana-data: null
+  keycloak-data: null
+  postgres-data: null
