@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "published_at": "2026-02-23T00:00:00Z",
+  "version": "1.1.0",
+  "published_at": "2026-07-06T10:34:05Z",
   "repository": "https://github.com/Gaskony-Ignition/ignition-toolbox",
   "playbooks": {
     "gateway/module_install": {
@@ -12,9 +12,16 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_install.yaml",
       "checksum": "sha256:6681bf0b333acb8bef4698646e8bc6f2100863019fdf7efd5f7e2f11dd99ef79",
       "size_bytes": 19842,
-      "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
+      "dependencies": [
+        "gateway/gateway_login",
+        "gateway/gateway_restart"
+      ],
       "author": "Nigel G",
-      "tags": ["module", "install", "gateway"],
+      "tags": [
+        "module",
+        "install",
+        "gateway"
+      ],
       "group": "Gateway (Base Playbooks)",
       "release_notes": "Fix: Add on_failure: continue to screenshot steps to prevent browser crashes from aborting install"
     },
@@ -29,7 +36,10 @@
       "size_bytes": 12734,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["gateway", "restart"],
+      "tags": [
+        "gateway",
+        "restart"
+      ],
       "group": "Gateway (Base Playbooks)",
       "release_notes": "Fix: Remove broad banner selector that clicked trial banner instead of restart banner; wait up to 20s for restart banner to appear after module changes"
     },
@@ -44,9 +54,13 @@
       "size_bytes": 2608,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["gateway", "login", "authentication"],
+      "tags": [
+        "gateway",
+        "login",
+        "authentication"
+      ],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: removed unsupported timeout params from browser.navigate/screenshot, changed screenshot path→name, moved retry_count from parameters to step level"
+      "release_notes": "Fix: removed unsupported timeout params from browser.navigate/screenshot, changed screenshot path\u2192name, moved retry_count from parameters to step level"
     },
     "gateway/module_uninstall": {
       "version": "4.5",
@@ -57,9 +71,16 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_uninstall.yaml",
       "checksum": "sha256:ad9c405d0d0585bc3a9c1983add1c1535d91dd32761faea3c7caa62038390c5a",
       "size_bytes": 8622,
-      "dependencies": ["gateway/gateway_login", "gateway/gateway_restart"],
+      "dependencies": [
+        "gateway/gateway_login",
+        "gateway/gateway_restart"
+      ],
       "author": "Nigel G",
-      "tags": ["module", "uninstall", "gateway"],
+      "tags": [
+        "module",
+        "uninstall",
+        "gateway"
+      ],
       "group": "Gateway (Base Playbooks)",
       "release_notes": "Fix: More options button selector for Ignition 8.3.3 (data-label=\"show-more-button\")"
     },
@@ -72,11 +93,17 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/backup_gateway.yaml",
       "checksum": "sha256:4e93079730e9f8cb153df0b91c9fedc21a9fc1799c2ba879e06b6954fc112a64",
       "size_bytes": 2113,
-      "dependencies": ["gateway/gateway_login"],
+      "dependencies": [
+        "gateway/gateway_login"
+      ],
       "author": "Nigel G",
-      "tags": ["gateway", "backup", "maintenance"],
+      "tags": [
+        "gateway",
+        "backup",
+        "maintenance"
+      ],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Initial library release — standalone gateway backup playbook"
+      "release_notes": "Initial library release \u2014 standalone gateway backup playbook"
     },
     "gateway/reset_trial": {
       "version": "3.1",
@@ -87,11 +114,17 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/reset_trial.yaml",
       "checksum": "sha256:bfe8c9d996c9851b99624b729436b6881bc1c94fa70ad14753facac1393168bf",
       "size_bytes": 2815,
-      "dependencies": ["gateway/gateway_login"],
+      "dependencies": [
+        "gateway/gateway_login"
+      ],
       "author": "Nigel G",
-      "tags": ["gateway", "trial", "license"],
+      "tags": [
+        "gateway",
+        "trial",
+        "license"
+      ],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: condition→exists in browser.verify, screenshot path→name parameter"
+      "release_notes": "Fix: condition\u2192exists in browser.verify, screenshot path\u2192name parameter"
     },
     "gateway/api_key_setup": {
       "version": "2.1",
@@ -102,11 +135,18 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/api_key_setup.yaml",
       "checksum": "sha256:6629af3dba51eccf451dee53dc44aa37e77c2036cb4f7d39759ce60d50143e49",
       "size_bytes": 5219,
-      "dependencies": ["gateway/gateway_login"],
+      "dependencies": [
+        "gateway/gateway_login"
+      ],
       "author": "Nigel G",
-      "tags": ["gateway", "api", "api-key", "setup"],
+      "tags": [
+        "gateway",
+        "api",
+        "api-key",
+        "setup"
+      ],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: screenshot path→name parameter, removed unsupported timeout from browser.navigate"
+      "release_notes": "Fix: screenshot path\u2192name parameter, removed unsupported timeout from browser.navigate"
     },
     "gateway/module_upgrade": {
       "version": "4.1",
@@ -117,11 +157,17 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/gateway/module_upgrade.yaml",
       "checksum": "sha256:55752273b944ce654adfc91250241ced00795e5dc0bcd58b5ea5a1a449cc7f77",
       "size_bytes": 6347,
-      "dependencies": ["gateway/module_install", "gateway/module_uninstall"],
+      "dependencies": [
+        "gateway/module_install",
+        "gateway/module_uninstall"
+      ],
       "author": "Nigel G",
-      "tags": ["module", "upgrade"],
+      "tags": [
+        "module",
+        "upgrade"
+      ],
       "group": "Gateway (Base Playbooks)",
-      "release_notes": "Fix: wait_for→wait_until in browser.navigate, removed unsupported timeout param"
+      "release_notes": "Fix: wait_for\u2192wait_until in browser.navigate, removed unsupported timeout param"
     },
     "perspective/test_buttons": {
       "version": "1.1",
@@ -133,9 +179,14 @@
       "size_bytes": 13861,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "buttons", "ui"],
+      "tags": [
+        "perspective",
+        "testing",
+        "buttons",
+        "ui"
+      ],
       "group": "Perspective Testing",
-      "release_notes": "Fix: code→script parameter in utility.python steps"
+      "release_notes": "Fix: code\u2192script parameter in utility.python steps"
     },
     "perspective/test_discovery_debug": {
       "version": "1.0",
@@ -147,7 +198,12 @@
       "size_bytes": 2346,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "discovery", "debug"],
+      "tags": [
+        "perspective",
+        "testing",
+        "discovery",
+        "debug"
+      ],
       "group": "Perspective Testing",
       "release_notes": "Initial library release - discovery debug playbook"
     },
@@ -161,9 +217,15 @@
       "size_bytes": 13288,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "docks", "popups", "modals"],
+      "tags": [
+        "perspective",
+        "testing",
+        "docks",
+        "popups",
+        "modals"
+      ],
       "group": "Perspective Testing",
-      "release_notes": "Fix: code→script parameter in utility.python steps"
+      "release_notes": "Fix: code\u2192script parameter in utility.python steps"
     },
     "perspective/test_inputs": {
       "version": "1.1",
@@ -175,9 +237,14 @@
       "size_bytes": 12237,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "inputs", "forms"],
+      "tags": [
+        "perspective",
+        "testing",
+        "inputs",
+        "forms"
+      ],
       "group": "Perspective Testing",
-      "release_notes": "Fix: code→script parameter in utility.python steps"
+      "release_notes": "Fix: code\u2192script parameter in utility.python steps"
     },
     "perspective/test_suite_master": {
       "version": "1.2",
@@ -187,11 +254,21 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/test_suite_master.yaml",
       "checksum": "sha256:afe5222b47328a46db3bbd8494425d8cb9e2902f6b5020efa62739fed264e196",
       "size_bytes": 18907,
-      "dependencies": ["perspective/test_buttons", "perspective/test_inputs", "perspective/test_docks", "perspective/test_visual_consistency"],
+      "dependencies": [
+        "perspective/test_buttons",
+        "perspective/test_inputs",
+        "perspective/test_docks",
+        "perspective/test_visual_consistency"
+      ],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "suite", "orchestrator"],
+      "tags": [
+        "perspective",
+        "testing",
+        "suite",
+        "orchestrator"
+      ],
       "group": "Perspective Testing",
-      "release_notes": "Fix: code→script in utility.python, added required parameters for nested verification playbook"
+      "release_notes": "Fix: code\u2192script in utility.python, added required parameters for nested verification playbook"
     },
     "perspective/test_verification_examples": {
       "version": "1.0",
@@ -203,7 +280,12 @@
       "size_bytes": 6288,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "verification", "examples"],
+      "tags": [
+        "perspective",
+        "testing",
+        "verification",
+        "examples"
+      ],
       "group": "Perspective Testing",
       "release_notes": "Initial library release - verification step type examples"
     },
@@ -217,9 +299,131 @@
       "size_bytes": 17369,
       "dependencies": [],
       "author": "Nigel G",
-      "tags": ["perspective", "testing", "visual", "css", "consistency"],
+      "tags": [
+        "perspective",
+        "testing",
+        "visual",
+        "css",
+        "consistency"
+      ],
       "group": "Perspective Testing",
-      "release_notes": "Fix: code→script parameter in utility.python steps"
+      "release_notes": "Fix: code\u2192script parameter in utility.python steps"
+    },
+    "perspective/session_smoke": {
+      "version": "1.0",
+      "domain": "perspective",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Opens a Perspective project's client URL and verifies a session starts and a page actually renders. Designed to work with no login against public / anonymous projects (the bundled test-project/ToolboxAudit is built this way) while still attempting a best-effort login if the target project is secured. Steps 4-6 (the login fill/submit) are intentionally optional: they are marked on_failure=continue and are EXPECTED to report a non-fatal failure (selector not found) when run against an anonymous project like ToolboxAudit, since there is no login form to fill in. That is correct behaviour, not a bug - the overall execution still completes and the real assertions (steps 2, 7) still pass.\n",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/session_smoke.yaml",
+      "checksum": "sha256:d7b712c5657f6f89e7cbacdff921d733b4d996651df8c0d50b75750398aca58c",
+      "size_bytes": 4040,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "perspective",
+        "audit",
+        "smoke",
+        "session"
+      ],
+      "group": "Perspective (Audit)",
+      "release_notes": "Initial library publication"
+    },
+    "perspective/page_crawl": {
+      "version": "1.0",
+      "domain": "perspective",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Walks a small, fixed set of Perspective page-config routes, screenshotting each and running perspective.discover_page to inventory its components. NOTE on page_paths: the playbook engine has no loop/foreach construct (a playbook's step list is static), so this cannot dynamically iterate an arbitrary comma-separated list at runtime. `page_paths` is kept as a documented, human-readable summary of what this build crawls (shown in logs/reports); the actual navigation targets are the indexed parameters page1_path and page2_path below, which must be kept in sync with page_paths. To crawl more pages, duplicate the 3-step block (navigate / wait / screenshot / discover) for a page3_path, etc.\n",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/page_crawl.yaml",
+      "checksum": "sha256:3f88b0761b874aaf978d5a11e189598ac0478900b376eba6ea0bdd8485b286a9",
+      "size_bytes": 3651,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "perspective",
+        "audit",
+        "crawl",
+        "discovery"
+      ],
+      "group": "Perspective (Audit)",
+      "release_notes": "Initial library publication"
+    },
+    "perspective/navigation_audit": {
+      "version": "1.0",
+      "domain": "perspective",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Verifies that a Perspective project's page-config navigation actually works: each configured page-config route renders directly, and the in-app navigation button on the Home page drives the client to the expected route and back. Built against the bundled test-project (`test-project/ToolboxAudit/`), whose Home view has a button (\"GoToPage2Button\", at data-component-path C.0:2) that calls system.perspective.navigate(page=\"/page2\"), and whose Page2 view has a mirror button (\"BackHomeButton\", also C.0:2 in its own tree) that navigates back to \"/\". NOTE on step-type choice: perspective.verify_navigation is used to assert the client URL actually changed after each navigation (it checks page.url against expected_url_pattern after settling to networkidle) - a stronger check than browser.wait alone, which only confirms *some* Perspective view rendered, not that it is the *expected* one. NOTE on page_paths: as in page_crawl.yaml, the engine has no loop construct, so page1_path/page2_path are the actual navigation targets; page_paths is a human-readable summary only - keep both in sync.\n",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/navigation_audit.yaml",
+      "checksum": "sha256:36665a0a87a0e74028355028be060bca60ab9a9d7daed2657ac162911e40c691",
+      "size_bytes": 7300,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "perspective",
+        "audit",
+        "navigation"
+      ],
+      "group": "Perspective (Audit)",
+      "release_notes": "Initial library publication"
+    },
+    "perspective/visual_baseline": {
+      "version": "1.0",
+      "domain": "perspective",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Captures a deterministically-named, full-page screenshot set for every configured page-config route, for before/after visual comparison (e.g. before and after a customer's remediation of audit findings, or before and after an Ignition/module upgrade). Screenshot filenames incorporate baseline_name so two runs with different baseline_name values (e.g. \"before\" and \"after\") produce non-colliding, diffable sets in the screenshots directory (browser.screenshot writes \"<name>.<format>\" under the manager's screenshots_dir - see ignition_toolkit/browser/manager.py `screenshot()`). NOTE on page_paths: as in page_crawl.yaml, the engine has no loop construct, so page1_path/page2_path are the actual navigation targets; page_paths is a human-readable summary only - keep both in sync.\n",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/perspective/visual_baseline.yaml",
+      "checksum": "sha256:a9d7a1040fa24810c09925c81e3b7e36fbbe225ae1b24b5fc7f44d9d1bee28a4",
+      "size_bytes": 4221,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "perspective",
+        "audit",
+        "visual",
+        "screenshots"
+      ],
+      "group": "Perspective (Audit)",
+      "release_notes": "Initial library publication"
+    },
+    "designer/launch_designer_linux": {
+      "version": "1.0",
+      "domain": "designer",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Launch Ignition Designer application on Linux using xdotool and X11 automation",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/designer/launch_designer_linux.yaml",
+      "checksum": "sha256:8151558a5efa39541eeede4dcfab126207038830d9b048ab0bfd8aed5ae35d30",
+      "size_bytes": 6606,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "designer",
+        "launch",
+        "linux"
+      ],
+      "group": "Designer (Base Playbooks)",
+      "release_notes": "Initial library publication"
+    },
+    "designer/launch_designer_shortcut": {
+      "version": "1.0",
+      "domain": "designer",
+      "verified": true,
+      "verified_by": "Nigel G",
+      "description": "Launch Ignition Designer application",
+      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/designer/launch_designer_shortcut.yaml",
+      "checksum": "sha256:cf4f762f2473e015fed0dfd1ac22df4c7cbd776c03e610b6b09b30a5011dbf45",
+      "size_bytes": 14022,
+      "dependencies": [],
+      "author": "Nigel G",
+      "tags": [
+        "designer",
+        "launch"
+      ],
+      "group": "Designer (Base Playbooks)",
+      "release_notes": "Initial library publication"
     }
   }
 }

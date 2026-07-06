@@ -1,0 +1,113 @@
+name: "Perspective Page Crawl"
+version: "1.0"
+description: >
+  Walks a small, fixed set of Perspective page-config routes, screenshotting
+  each and running perspective.discover_page to inventory its components.
+  NOTE on page_paths: the playbook engine has no loop/foreach construct (a
+  playbook's step list is static), so this cannot dynamically iterate an
+  arbitrary comma-separated list at runtime. `page_paths` is kept as a
+  documented, human-readable summary of what this build crawls (shown in
+  logs/reports); the actual navigation targets are the indexed parameters
+  page1_path and page2_path below, which must be kept in sync with
+  page_paths. To crawl more pages, duplicate the 3-step block (navigate /
+  wait / screenshot / discover) for a page3_path, etc.
+domain: perspective
+group: "Perspective (Audit)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: project_name
+    type: string
+    required: true
+    default: "ToolboxAudit"
+    description: "Perspective project name to crawl (case-sensitive, as it appears in the client URL)"
+
+  - name: page_paths
+    type: string
+    required: false
+    default: "/,/page2"
+    description: >
+      Comma-separated list of page-config routes this build is crawling, for
+      documentation/logging only (the engine cannot loop over this at
+      runtime - see the playbook description). Keep in sync with
+      page1_path/page2_path below.
+
+  - name: page1_path
+    type: string
+    required: true
+    default: "/"
+    description: "First page-config route to crawl, must start with '/' (e.g. '/')"
+
+  - name: page2_path
+    type: string
+    required: true
+    default: "/page2"
+    description: "Second page-config route to crawl, must start with '/' (e.g. '/page2')"
+
+steps:
+  - id: step1
+    name: "Step 1: Log crawl plan"
+    type: utility.log
+    parameters:
+      message: "Crawling {{ parameter.project_name }} pages: {{ parameter.page_paths }} (page1={{ parameter.page1_path }}, page2={{ parameter.page2_path }})"
+      level: "info"
+
+  - id: step2
+    name: "Step 2: Navigate to page 1"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page1_path }}"
+      wait_until: "load"
+
+  - id: step3
+    name: "Step 3: Wait for page 1 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step4
+    name: "Step 4: Screenshot page 1"
+    type: browser.screenshot
+    parameters:
+      name: "page_crawl_page1"
+      full_page: true
+
+  - id: step5
+    name: "Step 5: Discover components on page 1"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"
+
+  - id: step6
+    name: "Step 6: Navigate to page 2"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page2_path }}"
+      wait_until: "load"
+
+  - id: step7
+    name: "Step 7: Wait for page 2 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step8
+    name: "Step 8: Screenshot page 2"
+    type: browser.screenshot
+    parameters:
+      name: "page_crawl_page2"
+      full_page: true
+
+  - id: step9
+    name: "Step 9: Discover components on page 2"
+    type: perspective.discover_page
+    parameters:
+      selector: "body"

@@ -41,7 +41,40 @@ doesn't advertise it. Either way the pair sweep will enforce the outcome.
 Note: the UDT linter and the project audit share one rule-engine core
 (`ignition_toolkit/audit/`) — whichever plan runs first builds it.
 
+## Review backlog (from the 2026-07-06 pre-release deep review; none block release)
+
+- `audit/engine.py`: each of the 10 rules independently re-walks every view
+  (O(rules × views × components)); one shared walk dispatching to all rules
+  would cut audit time ~10× on large customer projects.
+- `compose_generator.py`: config generators should declare their own bind
+  mounts (catalog `default_config.volumes` pattern) instead of the
+  grafana-specific mount loop — any future provisioned config file can
+  silently repeat the "generated but never mounted" bug.
+- catalog.json: add an explicit `host_port_option` key per port mapping so
+  `_get_host_port` matches structurally instead of by default-value
+  coincidence (safe today; validated by the singles sweep).
+- Normalise Playwright's TimeoutError at the browser-manager boundary so no
+  handler can regress the `except TimeoutError` bug class.
+- `POST /api/udt/build` 422s: return structured field errors instead of a
+  joined string (UdtBuilder.tsx currently regex-parses the message).
+- `api/routers/udt.py`: drop the `list_templates()` existence pre-check
+  (re-parses every template per request); map builder's own unknown-template
+  error to 404.
+- Move `MAX_UPLOAD_BYTES` (audit.py) into `core/validation_limits.py`.
+- Frontend: extract a shared `saveBlobAsFile()` helper (6 inline copies of
+  the blob→anchor download dance).
+- `page_crawl.yaml`: remove the informational-only `page_paths` parameter
+  (must be hand-synced with `pageN_path`).
+- Audit tab "Download report" re-uploads and re-audits the zip; reuse the
+  already-fetched report data instead.
+
 ## Blocked on Nigel
+
+- **Retire the 7 stale `perspective/test_*` entries from `library/` +
+  `playbooks-index.json`?** They were removed from the shipped product in
+  Feb but are still published in the remote library (unverified, built for
+  an older engine, superseded by the 4 new audit playbooks). Recommendation:
+  remove them.
 
 - Export the customer "Ignition UDTs" reference project from the Claude
   Windows GUI / old machine into `docs/reference/udt-examples/`
