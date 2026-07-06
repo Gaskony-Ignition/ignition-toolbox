@@ -26,6 +26,9 @@ import type {
   AuditReport,
   UdtTemplateMeta,
   UdtBuildResult,
+  UdtComposition,
+  UdtComposeResponse,
+  UdtPreset,
 } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -1169,8 +1172,9 @@ export const api = {
   },
 
   /**
-   * UDT Builder — questionnaire answers -> convention-conforming UDT JSON.
-   * Download-JSON-only delivery: nothing here writes to disk or a gateway.
+   * UDT Builder / Composer — guided composition -> convention-conforming UDT
+   * JSON. Download-JSON-only delivery: nothing here writes to disk or a
+   * gateway.
    */
   udt: {
     /** List every available device-class template's metadata + questionnaire schema. */
@@ -1186,6 +1190,22 @@ export const api = {
           naming_style: namingStyle,
         }),
       }),
+
+    /**
+     * Compose a UDT from the wizard's composition tree — used both for the
+     * final build (Review step) and for live/debounced lint-only calls as
+     * the user edits. Lint findings never block; a 422 means the
+     * composition itself is structurally invalid (bad type name, unknown
+     * parameter ref, duplicate sibling names, invalid data type).
+     */
+    compose: (composition: UdtComposition) =>
+      fetchJSON<UdtComposeResponse>('/api/udt/compose', {
+        method: 'POST',
+        body: JSON.stringify(composition),
+      }),
+
+    /** Quick-start presets (derived from the device-class templates) that prefill the composer. */
+    getPresets: () => fetchJSON<UdtPreset[]>('/api/udt/presets'),
   },
 
   /**

@@ -426,3 +426,105 @@ export interface UdtBuildResult {
   udt: UdtWireFormat;
   filename: string;
 }
+
+// ============================================================================
+// UDT Composer types (phase C2 — docs/plans/udt-composer-design.md)
+//
+// The "composition" is the UI-friendly tree the wizard edits; the backend
+// converts it to a UdtDefinition and then to tag-export JSON. This is the
+// fixed wire contract for POST /api/udt/compose — keep in sync with the
+// design doc, not with whatever the wizard happens to render.
+// ============================================================================
+
+export type UdtNamingStyle = 'camelCase' | 'PascalCase';
+
+export type UdtValueSource = 'opc' | 'memory' | 'expression';
+
+/** Ignition data types offered by the composer (superset may exist server-side). */
+// Ignition 8.x tag-export names (Int1/Int2/Int4/Int8 and Bool are legacy 7.x
+// names the backend rejects): integers are Short/Integer/Long, booleans Boolean.
+export type UdtDataType = 'Float4' | 'Float8' | 'Short' | 'Integer' | 'Long' | 'Boolean' | 'String';
+
+export interface UdtCompositionParameter {
+  name: string;
+  data_type: UdtDataType;
+  default_value?: string | number | boolean | null;
+  description?: string;
+}
+
+export interface UdtCompositionHistory {
+  enabled: boolean;
+  tag_group?: string;
+  deadband_style?: string;
+}
+
+export interface UdtCompositionAlarm {
+  name: string;
+  setpoint?: number | string | boolean | null;
+  /** Required (> 0) on analog alarms — the lint pack flags a missing one. */
+  deadband?: number | string | null;
+  mode?: string;
+  /** null = apply the ISA-18.2 default priority for this alarm name; an explicit value overrides. */
+  priority: string | null;
+}
+
+export interface UdtCompositionTag {
+  kind: 'tag';
+  name: string;
+  value_source: UdtValueSource;
+  data_type: UdtDataType;
+  // value_source === 'opc'
+  opc_item_path?: string;
+  opc_server?: string;
+  // value_source === 'memory'
+  value?: string | number | boolean | null;
+  // value_source === 'expression'
+  expression?: string;
+  // analog-only (numeric data types)
+  eng_unit?: string;
+  eng_low?: number;
+  eng_high?: number;
+  documentation?: string;
+  tooltip?: string;
+  history?: UdtCompositionHistory;
+  alarms?: UdtCompositionAlarm[];
+}
+
+export interface UdtCompositionFolder {
+  kind: 'folder';
+  name: string;
+  members: UdtCompositionMember[];
+}
+
+export type UdtCompositionMember = UdtCompositionFolder | UdtCompositionTag;
+
+export interface UdtComposition {
+  type_name: string;
+  description?: string;
+  naming_style: UdtNamingStyle;
+  parameters: UdtCompositionParameter[];
+  members: UdtCompositionMember[];
+}
+
+export type UdtLintSeverity = 'critical' | 'high' | 'medium' | 'info';
+
+export interface UdtLintFinding {
+  rule_id: string;
+  severity: UdtLintSeverity;
+  location: string;
+  message: string;
+  recommendation: string;
+}
+
+export interface UdtComposeResponse {
+  udt: UdtWireFormat;
+  filename: string;
+  findings: UdtLintFinding[];
+}
+
+export interface UdtPreset {
+  id: string;
+  label: string;
+  description: string;
+  composition: UdtComposition;
+}
