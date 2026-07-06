@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
 from ignition_toolkit.browser import BrowserManager
 from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
@@ -314,7 +316,7 @@ class PerspectiveVerifyNavigationHandler(StepHandler):
                 "message": "Navigation verified successfully"
             }
 
-        except TimeoutError:
+        except (TimeoutError, PlaywrightTimeoutError):
             raise StepExecutionError(
                 "perspective",
                 f"Navigation verification timed out after {timeout}ms"
@@ -358,7 +360,7 @@ class PerspectiveVerifyDockHandler(StepHandler):
                 "message": "Dock opened and visible"
             }
 
-        except TimeoutError:
+        except (TimeoutError, PlaywrightTimeoutError):
             raise StepExecutionError(
                 "perspective",
                 f"Dock did not open within {timeout}ms: {dock_selector}"

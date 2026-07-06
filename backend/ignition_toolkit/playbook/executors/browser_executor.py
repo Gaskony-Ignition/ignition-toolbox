@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
 from ignition_toolkit.browser import BrowserManager
 from ignition_toolkit.core.timeouts import TimeoutDefaults
 from ignition_toolkit.playbook.exceptions import StepExecutionError
@@ -102,7 +104,10 @@ class BrowserVerifyHandler(StepHandler):
             # Try to find the element
             await self.manager.wait_for_selector(selector, timeout=timeout)
             element_found = True
-        except TimeoutError:
+        except (TimeoutError, PlaywrightTimeoutError):
+            # Playwright's TimeoutError is NOT a subclass of the builtin
+            # TimeoutError, so both must be caught or `exists: false`
+            # verification can never pass when the element is absent.
             element_found = False
 
         # Check if result matches expectation
