@@ -189,7 +189,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 | ----------- | --------- |
-| `src/pages/` | 9 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Exchange, Settings |
+| `src/pages/` | 11 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, UdtBuilder, APIExplorer, Exchange, Audit, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
 | `src/data/` | Static data (ignitionApiDocs.ts) |
