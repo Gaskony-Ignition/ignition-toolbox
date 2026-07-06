@@ -120,6 +120,7 @@ services:
       GF_SMTP_SKIP_VERIFY: 'true'
     volumes:
     - grafana-data:/var/lib/grafana
+    - ./configs/grafana/provisioning/datasources/auto.yaml:/etc/grafana/provisioning/datasources/auto.yaml:ro
     labels:
     - traefik.enable=true
     - traefik.http.routers.grafana.rule=Host(`grafana.localhost`)

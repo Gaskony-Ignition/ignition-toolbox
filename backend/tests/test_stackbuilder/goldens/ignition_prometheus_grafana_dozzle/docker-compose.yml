@@ -46,6 +46,7 @@ services:
       TZ: UTC
     volumes:
     - grafana-data:/var/lib/grafana
+    - ./configs/grafana/provisioning/datasources/auto.yaml:/etc/grafana/provisioning/datasources/auto.yaml:ro
     depends_on:
       prometheus:
         condition: service_started

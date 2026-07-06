@@ -332,6 +332,27 @@ class ComposeGenerator:
             instances, integration_results, integration_settings, config_files, keycloak_realm_config, stack_name
         )
 
+        # Mount the auto-provisioned Grafana datasource file generated just above.
+        # `_generate_integration_configs` writes
+        # configs/{grafana_instance}/provisioning/datasources/auto.yaml whenever Grafana
+        # has a wired data source (see the "visualization" integration), but never added
+        # the matching bind mount - Grafana never actually saw the file, so the
+        # advertised "datasource auto-provisioned" behaviour silently did nothing. Wire
+        # it into the service's volumes now that config_files is populated.
+        for instance in instances:
+            if instance["app_id"] != "grafana":
+                continue
+            provisioning_path = (
+                f"configs/{instance['instance_name']}/provisioning/datasources/auto.yaml"
+            )
+            if provisioning_path not in config_files:
+                continue
+            grafana_service = compose["services"].get(instance["instance_name"])
+            if grafana_service is not None:
+                grafana_service.setdefault("volumes", []).append(
+                    f"./{provisioning_path}:/etc/grafana/provisioning/datasources/auto.yaml:ro"
+                )
+
         # Generate Prometheus configs
         for instance in instances:
             if instance["app_id"] == "prometheus":
