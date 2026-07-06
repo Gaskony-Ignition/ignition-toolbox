@@ -48,12 +48,12 @@ def main() -> int:
 
     versions = set(sources.values())
     if len(versions) == 1:
-        print(f"✓ All version files agree: {next(iter(versions))}")
+        print(f"OK: All version files agree: {next(iter(versions))}")
         for name, ver in sources.items():
             print(f"  {name}: {ver}")
         return 0
     else:
-        print("✗ Version mismatch detected!", file=sys.stderr)
+        print("MISMATCH: Version mismatch detected!", file=sys.stderr)
         for name, ver in sources.items():
             print(f"  {name}: {ver}", file=sys.stderr)
         print(
