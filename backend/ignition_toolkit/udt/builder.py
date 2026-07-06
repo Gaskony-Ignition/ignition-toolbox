@@ -24,6 +24,15 @@ Because the resolved structure is fed straight into
 :class:`~ignition_toolkit.udt.models.UdtDefinition`'s pydantic validation
 (never assembled as a hand-built dict returned directly), the output always
 goes through the Phase 1 models and their camelCase aliasing.
+
+Templates author every member/folder ``name`` in one canonical spelling
+(camelCase). :func:`build` accepts a ``naming_style`` option
+(``"camelCase"`` or ``"PascalCase"``, see
+``conventions.NAMING_STYLES``/``DEFAULT_NAMING_STYLE`` — Nigel-decided
+2026-07-06 that this is user-selectable) and rewrites every resolved
+member/folder name to that style before validation. UDT *type* names,
+``parameters`` keys, and alarm names are never touched by this — only the
+``name`` field of nodes in the ``tags`` tree.
 """
 
 import json
@@ -32,7 +41,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ignition_toolkit.udt.conventions import find_convention_issues
+from ignition_toolkit.udt.conventions import (
+    DEFAULT_NAMING_STYLE,
+    NAMING_STYLES,
+    apply_naming_style,
+    find_convention_issues,
+)
 from ignition_toolkit.udt.models import UdtDefinition
 
 logger = logging.getLogger(__name__)
@@ -72,12 +86,19 @@ class TemplateMeta:
     rendering a dynamic form — it deliberately excludes the ``tags``/
     ``parameters`` skeleton, which is an implementation detail of
     :func:`build`.
+
+    ``naming_styles``/``default_naming_style`` are the same for every
+    template (the option is global, not per-device-class) but are exposed
+    here so a future form can render the choice alongside a template's own
+    questionnaire without a second lookup.
     """
 
     id: str
     label: str
     description: str
     questionnaire: list[QuestionnaireField] = field(default_factory=list)
+    naming_styles: list[str] = field(default_factory=lambda: list(NAMING_STYLES))
+    default_naming_style: str = DEFAULT_NAMING_STYLE
 
 
 def _template_path(template_id: str) -> Path:
@@ -191,6 +212,29 @@ def _validate_answers(fields: list[QuestionnaireField], answers: dict[str, Any])
     return resolved
 
 
+def _apply_naming_style(tags: list[dict[str, Any]], style: str) -> list[dict[str, Any]]:
+    """
+    Recursively rewrite the ``name`` of every member/folder in a resolved
+    ``tags`` list (and any nested folder ``tags`` lists) to ``style``.
+
+    Deliberately shallow about *which* keys it touches: only a node's own
+    ``name`` and its nested ``tags`` list are considered. This means a tag's
+    ``alarms`` list (whose entries also have a ``name`` key, e.g.
+    ``"HiHi"``) is left completely alone — alarm names are not members and
+    are never subject to the naming-style option.
+    """
+    styled: list[dict[str, Any]] = []
+    for tag in tags:
+        new_tag = dict(tag)
+        if "name" in new_tag:
+            new_tag["name"] = apply_naming_style(new_tag["name"], style)
+        nested = new_tag.get("tags")
+        if isinstance(nested, list):
+            new_tag["tags"] = _apply_naming_style(nested, style)
+        styled.append(new_tag)
+    return styled
+
+
 def _resolve(raw: Any, answers: dict[str, Any]) -> Any:
     """
     Recursively resolve ``$ref``/``$if``/``$then`` directives in a template
@@ -225,7 +269,11 @@ def _resolve(raw: Any, answers: dict[str, Any]) -> Any:
     return raw
 
 
-def build(template_id: str, answers: dict[str, Any]) -> UdtDefinition:
+def build(
+    template_id: str,
+    answers: dict[str, Any],
+    naming_style: str = DEFAULT_NAMING_STYLE,
+) -> UdtDefinition:
     """
     Build a convention-conforming UDT type definition from a template + answers.
 
@@ -235,22 +283,36 @@ def build(template_id: str, answers: dict[str, Any]) -> UdtDefinition:
         answers: Questionnaire answers keyed by field name. Missing optional
             fields fall back to the template's declared default; missing
             required fields raise :class:`UdtBuilderError`.
+        naming_style: One of ``conventions.NAMING_STYLES`` (``"camelCase"``
+            or ``"PascalCase"``) — user-selectable member/folder naming
+            style (Nigel-decided 2026-07-06). Applied recursively to every
+            member/folder ``name`` in the emitted structure; the UDT *type*
+            name, ``parameters`` keys, alarm names, and ``{ParamRef}``
+            strings are never affected. Defaults to
+            ``conventions.DEFAULT_NAMING_STYLE``.
 
     Returns:
         A :class:`~ignition_toolkit.udt.models.UdtDefinition` ready to be
         dumped via :func:`~ignition_toolkit.udt.models.to_tag_export`.
 
     Raises:
-        UdtBuilderError: unknown template id, invalid/missing answers, or
-            (a template bug) generated output that fails the conventions
-            self-check in :func:`~ignition_toolkit.udt.conventions.find_convention_issues`.
+        UdtBuilderError: unknown template id, invalid/missing answers,
+            unknown ``naming_style``, or (a template bug) generated output
+            that fails the conventions self-check in
+            :func:`~ignition_toolkit.udt.conventions.find_convention_issues`.
     """
+    if naming_style not in NAMING_STYLES:
+        raise UdtBuilderError(
+            f"Unknown naming_style '{naming_style}'. Available: {', '.join(NAMING_STYLES)}"
+        )
+
     template = _load_template(template_id)
     fields = _questionnaire_fields(template.get("questionnaire", []))
     resolved_answers = _validate_answers(fields, answers)
 
     resolved_parameters = _resolve(template.get("parameters", {}), resolved_answers)
     resolved_tags = _resolve(template.get("tags", []), resolved_answers)
+    resolved_tags = _apply_naming_style(resolved_tags, naming_style)
 
     udt_data: dict[str, Any] = {"name": template["type_name"], "tagType": "UdtType"}
     if resolved_parameters:

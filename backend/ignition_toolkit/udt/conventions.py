@@ -18,9 +18,15 @@ it can be flagged for ratification.
 
 Convention summary (see the design doc for the original draft):
 
-1. **Naming** — UDT *type* names are PascalCase; every *member* (atomic tag,
-   folder, or nested UDT instance) is camelCase. No spaces, no
-   Designer-default placeholder names (``NewTag_0``, ...).
+1. **Naming** — UDT *type* names are always PascalCase. Every *member*
+   (atomic tag, folder, or nested UDT instance) is **either** camelCase
+   **or** PascalCase — user-selectable per build via ``builder.build()``'s
+   ``naming_style`` option (see ``NAMING_STYLES``/``DEFAULT_NAMING_STYLE``
+   below); a single UDT is internally consistent (one style throughout, never
+   mixed). No spaces, no Designer-default placeholder names (``NewTag_0``,
+   ...). Parameter names stay PascalCase and alarm names stay the
+   standardised bare names (``HiHi``/``Fault``/...) regardless of the
+   member-naming style in effect — neither is a "member" for this rule.
 2. **Documentation** — every member carries non-empty ``documentation``.
 3. **Engineering units** — every analog member (``Float4``/``Float8``)
    carries a non-empty ``engUnit``.
@@ -41,11 +47,11 @@ Convention summary (see the design doc for the original draft):
 Judgement calls made resolving the draft (flag for Nigel's ratification):
 
 - The design doc's prose example writes folder names capitalised
-  ("status/command/config"). Rule 1 ("camelCase member tags") is applied
-  uniformly to folders and UDT instances as well as atomic tags, since a
-  folder is a member of its parent UDT like any other tag node. This module
-  therefore expects ``status``/``command``/``config`` (lower camelCase), not
-  ``Status``/``Command``/``Config``.
+  ("status/command/config"). Rule 1 (member naming) is applied uniformly to
+  folders and UDT instances as well as atomic tags, since a folder is a
+  member of its parent UDT like any other tag node — whichever naming style
+  is selected, ``status``/``command``/``config`` fold in the same as any
+  other member name (``Status``/``Command``/``Config`` under PascalCase).
 - The Phase 1 synthetic fixtures (``motor_simple.json``,
   ``valve_nested_inheritance.json``) use PascalCase member names
   (``Speed``, ``Running``, ``Actuator``...). Those fixtures predate this
@@ -56,10 +62,25 @@ Judgement calls made resolving the draft (flag for Nigel's ratification):
   the literal ``AlarmConfig.name`` value (e.g. ``"HiHi"``), not a
   member-name-prefixed variant (e.g. ``"SpeedHiHi"``) — the member is already
   identified by the tag's own path in any alarm summary/journal view.
+  **RATIFIED by Nigel on 2026-07-06** — no longer a draft judgement call.
 - ISA-18.2 does not itself define Ignition's five built-in priority levels;
   ``ALARM_PRIORITY_GUIDANCE`` below is this project's mapping of Ignition's
   Diagnostic/Low/Medium/High/Critical onto ISA-18.2's consequence-and-
-  response-time philosophy.
+  response-time philosophy. **RATIFIED by Nigel on 2026-07-06.**
+- Member/folder naming *style* (camelCase vs. PascalCase) was originally a
+  single fixed rule (camelCase only, per the design doc draft). **Nigel
+  decided on 2026-07-06 that this is user-selectable**, not fixed: templates
+  keep a single canonical (camelCase) spelling of every member/folder name,
+  and ``builder.build()``'s ``naming_style`` argument renders it in whichever
+  style the user chose at build time. ``NAMING_STYLES`` enumerates the valid
+  options and ``DEFAULT_NAMING_STYLE`` is the fallback when unspecified.
+- The Phase 3 delivery-mechanism question in the design doc ("download-JSON-
+  only" vs. a direct push via the 8.3 tag config API) was **RATIFIED by
+  Nigel on 2026-07-06: download-JSON-only** — future agents should stop
+  flagging this as an open question when they reach Phase 3; it is settled,
+  not a draft assumption. (Noted here, alongside the other now-ratified
+  items, even though delivery is a Phase 3/API concern rather than a
+  `conventions.py` rule, so one place records every 2026-07-06 ratification.)
 """
 
 import logging
@@ -92,9 +113,18 @@ MEMBER_TAG_TYPES = frozenset({"AtomicTag", "Folder", "UdtInstance"})
 # because the common case (raw discrete counts) rarely wants one.
 ANALOG_DATA_TYPES = frozenset({"Float4", "Float8"})
 
-# Folder names larger device classes should use to group members. Lower
-# camelCase per the naming judgement call above.
+# Folder names larger device classes should use to group members. Written in
+# their canonical camelCase spelling; ``apply_naming_style`` renders them (and
+# every other member name) in whichever style a build selected.
 STANDARD_FOLDERS = ("status", "command", "config")
+
+# Valid member/folder naming styles a builder consumer may select, and the
+# fallback used when a caller doesn't specify one. Nigel-decided
+# (2026-07-06): naming style is user-selectable, not fixed — see the module
+# docstring's "Judgement calls" note. A future API/UI should enumerate this
+# constant rather than hardcoding the two option strings.
+NAMING_STYLES: tuple[str, ...] = ("camelCase", "PascalCase")
+DEFAULT_NAMING_STYLE = "camelCase"
 
 
 def is_pascal_case(name: str) -> bool:
@@ -118,8 +148,47 @@ def is_valid_type_name(name: str) -> bool:
 
 
 def is_valid_member_name(name: str) -> bool:
-    """A UDT *member* name (atomic tag/folder/instance): camelCase, no spaces, not default."""
-    return bool(name) and " " not in name and is_camel_case(name) and not is_default_name(name)
+    """
+    A UDT *member* name (atomic tag/folder/instance): no spaces, not a default
+    placeholder, and shaped like **either** naming style in ``NAMING_STYLES``
+    (camelCase or PascalCase) — the style is a per-build user choice (see
+    ``apply_naming_style``), not something a single name can be judged wrong
+    against in isolation.
+    """
+    if not name or " " in name or is_default_name(name):
+        return False
+    return is_camel_case(name) or is_pascal_case(name)
+
+
+def to_camel_case(name: str) -> str:
+    """Render a canonical member/folder ``name`` in camelCase (lowercase the first letter only)."""
+    return name[:1].lower() + name[1:] if name else name
+
+
+def to_pascal_case(name: str) -> str:
+    """Render a canonical member/folder ``name`` in PascalCase (uppercase the first letter only)."""
+    return name[:1].upper() + name[1:] if name else name
+
+
+def apply_naming_style(name: str, style: str) -> str:
+    """
+    Render a template's canonical (camelCase-authored) member/folder ``name``
+    in the requested ``style``.
+
+    Only the first character changes — canonical names are already
+    multi-word-boundary-correct camelCase (e.g. ``highSpeedSetpoint``), so
+    PascalCase is just that first letter capitalised (``HighSpeedSetpoint``)
+    and camelCase is a no-op (or lowercases an already-Pascal name's first
+    letter, for symmetry). No other mangling is performed.
+
+    Raises:
+        ValueError: ``style`` is not one of ``NAMING_STYLES``.
+    """
+    if style == "camelCase":
+        return to_camel_case(name)
+    if style == "PascalCase":
+        return to_pascal_case(name)
+    raise ValueError(f"Unknown naming style {style!r}; expected one of {NAMING_STYLES}")
 
 
 # --------------------------------------------------------------------------
@@ -290,7 +359,7 @@ def check_naming(element: TagElement, path: str) -> list[str]:
             issues.append(f"{path}: UDT type name '{name}' is not valid PascalCase")
     elif element.tag_type in MEMBER_TAG_TYPES:
         if not is_valid_member_name(name):
-            issues.append(f"{path}: member name '{name}' is not valid camelCase")
+            issues.append(f"{path}: member name '{name}' is not valid camelCase or PascalCase")
     return issues
 
 

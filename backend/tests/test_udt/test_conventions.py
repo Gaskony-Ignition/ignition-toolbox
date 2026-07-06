@@ -6,12 +6,17 @@ paths, alarms, history) so the rules are pinned independently of whatever
 the templates/builder happen to produce.
 """
 
+import pytest
+
 from ignition_toolkit.udt.conventions import (
     ALARM_PRIORITIES,
     ALARM_PRIORITY_GUIDANCE,
+    DEFAULT_NAMING_STYLE,
+    NAMING_STYLES,
     STANDARD_ALARM_DEFAULTS,
     STANDARD_ALARM_NAMES,
     alarm_deadband_required,
+    apply_naming_style,
     find_convention_issues,
     has_deliberate_history_choice,
     has_valid_deadband,
@@ -25,6 +30,8 @@ from ignition_toolkit.udt.conventions import (
     is_valid_member_name,
     is_valid_type_name,
     opc_item_path_uses_parameters,
+    to_camel_case,
+    to_pascal_case,
 )
 from ignition_toolkit.udt.models import AlarmConfig, TagElement, UdtDefinition
 
@@ -40,9 +47,20 @@ class TestNaming:
     def test_camel_case_member_names(self) -> None:
         assert is_valid_member_name("speed")
         assert is_valid_member_name("highSpeedSetpoint")
-        assert not is_valid_member_name("Speed")
         assert not is_valid_member_name("high speed")
         assert not is_valid_member_name("high_speed")
+
+    def test_pascal_case_member_names_also_valid(self) -> None:
+        """
+        Member naming *style* is user-selectable (Nigel-decided 2026-07-06):
+        a member name is valid under either style, since a whole UDT is
+        rendered consistently in one style by builder.build(), not judged
+        name-by-name against a single fixed convention.
+        """
+        assert is_valid_member_name("Speed")
+        assert is_valid_member_name("HighSpeedSetpoint")
+        assert not is_valid_member_name("High Speed")
+        assert not is_valid_member_name("High_Speed")
 
     def test_default_names_rejected(self) -> None:
         assert is_default_name("NewTag_0")
@@ -57,6 +75,33 @@ class TestNaming:
         assert not is_pascal_case("motor")
         assert is_camel_case("motor")
         assert not is_camel_case("Motor")
+
+
+class TestNamingStyle:
+    def test_naming_styles_constant(self) -> None:
+        assert set(NAMING_STYLES) == {"camelCase", "PascalCase"}
+        assert DEFAULT_NAMING_STYLE == "camelCase"
+        assert DEFAULT_NAMING_STYLE in NAMING_STYLES
+
+    def test_to_camel_case(self) -> None:
+        assert to_camel_case("speed") == "speed"
+        assert to_camel_case("Speed") == "speed"
+        assert to_camel_case("HighSpeedSetpoint") == "highSpeedSetpoint"
+        assert to_camel_case("") == ""
+
+    def test_to_pascal_case(self) -> None:
+        assert to_pascal_case("speed") == "Speed"
+        assert to_pascal_case("Speed") == "Speed"
+        assert to_pascal_case("highSpeedSetpoint") == "HighSpeedSetpoint"
+        assert to_pascal_case("") == ""
+
+    def test_apply_naming_style(self) -> None:
+        assert apply_naming_style("highSpeedSetpoint", "camelCase") == "highSpeedSetpoint"
+        assert apply_naming_style("highSpeedSetpoint", "PascalCase") == "HighSpeedSetpoint"
+
+    def test_apply_naming_style_rejects_unknown_style(self) -> None:
+        with pytest.raises(ValueError, match="Unknown naming style"):
+            apply_naming_style("speed", "kebab-case")
 
 
 class TestOpcPaths:
@@ -194,13 +239,19 @@ class TestFindConventionIssues:
         assert any("PascalCase" in issue for issue in issues)
 
     def test_bad_member_name_flagged(self) -> None:
+        """
+        "Running" (PascalCase) is *not* a bad member name any more — member
+        naming style is user-selectable (Nigel-decided 2026-07-06), so a
+        member name is only invalid if it fails *both* styles, e.g. an
+        underscore-separated name like this one.
+        """
         udt = UdtDefinition.model_validate(
             {
                 "name": "Widget",
                 "tagType": "UdtType",
                 "tags": [
                     {
-                        "name": "Running",
+                        "name": "running_status",
                         "tagType": "AtomicTag",
                         "valueSource": "opc",
                         "dataType": "Boolean",
@@ -213,7 +264,7 @@ class TestFindConventionIssues:
             }
         )
         issues = find_convention_issues(udt)
-        assert any("camelCase" in issue for issue in issues)
+        assert any("camelCase" in issue and "PascalCase" in issue for issue in issues)
 
     def test_missing_documentation_flagged(self) -> None:
         udt = UdtDefinition.model_validate(
@@ -390,7 +441,7 @@ class TestFindConventionIssues:
                         "documentation": "Status folder.",
                         "tags": [
                             {
-                                "name": "Open",  # bad casing, nested inside a folder
+                                "name": "is_open",  # bad name (underscore), nested in a folder
                                 "tagType": "AtomicTag",
                                 "valueSource": "opc",
                                 "dataType": "Boolean",
@@ -405,4 +456,4 @@ class TestFindConventionIssues:
             }
         )
         issues = find_convention_issues(udt)
-        assert any("Open" in issue and "camelCase" in issue for issue in issues)
+        assert any("is_open" in issue and "camelCase" in issue for issue in issues)

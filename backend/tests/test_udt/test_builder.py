@@ -18,7 +18,11 @@ from typing import Any
 import pytest
 
 from ignition_toolkit.udt.builder import UdtBuilderError, build, list_templates
-from ignition_toolkit.udt.conventions import find_convention_issues
+from ignition_toolkit.udt.conventions import (
+    DEFAULT_NAMING_STYLE,
+    NAMING_STYLES,
+    find_convention_issues,
+)
 from ignition_toolkit.udt.models import UdtDefinition, find_parameter_references, to_tag_export
 
 GOLDEN_MOTOR_PATH = Path(__file__).parent / "golden" / "motor_built_golden.json"
@@ -55,6 +59,13 @@ class TestListTemplates:
             assert qf.type in {"string", "integer", "float", "boolean"}
             assert isinstance(qf.required, bool)
             assert isinstance(qf.description, str) and qf.description
+
+    def test_exposes_naming_style_option(self) -> None:
+        """Every template's metadata exposes the naming_style choice for a future form."""
+        for template in list_templates():
+            assert set(template.naming_styles) == set(NAMING_STYLES)
+            assert template.default_naming_style == DEFAULT_NAMING_STYLE
+            assert template.default_naming_style in template.naming_styles
 
 
 class TestMotorTemplate:
@@ -326,6 +337,67 @@ class TestParameterReferencesUsedByAllTemplates:
         refs = find_parameter_references(udt)
         assert "OpcServer" in refs
         assert "DevicePath" in refs
+
+
+class TestNamingStyleOption:
+    """
+    Member/folder naming style is user-selectable (Nigel-decided 2026-07-06),
+    via build()'s naming_style argument. Type names, parameter names, and
+    alarm names must never be affected by it.
+    """
+
+    @pytest.fixture
+    def motor_answers(self) -> dict[str, Any]:
+        return {"device_path": "[default]PLC1/Motors/M101"}
+
+    def test_default_style_is_camel_case_and_unchanged(self, motor_answers: dict[str, Any]) -> None:
+        default_build = build("motor", motor_answers)
+        explicit_build = build("motor", motor_answers, naming_style="camelCase")
+        assert to_tag_export(default_build) == to_tag_export(explicit_build)
+        assert [t.name for t in default_build.tags] == ["running", "start", "speed", "fault"]
+
+    def test_pascal_case_motor_members(self, motor_answers: dict[str, Any]) -> None:
+        udt = build("motor", motor_answers, naming_style="PascalCase")
+        names = [t.name for t in udt.tags]
+        assert names == ["Running", "Start", "Speed", "Fault"]
+
+    def test_pascal_case_type_name_and_parameters_unaffected(
+        self, motor_answers: dict[str, Any]
+    ) -> None:
+        udt = build("motor", motor_answers, naming_style="PascalCase")
+        assert udt.name == "Motor"
+        assert set(udt.parameters) == {"OpcServer", "DevicePath", "HighSpeedSetpoint"}
+
+    def test_pascal_case_alarm_names_and_param_refs_unaffected(
+        self, motor_answers: dict[str, Any]
+    ) -> None:
+        udt = build("motor", motor_answers, naming_style="PascalCase")
+        speed = next(t for t in udt.tags if t.name == "Speed")
+        assert speed.alarms[0].name == "HiHi"
+        assert speed.alarms[0].setpoint_a == "{HighSpeedSetpoint}"
+        assert speed.opc_server == "{OpcServer}"
+        assert speed.opc_item_path == "{DevicePath}/Speed"
+
+    def test_pascal_case_valve_folder_names(self) -> None:
+        udt = build(
+            "valve", {"device_path": "[default]PLC1/Valves/V101"}, naming_style="PascalCase"
+        )
+        assert [t.name for t in udt.tags] == ["Status", "Command", "Config"]
+        status, command, _config = udt.tags
+        assert [t.name for t in status.tags] == ["Open", "Closed", "Position", "Fault"]
+        assert [t.name for t in command.tags] == ["OpenCmd", "CloseCmd"]
+
+    def test_pascal_case_round_trips_losslessly(self, motor_answers: dict[str, Any]) -> None:
+        udt = build("motor", motor_answers, naming_style="PascalCase")
+        _assert_lossless_round_trip(udt)
+
+    def test_pascal_case_no_convention_violations(self, motor_answers: dict[str, Any]) -> None:
+        udt = build("motor", motor_answers, naming_style="PascalCase")
+        assert find_convention_issues(udt) == []
+
+    def test_invalid_naming_style_raises_clean_error(self, motor_answers: dict[str, Any]) -> None:
+        with pytest.raises(UdtBuilderError, match="naming_style"):
+            build("motor", motor_answers, naming_style="snake_case")
 
 
 class TestMotorGoldenFixture:
