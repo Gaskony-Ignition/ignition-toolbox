@@ -28,6 +28,7 @@ const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ defaul
 const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
 const Exchange = lazy(() => import('./pages/Exchange').then(m => ({ default: m.Exchange })));
 const Audit = lazy(() => import('./pages/Audit').then(m => ({ default: m.Audit })));
+const UdtBuilder = lazy(() => import('./pages/UdtBuilder').then(m => ({ default: m.UdtBuilder })));
 
 // Loading fallback for lazy-loaded components
 function PageLoader() {
@@ -198,9 +199,9 @@ function AppContent() {
         );
       case 'udtbuilder':
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', opacity: 0.5 }}>
-            <Typography variant="h5" color="text.secondary">UDT Builder — Coming Soon</Typography>
-          </Box>
+          <Suspense fallback={<PageLoader />}>
+            <UdtBuilder />
+          </Suspense>
         );
       case 'exchange':
         return (

@@ -76,7 +76,7 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: 
   { id: 'designer', label: 'Browser Designer', icon: <DesignerIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
-  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Coming Soon' },
+  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" /> },
   { id: 'exchange', label: 'Exchange', icon: <StorefrontOutlined fontSize="small" /> },
   { id: 'audit', label: 'Audit', icon: <AuditIcon fontSize="small" /> },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },

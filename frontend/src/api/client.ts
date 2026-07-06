@@ -24,6 +24,8 @@ import type {
   LogEntry,
   LogStats,
   AuditReport,
+  UdtTemplateMeta,
+  UdtBuildResult,
 } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -1164,6 +1166,26 @@ export const api = {
     /** Same audit, downloaded as a customer-facing markdown report. */
     downloadPerspectiveAuditMarkdown: (file: File) =>
       postFileForDownload('/api/audit/perspective/markdown', file, 'audit-report.md'),
+  },
+
+  /**
+   * UDT Builder — questionnaire answers -> convention-conforming UDT JSON.
+   * Download-JSON-only delivery: nothing here writes to disk or a gateway.
+   */
+  udt: {
+    /** List every available device-class template's metadata + questionnaire schema. */
+    getTemplates: () => fetchJSON<UdtTemplateMeta[]>('/api/udt/templates'),
+
+    /** Build a UDT from a template id + questionnaire answers. */
+    build: (templateId: string, answers: Record<string, unknown>, namingStyle?: string) =>
+      fetchJSON<UdtBuildResult>('/api/udt/build', {
+        method: 'POST',
+        body: JSON.stringify({
+          template_id: templateId,
+          answers,
+          naming_style: namingStyle,
+        }),
+      }),
   },
 
   /**

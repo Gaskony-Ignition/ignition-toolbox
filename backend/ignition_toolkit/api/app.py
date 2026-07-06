@@ -39,6 +39,7 @@ from ignition_toolkit.api.routers.reports import router as reports_router
 from ignition_toolkit.api.routers.schedules import router as schedules_router
 from ignition_toolkit.api.routers.stackbuilder import router as stackbuilder_router
 from ignition_toolkit.api.routers.step_types import router as step_types_router
+from ignition_toolkit.api.routers.udt import router as udt_router
 from ignition_toolkit.api.routers.updates import router as updates_router
 from ignition_toolkit.api.routers.websockets import router as websockets_router
 from ignition_toolkit.api.services.log_capture import setup_log_capture
@@ -120,6 +121,9 @@ app.include_router(reports_router)
 
 # Perspective project audit (static analysis)
 app.include_router(audit_router)
+
+# UDT Builder (questionnaire -> convention-conforming UDT JSON, download-only)
+app.include_router(udt_router)
 
 # Initialize log capture for UI access
 setup_log_capture(max_entries=2000)

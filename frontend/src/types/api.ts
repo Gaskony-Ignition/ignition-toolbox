@@ -397,3 +397,32 @@ export interface AuditReport {
   aggregated_findings: AuditAggregatedFinding[];
   findings: AuditFinding[];
 }
+
+// UDT Builder types
+
+export type UdtQuestionnaireFieldType = 'string' | 'integer' | 'float' | 'boolean';
+
+export interface UdtQuestionnaireField {
+  name: string;
+  type: UdtQuestionnaireFieldType;
+  required: boolean;
+  default: string | number | boolean | null;
+  description: string;
+}
+
+export interface UdtTemplateMeta {
+  id: string;
+  label: string;
+  description: string;
+  questionnaire: UdtQuestionnaireField[];
+  naming_styles: string[];
+  default_naming_style: string;
+}
+
+/** Wire-format UDT tag-export JSON (camelCase keys) — an opaque tree as far as the frontend is concerned. */
+export type UdtWireFormat = Record<string, unknown>;
+
+export interface UdtBuildResult {
+  udt: UdtWireFormat;
+  filename: string;
+}
