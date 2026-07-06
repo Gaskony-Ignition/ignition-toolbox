@@ -1,4 +1,12 @@
 # Architectural Debt Audit - Single Source of Truth Analysis
+
+> **⚠️ Historical snapshot — do not act on this without verifying.**
+> Written 2026-02-22. Several Tier 1 items have since been implemented
+> (`electron/config.ts`, `electron/ipc/channels.ts`,
+> `backend/ignition_toolkit/core/timeouts.py`, `frontend/src/constants/`
+> and `frontend/src/config/` exist). Check the current code before
+> treating any item here as open work.
+
 **Date**: 2026-02-22
 **Scope**: Full codebase - Python backend, Electron main, React frontend, cross-layer contracts
 

@@ -12,7 +12,7 @@ Guide for setting up, running, and contributing to Ignition Toolbox.
 ## Setup
 
 ```bash
-cd /git/ignition-toolbox
+cd ignition-toolbox
 
 # Install Node.js dependencies (Electron)
 npm install

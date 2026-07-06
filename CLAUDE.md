@@ -33,7 +33,7 @@ is NOT", and the decision framework. Goals drive every feature decision.
 │  └── App settings (electron-store)                      │
 ├─────────────────────────────────────────────────────────┤
 │  Python Subprocess (FastAPI)                            │
-│  ├── Playbook engine (44 step types)                    │
+│  ├── Playbook engine (~69 step types)                   │
 │  ├── Playwright browser automation                      │
 │  ├── Gateway REST client                                │
 │  ├── Credential vault (Fernet encryption)               │
@@ -165,7 +165,7 @@ The Python backend is the full Ignition Automation Toolkit:
 | Module | Purpose |
 | -------- | --------- |
 | `ignition_toolkit/api/` | FastAPI REST API and WebSocket |
-| `ignition_toolkit/playbook/` | Playbook engine with 44 step types |
+| `ignition_toolkit/playbook/` | Playbook engine (~69 step types — source of truth: `StepType` enum in `playbook/models.py`) |
 | `ignition_toolkit/browser/` | Playwright browser automation |
 | `ignition_toolkit/gateway/` | Ignition Gateway REST client |
 | `ignition_toolkit/credentials/` | Fernet-encrypted credential vault |
@@ -189,7 +189,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 | ----------- | --------- |
-| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Exchange, Settings |
+| `src/pages/` | 9 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, APIExplorer, Exchange, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
 | `src/data/` | Static data (ignitionApiDocs.ts) |
@@ -277,17 +277,33 @@ You can also trigger builds from GitHub Actions UI:
 
 ## Skills (load before the matching task)
 
-| Task                                                                       | Skill                 |
-|----------------------------------------------------------------------------|-----------------------|
-| Writing/reviewing Python or TS code, commits, releases                     | `toolbox-conventions` |
-| Anything touching credentials, auth, inputs, subprocess, or file handling  | `security-checking`   |
+| Task                                                                       | Skill                       |
+|----------------------------------------------------------------------------|-----------------------------|
+| Writing/reviewing Python or TS code, commits, releases                     | `toolbox-conventions`       |
+| Anything touching credentials, auth, inputs, subprocess, or file handling  | `security-checking`         |
+| Running tests/lint, verifying a change, running the app                    | `testing-and-verification`  |
+| Adding/changing a playbook step type (StepType, registry, executors)       | `add-step-type`             |
+| Adding/changing an API endpoint or wiring backend → frontend               | `add-api-endpoint`          |
+| Editing library playbooks (`backend/playbooks/`) or `playbooks-index.json` | `playbook-authoring`        |
 
 Skills live in `.claude/skills/`. Load them — don't work from memory.
+
+**Work queue:** `docs/OPEN_WORK.md` is the live list of unfinished work;
+major planned features have agent-executable plans in `docs/plans/`
+(StackBuilder test strategy, UDT Builder, Perspective project audit).
+
+**Stale-doc warning:** `docs/IMPROVEMENT_PLAN.md` and
+`docs/architectural-debt-audit.md` are dated point-in-time reviews (Feb 2026,
+v2.0.x era); many findings are already fixed. Verify against current code
+before acting on them. `docs/archive/` is historical only.
 
 ---
 
 **Maintainer**: Nigel G
-**Status**: Production ready, maintenance mode - all development phases complete
+**Status**: Production ready. All roadmap phases complete, but the project is
+actively maintained — regular `v3.2.x` releases for playbook fixes and
+incremental features (check `git log` for current activity, `package.json`
+for the version).
 
 ## Development Phases
 

@@ -2,30 +2,33 @@
 
 Playbooks for Perspective (web-based HMI) browser automation using Playwright.
 
-## Available Playbooks
+## Status: library is empty — playbooks are planned
+
+No Perspective playbooks ship yet. The engine support is fully implemented
+(`perspective.*` step types, live browser streaming, component discovery);
+the library content is being built as part of the **Perspective Project
+Audit** feature — see `docs/plans/perspective-project-audit.md`.
+
+## Planned Playbooks
 
 | Playbook | Description |
-|----------|-------------|
-| `test_buttons.yaml` | Test button interactions and click handling |
-| `test_inputs.yaml` | Test input field interactions and form validation |
-| `test_docks.yaml` | Test dock panel navigation and layout |
-| `test_discovery_debug.yaml` | Debug playbook for component discovery |
-| `test_suite_master.yaml` | Master test suite that runs multiple test playbooks |
-| `test_verification_examples.yaml` | Examples of verification step patterns |
-| `test_visual_consistency.yaml` | Visual consistency checks across views |
+| -------- | ----------- |
+| `session_smoke.yaml` | Open project URL, login, verify a session starts |
+| `page_crawl.yaml` | Walk page-config routes, screenshot each, collect console errors and load times |
+| `navigation_audit.yaml` | Verify docks/navigation work on every page |
+| `visual_baseline.yaml` | Screenshot set for before/after comparisons |
 
-## Capabilities
+## Capabilities (already implemented in the engine)
 
-Perspective playbooks enable:
 - Automated UI testing for Perspective applications
 - Session management and authentication testing
 - Component interaction validation (buttons, inputs, dropdowns)
 - View navigation and dock panel testing
-- Real-time data verification
+- Component discovery and metadata extraction
+  (`perspective.discover_page`, `perspective.extract_component_metadata`)
 - Live browser streaming during execution (2 FPS)
-- AI-powered visual verification (`perspective.verify_with_ai`)
 
-## Usage
+## Usage (once playbooks exist)
 
 1. Navigate to the **Playbooks** page in the Toolbox
 2. Select a Perspective playbook

@@ -1,5 +1,12 @@
 # Ignition Toolbox - Comprehensive Improvement Plan
 
+> **⚠️ Historical snapshot — do not act on this without verifying.**
+> Written 2026-02-06 against v2.0.0. Many findings have since been fixed
+> (CI now runs pytest/vitest/eslint, `/ws/shell` requires API-key auth,
+> `claude-executor.ts` and the dead pages were removed, IPC channel and
+> port constants exist). Check the current code before treating any item
+> here as open work.
+
 **Generated:** 2026-02-06
 **Based on:** 4 parallel code review agents (Documentation, Security, Code Quality, Architecture)
 **Current Version:** 2.0.0
