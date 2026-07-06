@@ -10,7 +10,7 @@
 
 import { useMemo, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box, Typography } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme, CircularProgress, Box, Typography, Divider } from '@mui/material';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { Playbooks } from './pages/Playbooks';
@@ -155,7 +155,15 @@ function AppContent() {
           case 'designer':
             return <Playbooks domainFilter="designer" />;
           case 'perspective':
-            return <Playbooks domainFilter="perspective" />;
+            return (
+              <>
+                <Playbooks domainFilter="perspective" />
+                <Divider sx={{ my: 4 }} />
+                <Suspense fallback={<PageLoader />}>
+                  <Audit />
+                </Suspense>
+              </>
+            );
           case 'active-execution':
             if (!activeExecutionId) {
               return (
@@ -207,12 +215,6 @@ function AppContent() {
         return (
           <Suspense fallback={<PageLoader />}>
             <Exchange />
-          </Suspense>
-        );
-      case 'audit':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Audit />
           </Suspense>
         );
       case 'settings':

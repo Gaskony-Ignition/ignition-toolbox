@@ -309,6 +309,13 @@ export function UdtBuilder() {
 
       {templatesQuery.isError && <Alert severity="error">Failed to load UDT templates.</Alert>}
 
+      {templatesQuery.isSuccess && templates.length === 0 && (
+        <Alert severity="warning">
+          No UDT templates were found. This indicates a broken installation — the bundled
+          template files are missing. Try reinstalling the app.
+        </Alert>
+      )}
+
       {templates.length > 0 && (
         <TemplatePicker
           templates={templates}

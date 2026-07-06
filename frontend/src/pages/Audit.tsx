@@ -308,7 +308,7 @@ export function Audit() {
     <Box>
       {/* Page header */}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h5" fontWeight={700} gutterBottom>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
           Perspective Project Audit
         </Typography>
         <Typography variant="body2" color="text.secondary">

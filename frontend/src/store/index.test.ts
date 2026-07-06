@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStore } from './index';
 import { act } from '@testing-library/react';
+import { MAIN_TABS } from '../constants/navigation';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -203,6 +204,23 @@ describe('useStore', () => {
 
       const newState = useStore.getState();
       expect(newState.sessionCredentials).toHaveLength(0);
+    });
+  });
+
+  describe('tab navigation', () => {
+    it('no longer registers a top-level Audit tab (moved under Playbooks -> Perspective)', () => {
+      expect(MAIN_TABS).not.toContain('audit');
+    });
+
+    it('setMainTab persists the tab to localStorage', () => {
+      const store = useStore.getState();
+
+      act(() => {
+        store.setMainTab('playbooks');
+      });
+
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('mainTab', 'playbooks');
+      expect(useStore.getState().mainTab).toBe('playbooks');
     });
   });
 

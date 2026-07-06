@@ -197,4 +197,14 @@ describe('UdtBuilder page', () => {
 
     expect(await screen.findByText('Unknown template')).toBeInTheDocument();
   });
+
+  it('shows a broken-installation warning when the template list loads empty', async () => {
+    vi.mocked(api.udt.getTemplates).mockResolvedValue([]);
+    renderUdtBuilder();
+
+    expect(await screen.findByText(/no udt templates were found/i)).toBeInTheDocument();
+    expect(screen.getByText(/broken installation/i)).toBeInTheDocument();
+    expect(screen.getByText(/reinstalling the app/i)).toBeInTheDocument();
+    expect(screen.queryByTestId(/^template-card-/)).not.toBeInTheDocument();
+  });
 });
