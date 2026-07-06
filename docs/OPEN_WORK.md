@@ -8,11 +8,15 @@ Last verified against code: 2026-07-06 (v3.2.5).
 
 ## Major (planned, agent-executable — see `docs/plans/`)
 
-| Area | Plan | Next phase |
+| Area | Plan | State (2026-07-06) |
 | --- | --- | --- |
 | StackBuilder | [plans/stackbuilder-test-strategy.md](plans/stackbuilder-test-strategy.md) | **All 5 tiers done** (400+ new tests; 5 generator bugs fixed). Remaining: remove the beta label with the next release |
-| UDT Builder | [plans/udt-builder-design.md](plans/udt-builder-design.md) | Phases 1–2 done (models, conventions, 3 templates, builder, naming-style option; 90 tests). Next: phase 3 API + UdtBuilder page; validate against Nigel's reference exports when imported |
-| Perspective project audit | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | Phases 0–4 done (rule engine, report + API + Audit tab, 2 proven playbooks + ToolboxAudit test project). Next: phase 5 remaining playbooks + merge runtime findings into the report |
+| UDT Builder | [plans/udt-builder-design.md](plans/udt-builder-design.md) | **Phases 1–3 done** — full build flow shipped (Beta tab). Remaining: phase 4 linter + phase 5 template growth; Designer import check + validation against Nigel's reference exports |
+| Perspective project audit | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | **All phases done** — static audit + report + UI + 4 proven playbooks + runtime section. Future: rule pack growth; wire runtime results into the Audit tab |
+
+All three features are functionally complete; release checklist: Nigel reviews
+report tone + UDT conventions against reference exports, beta labels
+reassessed, then version bump + tag (NOT before Nigel says so).
 
 ## StackBuilder feature gaps (found by the 2026-07-06 pair-sweep work; declared in data but not implemented)
 
@@ -48,6 +52,12 @@ Note: the UDT linter and the project audit share one rule-engine core
   playbooks; risky if users install community playbooks from the remote index.
 
 ## Minor cleanups (no urgency)
+
+- No step type captures browser console output — `PageRuntimeResult.console_errors`
+  is always empty; a `browser.get_console_errors` step type would complete the
+  runtime audit story.
+- UDT Builder preview is an explicit button (not live/debounced); inline 422
+  field-error mapping parses builder.py's message strings (loosely coupled).
 
 - Nested-playbook verification UX: `playbook.run` steps require the child
   playbook to be marked verified in the *local metadata store*
