@@ -93,7 +93,7 @@ customer deliverable.
 | 1 ✅ DONE 2026-07-06 | `audit/project.py` loader + inventory | Loads dir or zip; smoke-run on real project mirror: 5 views / 470 components / 379 bindings |
 | 2 ✅ DONE 2026-07-06 | `audit/engine.py` + 10 seed rules + 34 tests | All rules have positive+negative fixtures; real-mirror run yields 366 findings incl. the Barometer smells. Open tuning question: `consistency-hardcoded-color` fired 261× on one view — needs per-view aggregation/threshold before customer use |
 | 3 ✅ DONE 2026-07-06 | `report.py` + `/api/audit/perspective` (+ `/markdown` download) + Audit page/tab | End-to-end verified on the real project mirror: 366 findings → 16 aggregated rows, markdown report downloads; 400 non-zip / 413 >50MB; upload chunk-checked + temp-dir only. Nigel to review: report tone/wording, remediation appendix uses first finding's text as representative |
-| 4 | Mode B playbooks 1–2 (`session_smoke`, `page_crawl`) | Run green against the VMware test gateway's Perspective project; `validate-playbooks.py` passes |
+| 4 ✅ DONE 2026-07-06 | Mode B playbooks 1–2 (`session_smoke`, `page_crawl`) + `test-project/ToolboxAudit` | Both proven on the docker gateway (page_crawl 9/9); 12/12 playbooks validate. Deploy procedure: docker cp + ownership fix + gateway "Scan File System" button (no restart). Gotcha documented: expired Perspective trial → run `gateway/reset_trial.yaml` first |
 | 5 | Remaining playbooks + rule pack growth; merge runtime findings into the report | Combined static+runtime report |
 
 Phases 1–3 are pure backend+frontend work, fully testable headless — ideal

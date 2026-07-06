@@ -10,9 +10,9 @@ Last verified against code: 2026-07-06 (v3.2.5).
 
 | Area | Plan | Next phase |
 | --- | --- | --- |
-| StackBuilder is beta | [plans/stackbuilder-test-strategy.md](plans/stackbuilder-test-strategy.md) | Phases 1–4 done (398 new tests incl. compose-spec + goldens; 4 generator bugs fixed). Next: phase 5 live smoke (Nigel's machine), then remove the beta label |
-| UDT Builder: "coming soon" | [plans/udt-builder-design.md](plans/udt-builder-design.md) | Phase 1 done (lossless data model, 15 tests). Next: phase 2 conventions + templates — blocked on Nigel (see below) |
-| Perspective project audit + empty playbook library | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | Phases 0–3 done (rule engine, 10 rules, report + API + Audit tab, end-to-end verified). Next: phase 4 runtime playbooks (needs test gateway) |
+| StackBuilder | [plans/stackbuilder-test-strategy.md](plans/stackbuilder-test-strategy.md) | **All 5 tiers done** (400+ new tests; 5 generator bugs fixed). Remaining: remove the beta label with the next release |
+| UDT Builder | [plans/udt-builder-design.md](plans/udt-builder-design.md) | Phases 1–2 done (models, conventions, 3 templates, builder, naming-style option; 90 tests). Next: phase 3 API + UdtBuilder page; validate against Nigel's reference exports when imported |
+| Perspective project audit | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | Phases 0–4 done (rule engine, report + API + Audit tab, 2 proven playbooks + ToolboxAudit test project). Next: phase 5 remaining playbooks + merge runtime findings into the report |
 
 ## StackBuilder feature gaps (found by the 2026-07-06 pair-sweep work; declared in data but not implemented)
 
@@ -48,6 +48,13 @@ Note: the UDT linter and the project audit share one rule-engine core
   playbooks; risky if users install community playbooks from the remote index.
 
 ## Minor cleanups (no urgency)
+
+- Nested-playbook verification UX: `playbook.run` steps require the child
+  playbook to be marked verified in the *local metadata store*
+  (`playbook_metadata.json`) even when the YAML ships `verified: true` —
+  a fresh install can't run `reset_trial.yaml` headless until
+  `gateway_login.yaml` is marked verified via the UI. Consider seeding the
+  metadata store from the shipped YAML's `verified` flag for built-ins.
 
 - `UpdateStatus` type defined in 4 places across electron/frontend boundary
 - One remaining `window.location.reload()` in the frontend

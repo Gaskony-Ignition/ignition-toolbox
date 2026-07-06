@@ -77,7 +77,7 @@ table). Follow `add-api-endpoint` for the wiring; API under `/api/udt/`.
 | Phase | Deliverable | Done when |
 | --- | --- | --- |
 | 1 ✅ DONE 2026-07-06 (synthetic fixtures — re-validate against real exports when available) | `udt/models.py` + round-trip tests | 15 tests green; lossless `TagElement` model with camelCase aliases; known limitation pinned (snake_case input keys rewritten) |
-| 2 | `conventions.py` + 3 templates (motor, valve, analog_input) + `builder.py` | Generated JSON imports cleanly into the test gateway's Designer and instances work against simulator tags |
+| 2 ✅ DONE 2026-07-06 | `conventions.py` + 3 templates (motor, valve, analog_input) + `builder.py` + user-selectable naming style | 90 tests green. Nigel ratified (2026-07-06): bare alarm names, ISA-18.2 priority mapping, download-JSON-only v1; member/folder naming style is a user option (camelCase default / PascalCase). Designer import check still pending real gateway validation |
 | 3 | API endpoints + UdtBuilder page (form → preview → download) | End-to-end: build a Motor UDT in the UI, import to gateway, no manual edits needed |
 | 4 | `linter.py` + lint tab | Nigel's reference UDTs (see prerequisite) produce a sensible findings report |
 | 5 | Template library growth seeded from reference project + community feedback | ≥8 device classes |

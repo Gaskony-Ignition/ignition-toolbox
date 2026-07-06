@@ -88,7 +88,7 @@ values; invariants = T2's assertions. Good ROI only after T1–T4 are green.
 | 2 ✅ DONE 2026-07-06 | `test_pairs_sweep.py` (T2) | 234 cases green incl. negative mutual-exclusivity + ignition×2. Surfaced and fixed 3 real generator bugs (dead port options, unenforced conflicts → now `IntegrationConflictError` → HTTP 422, wrong provider instance names). Feature gaps found are listed in `docs/OPEN_WORK.md`. |
 | 3 ✅ DONE 2026-07-06 | `test_compose_spec.py` (T3) | 29 integration tests; ran green against real docker compose v5.1.3; skips cleanly without docker |
 | 4 ✅ DONE 2026-07-06 | `goldens/` + `test_goldens.py` (T4) | 7 golden stacks, `--update-goldens` flag, OAuth/Keycloak secrets normalised (see goldens/README.md). Surfaced + fixed a real nondeterminism bug: `depends_on` order varied per run (`set()` → `dict.fromkeys()`). Known gap: mosquitto password-file salt is nondeterministic but unexercised |
-| 5 | `test_live_smoke.py` (T5) | 2 stacks up/healthy/down on Nigel's machine |
+| 5 ✅ DONE 2026-07-06 | `test_live_smoke.py` (T5) | Both stacks up/healthy/torn-down in ~94 s (ports 18000-18999; resident gateway untouched; slow tests force-skipped unless `-m` selected). Found + fixed: generated Grafana datasource provisioning file was never bind-mounted. **All 5 tiers complete — beta label can come off with the next release.** |
 
 Expect phases 1–2 to surface real generator bugs (that's the point) — fix
 them in `stackbuilder/`, not by loosening assertions. When the suite is
