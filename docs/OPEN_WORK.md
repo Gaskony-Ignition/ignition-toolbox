@@ -4,7 +4,7 @@ The single live list of unfinished work in this repo. Supersedes the
 banner-marked historical snapshots (`IMPROVEMENT_PLAN.md`,
 `architectural-debt-audit.md`) — do not mine those for tasks.
 
-Last verified against code: 2026-07-06 (v3.2.5).
+Last verified against code: 06/07/2026 (v3.4.0).
 
 ## Major (planned, agent-executable — see `docs/plans/`)
 
@@ -14,9 +14,9 @@ Last verified against code: 2026-07-06 (v3.2.5).
 | UDT Builder | [plans/udt-composer-design.md](plans/udt-composer-design.md) | **Composer shipped v3.4.0** — guided wizard + live lint pack (`audit/rules/udt/`), templates demoted to quick-start presets; supersedes the questionnaire flow (old phase-4 linter now exists as the lint pack). Remaining: preset growth; Designer import check + validation against Nigel's reference exports |
 | Perspective project audit | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | **All phases done** — static audit + report + UI + 4 proven playbooks + runtime section. Future: rule pack growth; wire runtime results into the Audit tab |
 
-All three features are functionally complete; release checklist: Nigel reviews
-report tone + UDT conventions against reference exports, beta labels
-reassessed, then version bump + tag (NOT before Nigel says so).
+All three shipped across v3.3.0-v3.4.0. Still open: Stacks/UDTs Beta badges
+(Nigel's call; UDT composer is freshly rebuilt so Beta is fair there), and
+UDT validation against Nigel's reference exports once they reach this machine.
 
 ## StackBuilder feature gaps (found by the 2026-07-06 pair-sweep work; declared in data but not implemented)
 
@@ -70,16 +70,12 @@ Note: the UDT linter and the project audit share one rule-engine core
 
 ## Blocked on Nigel
 
-- **Retire the 7 stale `perspective/test_*` entries from `library/` +
-  `playbooks-index.json`?** They were removed from the shipped product in
-  Feb but are still published in the remote library (unverified, built for
-  an older engine, superseded by the 4 new audit playbooks). Recommendation:
-  remove them.
-
 - Export the customer "Ignition UDTs" reference project from the Claude
   Windows GUI / old machine into `docs/reference/udt-examples/`
-  (needed for UDT plan phases 2+; searched this machine 2026-07-06 — absent).
-- Ratify UDT naming/alarm conventions (see udt-builder-design.md decisions).
+  (wanted to validate composer conventions against real-world exports;
+  searched this machine 2026-07-06 — absent).
+- Decide: remove the Stacks Beta badge? (test strategy complete since
+  v3.3.0). UDTs Beta badge should stay until the composer has field use.
 - Decide: sandbox or accept `exec()` in the `utility.python` step
   (`playbook/executors/utility_executor.py:134`). Fine for self-authored
   playbooks; risky if users install community playbooks from the remote index.

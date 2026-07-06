@@ -1,6 +1,11 @@
 # UDT Builder — Design & Plan for a Future Agent Session
 
-**Status:** PLANNED (written 2026-07-06). Nothing is built yet ("coming soon").
+**Status:** SUPERSEDED (06/07/2026). Phases 1-3 shipped in v3.3.0; the
+questionnaire flow was then replaced by the guided composer in v3.4.0 —
+see [udt-composer-design.md](udt-composer-design.md), which is the live
+doc. This file remains as reference for the models/conventions design and
+the still-open reference-export validation. The planned phase-4 linter now
+exists as the lint pack (`ignition_toolkit/audit/rules/udt/`).
 **Goal:** Make it super easy to build high-quality, best-practice Ignition
 UDTs — standardised structure, alarms, history, and documentation — instead of
 hand-assembling them in Designer. Load skills `add-api-endpoint`,
