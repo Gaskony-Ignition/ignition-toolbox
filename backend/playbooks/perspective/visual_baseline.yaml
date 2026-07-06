@@ -1,0 +1,120 @@
+name: "Perspective Visual Baseline"
+version: "1.0"
+description: >
+  Captures a deterministically-named, full-page screenshot set for every
+  configured page-config route, for before/after visual comparison (e.g.
+  before and after a customer's remediation of audit findings, or before
+  and after an Ignition/module upgrade). Screenshot filenames incorporate
+  baseline_name so two runs with different baseline_name values (e.g.
+  "before" and "after") produce non-colliding, diffable sets in the
+  screenshots directory (browser.screenshot writes
+  "<name>.<format>" under the manager's screenshots_dir - see
+  ignition_toolkit/browser/manager.py `screenshot()`).
+  NOTE on page_paths: as in page_crawl.yaml, the engine has no loop
+  construct, so page1_path/page2_path are the actual navigation targets;
+  page_paths is a human-readable summary only - keep both in sync.
+domain: perspective
+group: "Perspective (Audit)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: project_name
+    type: string
+    required: true
+    default: "ToolboxAudit"
+    description: "Perspective project name to baseline (case-sensitive, as it appears in the client URL)"
+
+  - name: baseline_name
+    type: string
+    required: true
+    default: "baseline"
+    description: >
+      Short identifier folded into each screenshot filename (e.g.
+      "before", "after", "2026-07-06"). Use stable, filesystem-safe
+      characters only (letters, digits, hyphen, underscore) so before/after
+      sets can be told apart and diffed.
+
+  - name: page_paths
+    type: string
+    required: false
+    default: "/,/page2"
+    description: >
+      Comma-separated list of page-config routes this build captures, for
+      documentation/logging only (the engine cannot loop over this at
+      runtime - see the playbook description). Keep in sync with
+      page1_path/page2_path below.
+
+  - name: page1_path
+    type: string
+    required: true
+    default: "/"
+    description: "First page-config route to capture, must start with '/' (e.g. '/')"
+
+  - name: page2_path
+    type: string
+    required: true
+    default: "/page2"
+    description: "Second page-config route to capture, must start with '/' (e.g. '/page2')"
+
+steps:
+  - id: step1
+    name: "Step 1: Log baseline plan"
+    type: utility.log
+    parameters:
+      message: "Capturing visual baseline '{{ parameter.baseline_name }}' for {{ parameter.project_name }}: {{ parameter.page_paths }} (page1={{ parameter.page1_path }}, page2={{ parameter.page2_path }})"
+      level: "info"
+
+  - id: step2
+    name: "Step 2: Navigate to page 1"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page1_path }}"
+      wait_until: "load"
+
+  - id: step3
+    name: "Step 3: Wait for page 1 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step4
+    name: "Step 4: Full-page screenshot of page 1"
+    type: browser.screenshot
+    parameters:
+      name: "{{ parameter.baseline_name }}_page1"
+      full_page: true
+
+  - id: step5
+    name: "Step 5: Navigate to page 2"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page2_path }}"
+      wait_until: "load"
+
+  - id: step6
+    name: "Step 6: Wait for page 2 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step7
+    name: "Step 7: Full-page screenshot of page 2"
+    type: browser.screenshot
+    parameters:
+      name: "{{ parameter.baseline_name }}_page2"
+      full_page: true
+
+  - id: step8
+    name: "Step 8: Log baseline completion"
+    type: utility.log
+    parameters:
+      message: "Visual baseline '{{ parameter.baseline_name }}' complete: {{ parameter.baseline_name }}_page1 and {{ parameter.baseline_name }}_page2 captured."
+      level: "info"

@@ -1,0 +1,194 @@
+name: "Perspective Navigation Audit"
+version: "1.0"
+description: >
+  Verifies that a Perspective project's page-config navigation actually
+  works: each configured page-config route renders directly, and the
+  in-app navigation button on the Home page drives the client to the
+  expected route and back. Built against the bundled test-project
+  (`test-project/ToolboxAudit/`), whose Home view has a button
+  ("GoToPage2Button", at data-component-path C.0:2) that calls
+  system.perspective.navigate(page="/page2"), and whose Page2 view has a
+  mirror button ("BackHomeButton", also C.0:2 in its own tree) that
+  navigates back to "/".
+  NOTE on step-type choice: perspective.verify_navigation is used to
+  assert the client URL actually changed after each navigation (it checks
+  page.url against expected_url_pattern after settling to networkidle) -
+  a stronger check than browser.wait alone, which only confirms *some*
+  Perspective view rendered, not that it is the *expected* one.
+  NOTE on page_paths: as in page_crawl.yaml, the engine has no loop
+  construct, so page1_path/page2_path are the actual navigation targets;
+  page_paths is a human-readable summary only - keep both in sync.
+domain: perspective
+group: "Perspective (Audit)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: project_name
+    type: string
+    required: true
+    default: "ToolboxAudit"
+    description: "Perspective project name to audit (case-sensitive, as it appears in the client URL)"
+
+  - name: page_paths
+    type: string
+    required: false
+    default: "/,/page2"
+    description: >
+      Comma-separated list of page-config routes this build audits, for
+      documentation/logging only (the engine cannot loop over this at
+      runtime - see the playbook description). Keep in sync with
+      page1_path/page2_path below.
+
+  - name: page1_path
+    type: string
+    required: true
+    default: "/"
+    description: "First page-config route to audit, must start with '/' (e.g. '/'). Must be the Home view containing the navigation button."
+
+  - name: page2_path
+    type: string
+    required: true
+    default: "/page2"
+    description: "Second page-config route to audit, must start with '/' (e.g. '/page2')"
+
+steps:
+  - id: step1
+    name: "Step 1: Log audit plan"
+    type: utility.log
+    parameters:
+      message: "Navigation audit of {{ parameter.project_name }}: {{ parameter.page_paths }} (page1={{ parameter.page1_path }}, page2={{ parameter.page2_path }})"
+      level: "info"
+
+  - id: step2
+    name: "Step 2: Navigate directly to page 1"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page1_path }}"
+      wait_until: "load"
+
+  - id: step3
+    name: "Step 3: Wait for page 1 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step4
+    name: "Step 4: Verify direct navigation landed on page 1"
+    type: perspective.verify_navigation
+    parameters:
+      expected_url_pattern: "{{ parameter.page1_path }}"
+      timeout: 10000
+
+  - id: step5
+    name: "Step 5: Screenshot page 1"
+    type: browser.screenshot
+    parameters:
+      name: "navigation_audit_page1_direct"
+      full_page: true
+
+  - id: step6
+    name: "Step 6: Navigate directly to page 2"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page2_path }}"
+      wait_until: "load"
+
+  - id: step7
+    name: "Step 7: Wait for page 2 to render"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step8
+    name: "Step 8: Verify direct navigation landed on page 2"
+    type: perspective.verify_navigation
+    parameters:
+      expected_url_pattern: "{{ parameter.page2_path }}"
+      timeout: 10000
+
+  - id: step9
+    name: "Step 9: Screenshot page 2"
+    type: browser.screenshot
+    parameters:
+      name: "navigation_audit_page2_direct"
+      full_page: true
+
+  - id: step10
+    name: "Step 10: Return to page 1 to reach the navigation button"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}{{ parameter.page1_path }}"
+      wait_until: "load"
+
+  - id: step11
+    name: "Step 11: Wait for page 1 to render again"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step12
+    name: "Step 12: Click the Home page's navigation button (GoToPage2Button, C.0:2)"
+    type: browser.click
+    parameters:
+      selector: "[data-component-path='C.0:2'], button:has-text('Go to Page 2')"
+      timeout: 10000
+
+  - id: step13
+    name: "Step 13: Wait for the button click to render page 2"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step14
+    name: "Step 14: Verify the button click actually navigated to page 2"
+    type: perspective.verify_navigation
+    parameters:
+      expected_url_pattern: "{{ parameter.page2_path }}"
+      timeout: 10000
+
+  - id: step15
+    name: "Step 15: Verify the app did not surface an error after the button click"
+    type: browser.verify_text
+    parameters:
+      # NOTE on step-type choice: a negative existence check (browser.verify
+      # with exists=false, e.g. for absence of "Trial Expired"/error text)
+      # would be the more direct expression of "verify the app didn't
+      # error", but the shared BrowserVerifyHandler's exists=false path
+      # relies on catching a plain builtin TimeoutError, while Playwright's
+      # own TimeoutError (raised by wait_for_selector on a genuinely-absent
+      # selector) is not a subclass of it - so exists=false checks always
+      # fail here when the checked-for element is (correctly) absent. That
+      # is a pre-existing bug in ignition_toolkit/playbook/executors/
+      # browser_executor.py, out of scope for the playbook library, so this
+      # step uses the positive form instead: assert the real Page 2 title
+      # (component C.0:0) is showing its expected text. A Perspective error
+      # or "Trial Expired" overlay replaces this content, so this still
+      # catches the failure mode the step name promises to check.
+      selector: "[data-component-path='C.0:0']"
+      text: "Page 2"
+      match: "contains"
+      timeout: 10000
+
+  - id: step16
+    name: "Step 16: Screenshot the page reached via the navigation button"
+    type: browser.screenshot
+    parameters:
+      name: "navigation_audit_button_click_page2"
+      full_page: true
+
+  - id: step17
+    name: "Step 17: Log audit completion"
+    type: utility.log
+    parameters:
+      message: "Navigation audit complete: page1 and page2 both render directly, and the Home page's navigation button correctly drives the client from page1 to page2."
+      level: "info"

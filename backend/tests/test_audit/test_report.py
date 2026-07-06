@@ -7,6 +7,8 @@ pipeline (engine -> report) against the real mini_project fixture to prove
 the pieces fit together end to end.
 """
 
+from datetime import UTC, datetime
+
 from ignition_toolkit.audit.engine import Finding, RuleEngine, Severity
 from ignition_toolkit.audit.project import Inventory
 from ignition_toolkit.audit.report import (
@@ -17,6 +19,7 @@ from ignition_toolkit.audit.report import (
     severity_counts,
 )
 from ignition_toolkit.audit.rules.perspective import default_rules
+from ignition_toolkit.audit.runtime import PageRuntimeResult, RuntimeAuditResults
 
 from .conftest import load_project
 
@@ -224,3 +227,88 @@ class TestRealFixturePipeline:
         # exactly with the full findings list (no findings lost or invented
         # during aggregation).
         assert sum(a["count"] for a in data["aggregated_findings"]) == len(data["findings"])
+
+
+class TestRuntimeSectionIsAdditive:
+    """The runtime section (Mode B results folded into a Mode A report) must
+    never change output when absent — these tests pin that byte-identical
+    guarantee, then check the new section's content when present."""
+
+    def test_to_dict_has_no_runtime_key_when_absent(self) -> None:
+        report = generate_report("P", EMPTY_INVENTORY, [_finding()])
+
+        assert "runtime" not in report.to_dict()
+
+    def test_to_markdown_unchanged_when_runtime_absent(self) -> None:
+        fixed_time = datetime(2026, 7, 6, 12, 0, tzinfo=UTC)
+        findings = [_finding()]
+
+        without_runtime = AuditReport("P", EMPTY_INVENTORY, findings, generated_at=fixed_time)
+        # A second, otherwise-identical report built the "old" way (never
+        # even touching the runtime field) must render byte-for-byte the
+        # same as one explicitly built with runtime=None.
+        explicit_none = AuditReport(
+            "P", EMPTY_INVENTORY, findings, generated_at=fixed_time, runtime=None
+        )
+
+        assert without_runtime.to_markdown() == explicit_none.to_markdown()
+        assert "Runtime Checks" not in without_runtime.to_markdown()
+
+    def test_to_dict_gains_runtime_key_when_present(self) -> None:
+        runtime = RuntimeAuditResults(
+            playbook_name="perspective/navigation_audit.yaml",
+            executed_at=datetime(2026, 7, 6, 12, 0, tzinfo=UTC),
+            pages=[
+                PageRuntimeResult(path="/", loaded_ok=True, load_time_ms=200.0),
+                PageRuntimeResult(path="/page2", loaded_ok=True, load_time_ms=180.0),
+            ],
+        )
+        report = generate_report("ToolboxAudit", EMPTY_INVENTORY, [], runtime=runtime)
+
+        data = report.to_dict()
+
+        assert data["runtime"]["playbook_name"] == "perspective/navigation_audit.yaml"
+        assert data["runtime"]["all_pages_loaded_ok"] is True
+        assert len(data["runtime"]["pages"]) == 2
+
+    def test_to_markdown_includes_runtime_checks_section(self) -> None:
+        runtime = RuntimeAuditResults(
+            playbook_name="perspective/navigation_audit.yaml",
+            executed_at=datetime(2026, 7, 6, 12, 0, tzinfo=UTC),
+            pages=[
+                PageRuntimeResult(
+                    path="/",
+                    loaded_ok=True,
+                    load_time_ms=812.0,
+                    screenshot_path="navigation_audit_page1_direct.webp",
+                ),
+                PageRuntimeResult(
+                    path="/page2",
+                    loaded_ok=False,
+                    error="Timeout 30000ms exceeded waiting for selector",
+                ),
+            ],
+        )
+        report = generate_report("ToolboxAudit", EMPTY_INVENTORY, [], runtime=runtime)
+
+        markdown = report.to_markdown()
+
+        assert "## Runtime Checks" in markdown
+        assert "perspective/navigation_audit.yaml" in markdown
+        assert "| / | OK | 812 ms | 0 | navigation_audit_page1_direct.webp |" in markdown
+        assert "| /page2 | FAILED | — | 0 | — |" in markdown
+        assert "### Runtime failures" in markdown
+        assert "Timeout 30000ms exceeded waiting for selector" in markdown
+
+    def test_to_markdown_runtime_section_with_no_pages(self) -> None:
+        runtime = RuntimeAuditResults(
+            playbook_name="perspective/page_crawl.yaml",
+            executed_at=datetime(2026, 7, 6, 12, 0, tzinfo=UTC),
+            pages=[],
+        )
+        report = generate_report("P", EMPTY_INVENTORY, [], runtime=runtime)
+
+        markdown = report.to_markdown()
+
+        assert "## Runtime Checks" in markdown
+        assert "No page visits were recorded" in markdown

@@ -17,6 +17,12 @@ findings in a single view. A raw findings table at that scale is not a
 usable customer deliverable — the report groups same-rule-same-view
 findings into one row (count + up to 3 example locations) everywhere
 except the full findings list carried alongside it for completeness.
+
+Optionally, an :class:`AuditReport` can also carry Mode B (playbook) runtime
+results — see :mod:`ignition_toolkit.audit.runtime` — folding a "Runtime
+Checks" section into both render forms. This is purely additive: a report
+built without runtime data renders exactly as it did before that feature
+existed.
 """
 
 import logging
@@ -27,6 +33,7 @@ from typing import Any
 
 from ignition_toolkit.audit.engine import Finding, Severity
 from ignition_toolkit.audit.project import Inventory
+from ignition_toolkit.audit.runtime import RuntimeAuditResults
 
 logger = logging.getLogger(__name__)
 
@@ -151,12 +158,22 @@ class AuditReport:
 
     Build via :func:`generate_report`; render via :meth:`to_dict` (API) or
     :meth:`to_markdown` (customer-facing document).
+
+    ``runtime`` is optional and additive: it carries the Mode B (playbook)
+    results for the same project — see
+    :mod:`ignition_toolkit.audit.runtime` — built via
+    :func:`~ignition_toolkit.audit.runtime.build_runtime_results_from_execution`.
+    When ``None`` (the default, and the only case Mode A callers exercise
+    today), :meth:`to_dict` omits the ``"runtime"`` key entirely and
+    :meth:`to_markdown` emits no "Runtime Checks" section — both render
+    byte-identically to before this field existed.
     """
 
     project_name: str
     inventory: Inventory
     findings: list[Finding]
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    runtime: RuntimeAuditResults | None = None
 
     @property
     def aggregated(self) -> list[AggregatedFinding]:
@@ -170,7 +187,7 @@ class AuditReport:
         raw detail, e.g. a future CSV export).
         """
         findings = self.findings
-        return {
+        data: dict[str, Any] = {
             "project_name": self.project_name,
             "generated_at": self.generated_at.isoformat(),
             "inventory": {
@@ -197,6 +214,13 @@ class AuditReport:
                 for f in findings
             ],
         }
+
+        # Additive: only present when a runtime (Mode B) execution was fed
+        # in. Existing callers that never pass ``runtime`` see no new key.
+        if self.runtime is not None:
+            data["runtime"] = self.runtime.to_dict()
+
+        return data
 
     def to_markdown(self) -> str:
         """Render the customer-facing markdown report.
@@ -297,6 +321,45 @@ class AuditReport:
                 lines.append(rule_findings[0].recommendation)
                 lines.append("")
 
+        # --- Runtime checks (Mode B, additive) -----------------------------------
+        # Only emitted when a runtime execution was fed in — with no
+        # ``runtime``, nothing below this point is added, so reports built
+        # without runtime data stay byte-identical to before this section
+        # existed.
+        if self.runtime is not None:
+            lines.append("## Runtime Checks")
+            lines.append("")
+            lines.append(
+                f"*From playbook `{self.runtime.playbook_name}`, executed "
+                f"{self.runtime.executed_at.strftime('%d/%m/%Y %H:%M UTC')}.*"
+            )
+            lines.append("")
+            if not self.runtime.pages:
+                lines.append("No page visits were recorded for this execution.")
+                lines.append("")
+            else:
+                lines.append("| Page | Loaded | Load time | Console errors | Screenshot |")
+                lines.append("| --- | --- | --- | --- | --- |")
+                for page in self.runtime.pages:
+                    status = "OK" if page.loaded_ok else "FAILED"
+                    load_time = (
+                        f"{page.load_time_ms:.0f} ms" if page.load_time_ms is not None else "—"
+                    )
+                    screenshot = page.screenshot_path or "—"
+                    lines.append(
+                        f"| {page.path} | {status} | {load_time} | "
+                        f"{len(page.console_errors)} | {screenshot} |"
+                    )
+                lines.append("")
+
+                failures = [page for page in self.runtime.pages if not page.loaded_ok]
+                if failures:
+                    lines.append("### Runtime failures")
+                    lines.append("")
+                    for page in failures:
+                        lines.append(f"- **{page.path}**: {page.error or 'unspecified failure'}")
+                    lines.append("")
+
         return "\n".join(lines)
 
 
@@ -305,11 +368,20 @@ def generate_report(
     inventory: Inventory,
     findings: list[Finding],
     generated_at: datetime | None = None,
+    runtime: RuntimeAuditResults | None = None,
 ) -> AuditReport:
-    """Build an :class:`AuditReport` from a project's inventory and findings."""
+    """Build an :class:`AuditReport` from a project's inventory and findings.
+
+    ``runtime`` is optional — pass the result of
+    :func:`~ignition_toolkit.audit.runtime.build_runtime_results_from_execution`
+    to fold Mode B (playbook) results into the same report. Omitting it (the
+    default) produces exactly the Mode-A-only report this function always
+    produced.
+    """
     return AuditReport(
         project_name=project_name,
         inventory=inventory,
         findings=list(findings),
         generated_at=generated_at or datetime.now(UTC),
+        runtime=runtime,
     )
