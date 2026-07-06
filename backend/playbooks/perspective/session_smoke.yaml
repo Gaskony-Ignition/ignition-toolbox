@@ -1,0 +1,117 @@
+name: "Perspective Session Smoke Test"
+version: "1.0"
+description: >
+  Opens a Perspective project's client URL and verifies a session starts and
+  a page actually renders. Designed to work with no login against public /
+  anonymous projects (the bundled test-project/ToolboxAudit is built this
+  way) while still attempting a best-effort login if the target project is
+  secured. Steps 4-6 (the login fill/submit) are intentionally optional: they
+  are marked on_failure=continue and are EXPECTED to report a non-fatal
+  failure (selector not found) when run against an anonymous project like
+  ToolboxAudit, since there is no login form to fill in. That is correct
+  behaviour, not a bug - the overall execution still completes and the real
+  assertions (steps 2, 7) still pass.
+domain: perspective
+group: "Perspective (Audit)"
+verified: true
+
+parameters:
+  - name: gateway_url
+    type: string
+    required: true
+    default: "http://localhost:8088"
+    description: "Gateway URL (e.g., http://localhost:8088)"
+
+  - name: project_name
+    type: string
+    required: true
+    default: "ToolboxAudit"
+    description: "Perspective project name to open (case-sensitive, as it appears in the client URL)"
+
+  - name: username
+    type: string
+    required: false
+    default: ""
+    description: >
+      Gateway/Perspective username. Only needed if the project's session
+      requires authentication - leave blank for public/anonymous projects
+      (e.g. the bundled ToolboxAudit test project). No default secret value
+      is ever stored here; supply it at run time.
+
+  - name: password
+    type: string
+    required: false
+    default: ""
+    description: >
+      Gateway/Perspective password. Only needed if the project's session
+      requires authentication - leave blank for public/anonymous projects.
+      Supply it at run time only, never store it in this file.
+
+steps:
+  - id: step1
+    name: "Step 1: Open Perspective client URL"
+    type: browser.navigate
+    parameters:
+      url: "{{ parameter.gateway_url }}/data/perspective/client/{{ parameter.project_name }}/"
+      wait_until: "load"
+
+  - id: step2
+    name: "Step 2: Wait for session start (app root or a login form)"
+    type: browser.wait
+    parameters:
+      selector: >-
+        #app-container, .client-root, .view-parent, .ia_container--root,
+        input[type='password'], input[name='username'], input[name='j_username']
+      timeout: 30000
+
+  - id: step3
+    name: "Step 3: Screenshot after initial load"
+    type: browser.screenshot
+    parameters:
+      name: "session_smoke_initial_load"
+      full_page: true
+
+  - id: step4
+    name: "Step 4: (Optional) Enter username if a login form is present"
+    type: browser.fill
+    on_failure: continue
+    parameters:
+      selector: >-
+        input[name='j_username'], input[name='username'],
+        input[type='text'][autocomplete*='user' i], input[type='email'],
+        .login-form input[type='text']
+      value: "{{ parameter.username }}"
+      timeout: 4000
+
+  - id: step5
+    name: "Step 5: (Optional) Enter password if a login form is present"
+    type: browser.fill
+    on_failure: continue
+    parameters:
+      selector: "input[name='j_password'], input[name='password'], input[type='password']"
+      value: "{{ parameter.password }}"
+      timeout: 4000
+
+  - id: step6
+    name: "Step 6: (Optional) Submit login if a login form is present"
+    type: browser.click
+    on_failure: continue
+    parameters:
+      selector: >-
+        button:has-text('CONTINUE'), button:has-text('Login'),
+        button:has-text('Log In'), .login-form button, button[type='submit']
+      timeout: 4000
+
+  - id: step7
+    name: "Step 7: Verify the Perspective session/page is rendered"
+    type: browser.wait
+    parameters:
+      selector: "#app-container .view, .client-root, .ia_container--root, [data-component-type]"
+      timeout: 30000
+
+  - id: step8
+    name: "Step 8: Screenshot of the started session"
+    type: browser.screenshot
+    parameters:
+      name: "session_smoke_final"
+      full_page: true

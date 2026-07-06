@@ -1,0 +1,15 @@
+{
+  "pages": {
+    "/": {
+      "title": "Home",
+      "viewPath": "Home"
+    },
+    "/page2": {
+      "title": "Page 2",
+      "viewPath": "Page2"
+    }
+  },
+  "sharedDocks": {
+    "cornerPriority": "top-bottom"
+  }
+}

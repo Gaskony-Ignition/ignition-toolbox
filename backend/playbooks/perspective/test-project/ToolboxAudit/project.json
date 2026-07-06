@@ -1,0 +1,7 @@
+{
+  "title": "ToolboxAudit",
+  "description": "Minimal Perspective project for Ignition Toolbox Phase 4 (Perspective Project Audit) playbook proving: session_smoke.yaml and page_crawl.yaml. Unrestricted/anonymous access by design so the smoke test needs no login. Safe to delete/redeploy.",
+  "enabled": true,
+  "inheritable": false,
+  "parent": ""
+}

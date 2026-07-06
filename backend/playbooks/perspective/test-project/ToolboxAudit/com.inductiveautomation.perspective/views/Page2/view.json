@@ -1,0 +1,67 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "style": {
+            "fontSize": "28px",
+            "fontWeight": "bold",
+            "marginBottom": "10px"
+          },
+          "text": "Page 2"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Body"
+        },
+        "props": {
+          "style": {
+            "fontSize": "16px",
+            "marginBottom": "20px"
+          },
+          "text": "Second route, present so page_crawl.yaml has more than one page to walk."
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.navigate(page = \"/\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "BackHomeButton"
+        },
+        "props": {
+          "text": "Back to Home"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "height": "100%",
+        "padding": "30px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

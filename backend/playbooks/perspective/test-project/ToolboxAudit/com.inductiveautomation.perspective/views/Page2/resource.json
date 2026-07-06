@@ -1,0 +1,16 @@
+{
+  "scope": "G",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "view.json"
+  ],
+  "attributes": {
+    "lastModificationSignature": "401622ed608f0c339c7c3950ad3e91684af796c24b963a0c33d923a0ff1e9371",
+    "lastModification": {
+      "actor": "toolbox-phase4",
+      "timestamp": "2026-07-06T07:56:03Z"
+    }
+  }
+}
