@@ -11,7 +11,7 @@ Last verified against code: 2026-07-06 (v3.2.5).
 | Area | Plan | State (2026-07-06) |
 | --- | --- | --- |
 | StackBuilder | [plans/stackbuilder-test-strategy.md](plans/stackbuilder-test-strategy.md) | **All 5 tiers done** (400+ new tests; 5 generator bugs fixed). Remaining: remove the beta label with the next release |
-| UDT Builder | [plans/udt-builder-design.md](plans/udt-builder-design.md) | **Phases 1–3 done** — full build flow shipped (Beta tab). Remaining: phase 4 linter + phase 5 template growth; Designer import check + validation against Nigel's reference exports |
+| UDT Builder | [plans/udt-composer-design.md](plans/udt-composer-design.md) | **Composer shipped v3.4.0** — guided wizard + live lint pack (`audit/rules/udt/`), templates demoted to quick-start presets; supersedes the questionnaire flow (old phase-4 linter now exists as the lint pack). Remaining: preset growth; Designer import check + validation against Nigel's reference exports |
 | Perspective project audit | [plans/perspective-project-audit.md](plans/perspective-project-audit.md) | **All phases done** — static audit + report + UI + 4 proven playbooks + runtime section. Future: rule pack growth; wire runtime results into the Audit tab |
 
 All three features are functionally complete; release checklist: Nigel reviews

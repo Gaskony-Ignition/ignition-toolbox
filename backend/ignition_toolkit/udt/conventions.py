@@ -216,6 +216,36 @@ def has_eng_unit(element: TagElement) -> bool:
     return bool(element.eng_unit and element.eng_unit.strip())
 
 
+def requires_eng_range(element: TagElement) -> bool:
+    """True if convention requires ``element`` to declare an ``engLow``/``engHigh`` range
+    (analog atomic tags).
+
+    .. note::
+       Added for the UDT Composer's lint pack (Phase C1,
+       ``docs/plans/udt-composer-design.md``), deliberately **not** wired into
+       ``find_convention_issues`` below: the existing ``valve`` template's
+       ``config/travelTimeSetpoint`` memory tag is analog (``Float4``) with an
+       ``engUnit`` but no declared range, and is already pinned by
+       ``test_builder.py``'s ``test_no_convention_violations`` as
+       convention-clean. Wiring this into the shared aggregate would flip that
+       template's builder self-check to failing. The UDT lint rule pack
+       (``audit/rules/udt/eng_range.py``) calls this directly instead.
+    """
+    return element.tag_type == "AtomicTag" and is_analog_data_type(element.data_type)
+
+
+def has_eng_range(element: TagElement) -> bool:
+    """True if ``element`` declares both ``engLow`` and ``engHigh``."""
+    return element.eng_low is not None and element.eng_high is not None
+
+
+def check_eng_range(element: TagElement, path: str) -> list[str]:
+    """Engineering-range-convention issues for ``element`` alone. See ``requires_eng_range``."""
+    if requires_eng_range(element) and not has_eng_range(element):
+        return [f"{path}: analog member missing engLow/engHigh (engineering range)"]
+    return []
+
+
 # --------------------------------------------------------------------------
 # OPC paths built from parameters
 # --------------------------------------------------------------------------
@@ -389,30 +419,95 @@ def check_opc_path(element: TagElement, path: str) -> list[str]:
     return issues
 
 
-def check_history(element: TagElement, path: str) -> list[str]:
-    """History-policy issues for ``element`` alone."""
+def check_history_choice(element: TagElement, path: str) -> list[str]:
+    """History-choice-convention issues for ``element`` alone (was a deliberate choice made?).
+
+    Split out from ``check_history`` (which still calls this) so the UDT lint
+    rule pack (``audit/rules/udt/history_choice.py``) can report it as its own
+    finding, distinct from ``check_history_completeness`` below.
+    """
     if element.tag_type != "AtomicTag":
         return []
-    issues: list[str] = []
     if not has_deliberate_history_choice(element):
-        issues.append(f"{path}: historyEnabled not explicitly set")
-    elif not history_config_complete(element):
-        issues.append(f"{path}: history enabled but historyProvider/historicalDeadband incomplete")
+        return [f"{path}: historyEnabled not explicitly set"]
+    return []
+
+
+def check_history_completeness(element: TagElement, path: str) -> list[str]:
+    """History-completeness-convention issues for ``element`` alone (provider/deadband set?).
+
+    Split out from ``check_history`` (which still calls this) so the UDT lint
+    rule pack (``audit/rules/udt/history_complete.py``) can report it as its
+    own finding. Skips elements that haven't made a deliberate choice yet
+    (``check_history_choice`` already covers that case) to avoid double-
+    reporting the same unset-``historyEnabled`` member under both checks.
+    """
+    if element.tag_type != "AtomicTag" or not has_deliberate_history_choice(element):
+        return []
+    if not history_config_complete(element):
+        return [f"{path}: history enabled but historyProvider/historicalDeadband incomplete"]
+    return []
+
+
+def check_history(element: TagElement, path: str) -> list[str]:
+    """History-policy issues for ``element`` alone (choice + completeness combined)."""
+    return check_history_choice(element, path) + check_history_completeness(element, path)
+
+
+def check_alarm_names(element: TagElement, path: str) -> list[str]:
+    """Alarm-name-convention issues for every alarm on ``element`` alone.
+
+    Split out from ``check_alarms`` (which still calls this) so the UDT lint
+    rule pack (``audit/rules/udt/alarm_name.py``) can report it as its own
+    finding, distinct from priority/deadband.
+    """
+    issues: list[str] = []
+    for alarm in element.alarms or []:
+        if not is_standard_alarm_name(alarm.name):
+            issues.append(
+                f"{path} alarm '{alarm.name}': name is not one of the standardised alarm names"
+            )
+    return issues
+
+
+def check_alarm_priorities(element: TagElement, path: str) -> list[str]:
+    """Alarm-priority-convention issues for every alarm on ``element`` alone.
+
+    Split out from ``check_alarms`` (which still calls this) — see
+    ``audit/rules/udt/alarm_priority.py``.
+    """
+    issues: list[str] = []
+    for alarm in element.alarms or []:
+        if not is_valid_alarm_priority(alarm.priority):
+            issues.append(
+                f"{path} alarm '{alarm.name}': priority '{alarm.priority}' is not a valid "
+                "ISA-18.2 level"
+            )
+    return issues
+
+
+def check_alarm_deadbands(element: TagElement, path: str) -> list[str]:
+    """Alarm-deadband-convention issues for every alarm on ``element`` alone.
+
+    Split out from ``check_alarms`` (which still calls this) — see
+    ``audit/rules/udt/alarm_deadband.py``.
+    """
+    issues: list[str] = []
+    for alarm in element.alarms or []:
+        if alarm_deadband_required(element.data_type) and not has_valid_deadband(alarm):
+            issues.append(
+                f"{path} alarm '{alarm.name}': analog member alarm is missing a positive deadband"
+            )
     return issues
 
 
 def check_alarms(element: TagElement, path: str) -> list[str]:
-    """Alarm-convention issues for every alarm on ``element`` alone."""
-    issues: list[str] = []
-    for alarm in element.alarms or []:
-        label = f"{path} alarm '{alarm.name}'"
-        if not is_standard_alarm_name(alarm.name):
-            issues.append(f"{label}: name is not one of the standardised alarm names")
-        if not is_valid_alarm_priority(alarm.priority):
-            issues.append(f"{label}: priority '{alarm.priority}' is not a valid ISA-18.2 level")
-        if alarm_deadband_required(element.data_type) and not has_valid_deadband(alarm):
-            issues.append(f"{label}: analog member alarm is missing a positive deadband")
-    return issues
+    """Alarm-convention issues for every alarm on ``element`` alone (name + priority + deadband)."""
+    return (
+        check_alarm_names(element, path)
+        + check_alarm_priorities(element, path)
+        + check_alarm_deadbands(element, path)
+    )
 
 
 def find_convention_issues(element: TagElement, path: str = "") -> list[str]:

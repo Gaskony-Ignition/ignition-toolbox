@@ -143,3 +143,181 @@ class TestBuildUdt:
 
         assert response.status_code == 200
         assert list(tmp_path.iterdir()) == []
+
+
+SIMPLE_COMPOSITION = {
+    "type_name": "ConveyorMotor",
+    "description": "A conveyor motor.",
+    "naming_style": "camelCase",
+    "parameters": [
+        {"name": "DevicePath", "data_type": "String", "default_value": ""},
+        {"name": "OpcServer", "data_type": "String", "default_value": "Ignition OPC UA Server"},
+    ],
+    "members": [
+        {
+            "kind": "folder",
+            "name": "status",
+            "documentation": "Status folder.",
+            "members": [
+                {
+                    "kind": "tag",
+                    "name": "speed",
+                    "value_source": "opc",
+                    "data_type": "Float4",
+                    "opc_item_path": "{DevicePath}/Speed",
+                    "opc_server": "{OpcServer}",
+                    "eng_unit": "rpm",
+                    "eng_low": 0,
+                    "eng_high": 1500,
+                    "documentation": "Motor shaft speed.",
+                    "alarms": [
+                        {"name": "HiHi", "setpoint": 1400, "deadband": 25, "mode": "AboveValue"}
+                    ],
+                }
+            ],
+        }
+    ],
+}
+
+
+class TestComposeUdt:
+    def test_compose_returns_200_with_udt_filename_and_findings(self) -> None:
+        response = client.post("/api/udt/compose", json=SIMPLE_COMPOSITION)
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["udt"]["name"] == "ConveyorMotor"
+        assert data["udt"]["tagType"] == "UdtType"
+        assert data["filename"] == "ConveyorMotor_udt.json"
+        assert isinstance(data["findings"], list)
+        for finding in data["findings"]:
+            assert set(finding) == {
+                "rule_id",
+                "severity",
+                "location",
+                "message",
+                "recommendation",
+            }
+
+    def test_isa_default_priority_is_filled_in_response(self) -> None:
+        response = client.post("/api/udt/compose", json=SIMPLE_COMPOSITION)
+
+        speed = response.json()["udt"]["tags"][0]["tags"][0]
+        assert speed["alarms"][0]["priority"] == "High"
+
+    def test_lint_dirty_composition_still_composes(self) -> None:
+        """A UDT with lint findings (e.g. missing documentation) still gets a 200 + udt."""
+        body = {
+            "type_name": "Widget",
+            "members": [
+                {
+                    "kind": "tag",
+                    "name": "value",
+                    "value_source": "memory",
+                    "data_type": "Boolean",
+                    "value": True,
+                }
+            ],
+        }
+        response = client.post("/api/udt/compose", json=body)
+
+        assert response.status_code == 200
+        assert response.json()["udt"]["name"] == "Widget"
+        assert len(response.json()["findings"]) > 0
+
+    def test_structural_error_returns_422(self) -> None:
+        body = {**SIMPLE_COMPOSITION, "type_name": "bad type name"}
+        response = client.post("/api/udt/compose", json=body)
+
+        assert response.status_code == 422
+        assert "not valid PascalCase" in response.json()["detail"]
+
+    def test_all_structural_errors_joined_in_422_detail(self) -> None:
+        body = {
+            "type_name": "bad type name",
+            "naming_style": "kebab-case",
+            "members": [
+                {"kind": "tag", "name": "a", "value_source": "memory", "data_type": "Bogus"},
+                {"kind": "folder", "name": "f", "alarms": [{"name": "HiHi"}], "members": []},
+            ],
+        }
+        response = client.post("/api/udt/compose", json=body)
+
+        assert response.status_code == 422
+        detail = response.json()["detail"]
+        assert "not valid PascalCase" in detail
+        assert "unknown naming_style" in detail
+        assert "unknown data type" in detail
+        assert "a folder cannot have alarms" in detail
+
+    def test_malformed_body_missing_type_name_returns_422(self) -> None:
+        response = client.post("/api/udt/compose", json={"members": []})
+
+        assert response.status_code == 422
+
+    def test_malformed_body_bad_member_kind_returns_422(self) -> None:
+        body = {
+            "type_name": "Widget",
+            "members": [{"kind": "not_a_real_kind", "name": "x"}],
+        }
+        response = client.post("/api/udt/compose", json=body)
+
+        assert response.status_code == 422
+
+    def test_malformed_body_not_json_object_returns_422(self) -> None:
+        response = client.post("/api/udt/compose", json=["not", "an", "object"])
+
+        assert response.status_code == 422
+
+
+class TestGetPresets:
+    def test_returns_three_presets(self) -> None:
+        response = client.get("/api/udt/presets")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert {p["id"] for p in data} == {"motor", "valve", "analog_input"}
+
+    def test_preset_shape(self) -> None:
+        response = client.get("/api/udt/presets")
+
+        motor = next(p for p in response.json() if p["id"] == "motor")
+        assert motor["label"] == "Motor"
+        assert motor["description"]
+        assert motor["composition"]["type_name"] == "Motor"
+        assert len(motor["composition"]["members"]) > 0
+
+    def test_every_preset_composes_cleanly(self) -> None:
+        """Every preset's composition must itself pass compose()'s structural validation."""
+        presets = client.get("/api/udt/presets").json()
+        for preset in presets:
+            response = client.post("/api/udt/compose", json=preset["composition"])
+            assert response.status_code == 200, (preset["id"], response.text)
+            assert response.json()["udt"]["name"] == preset["composition"]["type_name"]
+
+    def test_motor_preset_matches_builder_output_in_structure(self) -> None:
+        """
+        Preset-parity check at the API layer: running the motor preset's
+        composition through /compose must reproduce the same member names/
+        nesting and alarms (with ISA priorities) as /build with the
+        equivalent typical answers.
+        """
+        preset = next(p for p in client.get("/api/udt/presets").json() if p["id"] == "motor")
+        composed = client.post("/api/udt/compose", json=preset["composition"]).json()["udt"]
+        built = client.post(
+            "/api/udt/build",
+            json={"template_id": "motor", "answers": TYPICAL_ANSWERS["motor"]},
+        ).json()["udt"]
+
+        composed_names = [t["name"] for t in composed["tags"]]
+        built_names = [t["name"] for t in built["tags"]]
+        assert composed_names == built_names
+
+        composed_speed = next(t for t in composed["tags"] if t["name"] == "speed")
+        built_speed = next(t for t in built["tags"] if t["name"] == "speed")
+        assert [a["name"] for a in composed_speed["alarms"]] == [
+            a["name"] for a in built_speed["alarms"]
+        ]
+        assert [a["priority"] for a in composed_speed["alarms"]] == [
+            a["priority"] for a in built_speed["alarms"]
+        ]
