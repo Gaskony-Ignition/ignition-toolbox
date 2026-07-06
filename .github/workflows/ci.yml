@@ -27,6 +27,9 @@ jobs:
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
 
+      - name: Check version consistency
+        run: python scripts/check-versions.py
+
       - name: Install Node.js dependencies
         run: npm ci
 

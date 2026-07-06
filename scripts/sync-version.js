@@ -7,7 +7,6 @@
  *   - frontend/package.json
  *   - backend/ignition_toolkit/__init__.py
  *   - backend/pyproject.toml
- *   - .claude/CLAUDE.md  (version number, example tags, Last Updated date, Status line)
  *
  * Usage:
  *   node scripts/sync-version.js          # sync current version
@@ -24,7 +23,6 @@ const rootPkgPath      = path.join(root, 'package.json');
 const frontendPkgPath  = path.join(root, 'frontend', 'package.json');
 const initPyPath       = path.join(root, 'backend', 'ignition_toolkit', '__init__.py');
 const pyprojectPath    = path.join(root, 'backend', 'pyproject.toml');
-const claudeMdPath     = path.join(root, '.claude', 'CLAUDE.md');
 
 // ── Determine target version ────────────────────────────────────────────────
 // Read version from package.json via regex to avoid JSON roundtrip issues
@@ -38,6 +36,10 @@ const newVersion = process.argv[2] || currentVersion;
 // content exactly as-is. This avoids JSON.parse/JSON.stringify roundtrip
 // which can corrupt package.json by dropping fields.
 function replaceInFile(filePath, replacements) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`  (skipped ${path.relative(root, filePath)} - file not found)`);
+    return;
+  }
   let content = fs.readFileSync(filePath, 'utf8');
   let changed = false;
   for (const [pattern, replacement] of replacements) {
@@ -70,20 +72,6 @@ replaceInFile(initPyPath, [
 // ── backend/pyproject.toml ────────────────────────────────────────────────────
 replaceInFile(pyprojectPath, [
   [/^version = "[^"]+".*$/m, `version = "${newVersion}"  # Updated: ${today}`],
-]);
-
-// ── .claude/CLAUDE.md ─────────────────────────────────────────────────────────
-replaceInFile(claudeMdPath, [
-  // "Current Version: X.Y.Z"
-  [/\*\*Current Version:\*\* \S+/, `**Current Version:** ${newVersion}`],
-  // Example tag lines like "git tag v3.0.1"
-  [/git tag v\d+\.\d+\.\d+/g, `git tag v${newVersion}`],
-  // Example push lines like "git push origin v3.0.1"
-  [/git push origin v\d+\.\d+\.\d+/g, `git push origin v${newVersion}`],
-  // Last Updated date
-  [/\*\*Last Updated\*\*: \d{4}-\d{2}-\d{2}/, `**Last Updated**: ${today}`],
-  // Status line "Production Ready (vX.Y.Z)"
-  [/Production Ready \(v\d+\.\d+\.\d+\)/, `Production Ready (v${newVersion})`],
 ]);
 
 console.log(`\nVersion synced to ${newVersion} (${today})`);

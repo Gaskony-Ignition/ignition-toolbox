@@ -61,6 +61,19 @@ jobs:
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
 
+      - name: Check version consistency and tag match
+        shell: bash
+        run: |
+          python scripts/check-versions.py
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            PKG_VERSION=$(node -p "require('./package.json').version")
+            if [[ "${GITHUB_REF_NAME}" != "v${PKG_VERSION}" ]]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version v${PKG_VERSION}."
+              echo "Run 'npm run version:sync' and retag."
+              exit 1
+            fi
+          fi
+
       - name: Install Node.js dependencies
         run: npm ci
 
