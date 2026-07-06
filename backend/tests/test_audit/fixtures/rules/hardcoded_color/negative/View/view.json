@@ -1,0 +1,25 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Date"
+        },
+        "props": {
+          "style": {
+            "color": "var(--neutral-90)",
+            "classes": "Header/Date"
+          }
+        }
+      }
+    ]
+  }
+}

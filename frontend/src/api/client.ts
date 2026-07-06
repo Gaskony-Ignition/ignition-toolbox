@@ -23,6 +23,7 @@ import type {
   CleanupResult,
   LogEntry,
   LogStats,
+  AuditReport,
 } from '../types/api';
 import { createLogger } from '../utils/logger';
 
@@ -329,6 +330,70 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   }
 
   return response.json();
+}
+
+/**
+ * POST a single file as multipart/form-data and parse the JSON response.
+ *
+ * Deliberately not routed through fetchJSON: a multipart body must not set
+ * a Content-Type header itself (the browser adds one with the boundary).
+ */
+async function postFileForJSON<T>(url: string, file: File): Promise<T> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const message =
+      typeof errorData.detail === 'string'
+        ? errorData.detail
+        : errorData.detail?.message || `HTTP error ${response.status}`;
+    throw new APIError(message, response.status, errorData);
+  }
+
+  return response.json();
+}
+
+/**
+ * POST a single file as multipart/form-data and trigger a browser download
+ * of the response body, named from the server's Content-Disposition header.
+ */
+async function postFileForDownload(url: string, file: File, fallbackFilename: string): Promise<void> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const message =
+      typeof errorData.detail === 'string'
+        ? errorData.detail
+        : errorData.detail?.message || `HTTP error ${response.status}`;
+    throw new APIError(message, response.status, errorData);
+  }
+
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch?.[1] ?? fallbackFilename;
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(downloadUrl);
 }
 
 export const api = {
@@ -1086,6 +1151,19 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(config),
       }),
+  },
+
+  /**
+   * Perspective Project Audit
+   */
+  audit: {
+    /** Upload a Perspective project export (zip) and get back a structured findings report. */
+    runPerspectiveAudit: (file: File) =>
+      postFileForJSON<AuditReport>('/api/audit/perspective', file),
+
+    /** Same audit, downloaded as a customer-facing markdown report. */
+    downloadPerspectiveAuditMarkdown: (file: File) =>
+      postFileForDownload('/api/audit/perspective/markdown', file, 'audit-report.md'),
   },
 
   /**

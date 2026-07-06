@@ -353,3 +353,47 @@ export interface ExchangeConfig {
   max_resources: number;
   schedule: { enabled: boolean; cron: string };
 }
+
+// Perspective project audit types
+export type AuditSeverity = 'critical' | 'high' | 'medium' | 'info';
+
+export interface AuditInventory {
+  view_count: number;
+  component_count: number;
+  component_count_by_type: Record<string, number>;
+  binding_count: number;
+  views: string[];
+}
+
+export interface AuditFinding {
+  rule_id: string;
+  severity: AuditSeverity;
+  location: string;
+  message: string;
+  recommendation: string;
+}
+
+export interface AuditAggregatedFinding {
+  rule_id: string;
+  severity: AuditSeverity;
+  view: string;
+  count: number;
+  example_locations: string[];
+  message: string;
+  recommendation: string;
+}
+
+export interface AuditSummary {
+  total_findings: number;
+  by_severity: Record<AuditSeverity, number>;
+  by_rule_family: Record<string, number>;
+}
+
+export interface AuditReport {
+  project_name: string;
+  generated_at: string;
+  inventory: AuditInventory;
+  summary: AuditSummary;
+  aggregated_findings: AuditAggregatedFinding[];
+  findings: AuditFinding[];
+}

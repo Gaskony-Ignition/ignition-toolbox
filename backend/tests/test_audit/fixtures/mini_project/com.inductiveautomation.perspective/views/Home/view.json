@@ -1,0 +1,31 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Title"
+        },
+        "props": {
+          "text": "Hello"
+        }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "ConfirmPopup"
+        },
+        "props": {
+          "path": "Popup/Confirm"
+        }
+      }
+    ]
+  }
+}

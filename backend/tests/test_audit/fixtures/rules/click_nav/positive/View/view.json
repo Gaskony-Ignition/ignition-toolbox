@@ -1,0 +1,31 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.icon",
+        "meta": {
+          "name": "AlarmIcon"
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "C",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/alarms\")"
+              }
+            }
+          }
+        },
+        "props": {}
+      }
+    ]
+  }
+}

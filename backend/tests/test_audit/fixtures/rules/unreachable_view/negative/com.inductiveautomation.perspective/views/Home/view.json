@@ -1,0 +1,22 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.view",
+        "meta": {
+          "name": "Embedded"
+        },
+        "props": {
+          "path": "Included/Extra"
+        }
+      }
+    ]
+  }
+}

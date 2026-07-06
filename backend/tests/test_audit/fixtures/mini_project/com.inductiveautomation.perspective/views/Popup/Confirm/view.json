@@ -1,0 +1,32 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.text": {
+        "binding": {
+          "type": "tag",
+          "config": {
+            "tagPath": "[default]Some/Tag"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ConfirmButton"
+        },
+        "props": {
+          "text": "OK"
+        }
+      }
+    ]
+  }
+}

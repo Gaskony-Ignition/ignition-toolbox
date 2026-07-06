@@ -1,0 +1,9 @@
+{
+  "pages": {
+    "/": {
+      "title": "",
+      "viewPath": "Home"
+    }
+  },
+  "sharedDocks": {}
+}

@@ -1,0 +1,32 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Card"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "minHeight": 0,
+            "minWidth": 0
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "custom": {
+    "count": 0
+  },
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "custom.count": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "now(30000)"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.chart.timeseries",
+        "meta": {
+          "name": "History"
+        },
+        "propConfig": {
+          "props.data": {
+            "binding": {
+              "type": "tag-history",
+              "config": {
+                "polling": {
+                  "enabled": true,
+                  "rate": "30"
+                },
+                "tags": [
+                  {
+                    "path": "[default]Some/Tag"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "props": {}
+      }
+    ]
+  }
+}

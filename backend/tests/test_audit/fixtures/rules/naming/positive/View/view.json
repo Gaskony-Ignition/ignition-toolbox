@@ -1,0 +1,29 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Label_1"
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.image",
+        "meta": {
+          "name": "71oUI5FZdKL._SL1500_"
+        },
+        "props": {
+          "source": ""
+        }
+      }
+    ]
+  }
+}

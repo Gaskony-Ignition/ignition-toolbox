@@ -22,6 +22,7 @@ from ignition_toolkit import __version__
 from ignition_toolkit.api.middleware import RateLimitMiddleware
 from ignition_toolkit.api.routers import health_router
 from ignition_toolkit.api.routers.api_explorer import router as api_explorer_router
+from ignition_toolkit.api.routers.audit import router as audit_router
 from ignition_toolkit.api.routers.auth import router as auth_router
 from ignition_toolkit.api.routers.clouddesigner import router as clouddesigner_router
 from ignition_toolkit.api.routers.config import router as config_router
@@ -116,6 +117,9 @@ app.include_router(auth_router)
 
 # Reporting and analytics
 app.include_router(reports_router)
+
+# Perspective project audit (static analysis)
+app.include_router(audit_router)
 
 # Initialize log capture for UI access
 setup_log_capture(max_entries=2000)

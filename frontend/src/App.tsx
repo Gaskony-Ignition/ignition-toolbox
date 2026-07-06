@@ -27,6 +27,7 @@ const ExecutionDetail = lazy(() => import('./pages/ExecutionDetail').then(m => (
 const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ default: m.APIExplorer })));
 const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
 const Exchange = lazy(() => import('./pages/Exchange').then(m => ({ default: m.Exchange })));
+const Audit = lazy(() => import('./pages/Audit').then(m => ({ default: m.Audit })));
 
 // Loading fallback for lazy-loaded components
 function PageLoader() {
@@ -205,6 +206,12 @@ function AppContent() {
         return (
           <Suspense fallback={<PageLoader />}>
             <Exchange />
+          </Suspense>
+        );
+      case 'audit':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <Audit />
           </Suspense>
         );
       case 'settings':

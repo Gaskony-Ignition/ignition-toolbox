@@ -1,0 +1,20 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.container.coord",
+        "meta": {
+          "name": "Overlay"
+        },
+        "children": []
+      }
+    ]
+  }
+}

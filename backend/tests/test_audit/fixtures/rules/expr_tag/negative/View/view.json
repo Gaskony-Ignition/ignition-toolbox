@@ -1,0 +1,30 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "TempLabel"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "numberFormat({[default]Weather/outdoor/temperature}, '#.0') + \"\u00b0\""
+              }
+            }
+          }
+        },
+        "props": {}
+      }
+    ]
+  }
+}
