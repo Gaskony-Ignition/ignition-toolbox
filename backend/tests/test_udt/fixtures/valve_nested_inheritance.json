@@ -1,0 +1,78 @@
+{
+  "name": "ValveWithActuator",
+  "tagType": "UdtType",
+  "typeId": "BaseDevice",
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": ""
+    }
+  },
+  "tags": [
+    {
+      "name": "Status",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "Open",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Open",
+          "documentation": "Valve open limit switch",
+          "readOnly": true
+        },
+        {
+          "name": "Closed",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/Closed",
+          "documentation": "Valve closed limit switch",
+          "readOnly": true
+        }
+      ]
+    },
+    {
+      "name": "Command",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "name": "OpenCmd",
+          "tagType": "AtomicTag",
+          "valueSource": "opc",
+          "dataType": "Boolean",
+          "opcServer": "{OpcServer}",
+          "opcItemPath": "{DevicePath}/OpenCmd",
+          "documentation": "Valve open command",
+          "readOnly": false
+        }
+      ]
+    },
+    {
+      "name": "Actuator",
+      "tagType": "UdtInstance",
+      "typeId": "Motor",
+      "parameters": {
+        "OpcServer": {
+          "dataType": "String",
+          "value": "{OpcServer}"
+        },
+        "DevicePath": {
+          "dataType": "String",
+          "value": "{DevicePath}/Actuator"
+        },
+        "HighSpeedSetpoint": {
+          "dataType": "Float4",
+          "value": 900.0
+        }
+      }
+    }
+  ]
+}

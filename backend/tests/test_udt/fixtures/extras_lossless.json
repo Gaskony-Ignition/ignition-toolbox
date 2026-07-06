@@ -1,0 +1,67 @@
+{
+  "name": "WeirdLegacyDevice",
+  "tagType": "UdtType",
+  "customTypeFlag": true,
+  "exportedBy": "Designer-8.1.37",
+  "parameters": {
+    "DevicePath": {
+      "dataType": "String",
+      "value": "",
+      "customParamProp": "unused-by-model"
+    }
+  },
+  "tags": [
+    {
+      "name": "Pressure",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Float8",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Pressure",
+      "engUnit": "kPa",
+      "engLow": 0,
+      "engHigh": 1000,
+      "scaleMode": "Linear",
+      "customMemberProp": "some-vendor-extension",
+      "legacyFlags": [1, 2, 3],
+      "alarms": [
+        {
+          "name": "HiHi",
+          "mode": "AboveValue",
+          "priority": "Critical",
+          "setpointA": 950,
+          "deadband": 10,
+          "enabled": true,
+          "ackMode": "manual",
+          "customAlarmProp": {
+            "nested": "value",
+            "count": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notes",
+      "tagType": "Folder",
+      "folderColor": "#336699",
+      "tags": [
+        {
+          "name": "Comment",
+          "tagType": "AtomicTag",
+          "valueSource": "memory",
+          "dataType": "String",
+          "value": "installed 2019",
+          "documentation": "Free-text field kept for historical reasons",
+          "vendorSpecificMeta": {
+            "author": "unknown",
+            "revision": 3
+          }
+        }
+      ]
+    }
+  ],
+  "trailingUnknownBlock": {
+    "anything": ["can", "go", "here"],
+    "nested": {"deep": {"deeper": null}}
+  }
+}

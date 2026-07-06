@@ -1,0 +1,69 @@
+{
+  "name": "Motor",
+  "tagType": "UdtType",
+  "parameters": {
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    },
+    "DevicePath": {
+      "dataType": "String",
+      "value": ""
+    },
+    "HighSpeedSetpoint": {
+      "dataType": "Float4",
+      "value": 1800.0
+    }
+  },
+  "tags": [
+    {
+      "name": "Speed",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Float4",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Speed",
+      "engUnit": "RPM",
+      "engLow": 0.0,
+      "engHigh": 3600.0,
+      "deadband": 0.5,
+      "documentation": "Motor shaft speed feedback",
+      "tooltip": "RPM",
+      "readOnly": true,
+      "historyEnabled": true,
+      "historyProvider": "default",
+      "historicalDeadband": 1.0,
+      "sampleMode": "OnChange",
+      "alarms": [
+        {
+          "name": "HighSpeed",
+          "mode": "AboveValue",
+          "priority": "High",
+          "setpointA": "{HighSpeedSetpoint}",
+          "deadband": 25.0,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "name": "Running",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Running",
+      "documentation": "Motor run status",
+      "readOnly": true
+    },
+    {
+      "name": "Start",
+      "tagType": "AtomicTag",
+      "valueSource": "opc",
+      "dataType": "Boolean",
+      "opcServer": "{OpcServer}",
+      "opcItemPath": "{DevicePath}/Start",
+      "documentation": "Motor start command",
+      "readOnly": false
+    }
+  ]
+}
