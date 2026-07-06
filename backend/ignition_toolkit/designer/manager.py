@@ -9,12 +9,20 @@ import asyncio
 import logging
 import platform
 import subprocess
+import sys
 from pathlib import Path
 
 from ignition_toolkit.core.paths import get_data_dir, get_screenshots_dir
 from ignition_toolkit.designer.detector import detect_designer_installation, get_java_command
 
 logger = logging.getLogger(__name__)
+
+
+def _scripts_dir() -> Path:
+    """Get path to the Designer PowerShell helper scripts, handling frozen (PyInstaller) mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "designer" / "scripts"
+    return Path(__file__).parent / "scripts"
 
 
 class DesignerManager:
@@ -85,9 +93,11 @@ class DesignerManager:
         # Initialize platform-specific automation
         if self.system == "Windows":
             from ignition_toolkit.designer.platform_windows import WindowsDesignerAutomation
+
             self.platform_automation = WindowsDesignerAutomation()
         elif self.system == "Linux":
             from ignition_toolkit.designer.platform_linux import LinuxDesignerAutomation
+
             self.platform_automation = LinuxDesignerAutomation()
         else:
             raise RuntimeError(f"Unsupported platform: {self.system}")
@@ -169,8 +179,7 @@ class DesignerManager:
             if wait_for_window and self.platform_automation:
                 logger.info("Waiting for Designer window to appear...")
                 success = await asyncio.to_thread(
-                    self.platform_automation.find_designer_window,
-                    timeout=60
+                    self.platform_automation.find_designer_window, timeout=60
                 )
                 if not success:
                     logger.error("Designer window did not appear")
@@ -191,18 +200,21 @@ class DesignerManager:
         # Try javaws first (Java Web Start)
         try:
             self._process = await asyncio.create_subprocess_exec(
-                "javaws", str(jnlp_file),
+                "javaws",
+                str(jnlp_file),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             logger.info("Designer process started with javaws")
         except FileNotFoundError:
             # Fall back to java -jar
             logger.warning("javaws not found, trying java -jar")
             self._process = await asyncio.create_subprocess_exec(
-                java_cmd, "-jar", str(jnlp_file),
+                java_cmd,
+                "-jar",
+                str(jnlp_file),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             logger.info("Designer process started with java -jar")
 
@@ -210,9 +222,7 @@ class DesignerManager:
         """Launch Designer via Windows executable"""
         logger.info(f"Launching executable: {exe_file}")
         self._process = await asyncio.create_subprocess_exec(
-            str(exe_file),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            str(exe_file), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         logger.info("Designer process started")
 
@@ -225,9 +235,7 @@ class DesignerManager:
             file_path.chmod(0o755)
 
         self._process = await asyncio.create_subprocess_exec(
-            str(file_path),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            str(file_path), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         logger.info("Designer process started")
 
@@ -252,10 +260,7 @@ class DesignerManager:
 
         # Wait for login dialog
         logger.info("Waiting for login dialog...")
-        found = await asyncio.to_thread(
-            self.platform_automation.find_login_dialog,
-            timeout=timeout
-        )
+        found = await asyncio.to_thread(self.platform_automation.find_login_dialog, timeout=timeout)
         if not found:
             logger.error("Login dialog did not appear")
             return False
@@ -263,9 +268,7 @@ class DesignerManager:
         # Fill credentials
         logger.info("Filling login credentials...")
         success = await asyncio.to_thread(
-            self.platform_automation.fill_login_credentials,
-            username,
-            password
+            self.platform_automation.fill_login_credentials, username, password
         )
         if not success:
             logger.error("Failed to fill login credentials")
@@ -274,8 +277,7 @@ class DesignerManager:
         # Wait for login to complete
         logger.info("Waiting for login to complete...")
         success = await asyncio.to_thread(
-            self.platform_automation.wait_for_login_completion,
-            timeout=timeout
+            self.platform_automation.wait_for_login_completion, timeout=timeout
         )
         if not success:
             logger.error("Login did not complete successfully")
@@ -302,8 +304,7 @@ class DesignerManager:
 
         # Wait for project selector
         found = await asyncio.to_thread(
-            self.platform_automation.find_project_selector,
-            timeout=timeout
+            self.platform_automation.find_project_selector, timeout=timeout
         )
         if not found:
             logger.error("Project selector did not appear")
@@ -311,9 +312,7 @@ class DesignerManager:
 
         # Select project
         success = await asyncio.to_thread(
-            self.platform_automation.select_project,
-            project_name,
-            timeout=timeout
+            self.platform_automation.select_project, project_name, timeout=timeout
         )
         if not success:
             logger.error(f"Failed to select project: {project_name}")
@@ -353,8 +352,7 @@ class DesignerManager:
         logger.info(f"Taking Designer screenshot: {screenshot_path}")
 
         success = await asyncio.to_thread(
-            self.platform_automation.take_screenshot,
-            str(screenshot_path)
+            self.platform_automation.take_screenshot, str(screenshot_path)
         )
 
         if not success:
@@ -376,8 +374,7 @@ class DesignerManager:
             raise RuntimeError("Platform automation not initialized")
 
         return await asyncio.to_thread(
-            self.platform_automation.find_designer_window,
-            timeout=timeout
+            self.platform_automation.find_designer_window, timeout=timeout
         )
 
     async def launch_with_shortcut(
@@ -386,7 +383,7 @@ class DesignerManager:
         username: str,
         password: str,
         project_name: str,
-        timeout: int = 60
+        timeout: int = 60,
     ) -> bool:
         """
         Launch Designer using Windows shortcut command from WSL
@@ -419,7 +416,7 @@ class DesignerManager:
         logger.info("")
 
         # Get path to PowerShell helper scripts
-        script_dir = Path(__file__).parent / "scripts"
+        script_dir = _scripts_dir()
         login_script = script_dir / "enter-designer-login.ps1"
         project_script = script_dir / "open-designer-project-mouse.ps1"
 
@@ -444,9 +441,7 @@ class DesignerManager:
                 launch_cmd = f'powershell.exe -Command "Start-Process \\"{designer_exe}\\""'
 
             proc = await asyncio.create_subprocess_shell(
-                launch_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                launch_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             await proc.wait()
 
@@ -459,9 +454,7 @@ class DesignerManager:
             while attempt < max_attempts:
                 check_cmd = "powershell.exe -Command \"Get-Process | Where-Object {$_.MainWindowTitle -eq 'Login - Ignition'} | Measure-Object | Select-Object -ExpandProperty Count\""
                 proc = await asyncio.create_subprocess_shell(
-                    check_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    check_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
                 stdout, _ = await proc.communicate()
                 count = stdout.decode().strip()
@@ -478,19 +471,19 @@ class DesignerManager:
 
             if not login_window:
                 logger.error("ERROR: Login window did not appear after 30 seconds.")
-                logger.error("Check if Designer is already running or if there are connection issues.")
+                logger.error(
+                    "Check if Designer is already running or if there are connection issues."
+                )
                 return False
 
             # Step 3: Fill in login credentials using PowerShell script
             logger.info("[3/4] Entering credentials...")
             login_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{login_script}" -Username "{username}" -Password "{password}"'
             proc = await asyncio.create_subprocess_shell(
-                login_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                login_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
-            result = stdout.decode().strip().split('\n')[-1].strip()
+            result = stdout.decode().strip().split("\n")[-1].strip()
 
             if result != "success":
                 logger.error(f"ERROR: Failed to enter credentials. Result: {result}")
@@ -507,9 +500,7 @@ class DesignerManager:
             while attempt < max_attempts:
                 check_cmd = "powershell.exe -Command \"Get-Process | Where-Object {$_.MainWindowTitle -like '*Open/Create Project*'} | Measure-Object | Select-Object -ExpandProperty Count\""
                 proc = await asyncio.create_subprocess_shell(
-                    check_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    check_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
                 stdout, _ = await proc.communicate()
                 count = stdout.decode().strip()
@@ -525,19 +516,19 @@ class DesignerManager:
                     await asyncio.sleep(3)
 
             if not project_window:
-                logger.error("ERROR: Login may have failed. Project selection screen did not appear.")
+                logger.error(
+                    "ERROR: Login may have failed. Project selection screen did not appear."
+                )
                 return False
 
             # Step 5: Search for and open the project using PowerShell script
             logger.info(f"     Opening project '{project_name}'...")
             project_cmd = f'powershell.exe -ExecutionPolicy Bypass -File "{project_script}" -ProjectName "{project_name}"'
             proc = await asyncio.create_subprocess_shell(
-                project_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                project_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
-            result = stdout.decode().strip().split('\n')[-1].strip()
+            result = stdout.decode().strip().split("\n")[-1].strip()
 
             if result != "success":
                 logger.error(f"ERROR: Failed to open project. Result: {result}")
@@ -556,9 +547,7 @@ class DesignerManager:
             await asyncio.sleep(5)
             verify_cmd = "powershell.exe -Command \"Get-Process | Where-Object {($_.ProcessName -eq 'java') -or ($_.ProcessName -eq 'javaw')} | Select-Object -ExpandProperty MainWindowTitle\""
             proc = await asyncio.create_subprocess_shell(
-                verify_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                verify_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
             window_titles = stdout.decode()
@@ -566,12 +555,15 @@ class DesignerManager:
             if project_name.lower() in window_titles.lower():
                 logger.info(f"✓ CONFIRMED: Project '{project_name}' is now open!")
             else:
-                logger.warning("⚠ Could not verify project opened. Please check the Designer window.")
+                logger.warning(
+                    "⚠ Could not verify project opened. Please check the Designer window."
+                )
 
             return True
 
         except Exception as e:
             logger.error(f"Error during Designer launch: {e}")
             import traceback
+
             logger.error(traceback.format_exc())
             return False

@@ -25,18 +25,14 @@ from ignition_toolkit.playbook.step_type_registry import (
     get_all_definitions,
 )
 
-# Directories containing playbooks
+# Directories containing playbooks. The old ignition_toolkit/playbooks copy
+# was a stale byte-identical duplicate of backend/playbooks/gateway, removed
+# 2026-07 — every playbook was being validated twice.
 LIBRARY_DIR = Path(__file__).parent.parent.parent.parent / "library"
 BACKEND_PLAYBOOKS_DIR = Path(__file__).parent.parent.parent / "playbooks"
-BUNDLED_PLAYBOOKS_DIR = (
-    Path(__file__).parent.parent.parent / "ignition_toolkit" / "playbooks"
-)
 
 # All playbook directories to scan
 PLAYBOOK_DIRS = [LIBRARY_DIR, BACKEND_PLAYBOOKS_DIR]
-# Add bundled dir only if it exists (may not in all setups)
-if BUNDLED_PLAYBOOKS_DIR.is_dir():
-    PLAYBOOK_DIRS.append(BUNDLED_PLAYBOOKS_DIR)
 
 # Parameter names that handlers actually read (from browser_executor.py, etc.)
 # This is the ground truth — derived from reading the handler source code.

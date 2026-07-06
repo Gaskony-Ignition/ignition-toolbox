@@ -8,6 +8,7 @@ including component discovery, test execution, and verification.
 import asyncio
 import json
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,13 @@ from ignition_toolkit.playbook.exceptions import StepExecutionError
 from ignition_toolkit.playbook.executors.base import StepHandler
 
 logger = logging.getLogger(__name__)
+
+
+def _component_discovery_script_path() -> Path:
+    """Get path to the component discovery JS, handling frozen (PyInstaller) mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "browser" / "component_discovery.js"
+    return Path(__file__).parent.parent.parent / "browser" / "component_discovery.js"
 
 
 class PerspectiveDiscoverPageHandler(StepHandler):
@@ -35,21 +43,22 @@ class PerspectiveDiscoverPageHandler(StepHandler):
         types = params.get("types", [])
         exclude_selectors = params.get("exclude_selectors", [])
 
-        logger.info(f"Discovery parameters - selector: {selector}, types: {types}, exclude: {exclude_selectors}")
+        logger.info(
+            f"Discovery parameters - selector: {selector}, types: {types}, exclude: {exclude_selectors}"
+        )
 
         # Load discovery script
-        script_path = Path(__file__).parent.parent.parent / "browser" / "component_discovery.js"
+        script_path = _component_discovery_script_path()
         logger.info(f"Component discovery script path: {script_path}")
 
         if not script_path.exists():
             logger.error(f"Component discovery script NOT FOUND at: {script_path}")
             raise StepExecutionError(
-                "perspective",
-                f"Component discovery script not found: {script_path}"
+                "perspective", f"Component discovery script not found: {script_path}"
             )
 
         logger.info("Reading component discovery script...")
-        with open(script_path, encoding='utf-8') as f:
+        with open(script_path, encoding="utf-8") as f:
             discovery_script = f.read()
         logger.info(f"Discovery script loaded ({len(discovery_script)} characters)")
 
@@ -67,12 +76,11 @@ class PerspectiveDiscoverPageHandler(StepHandler):
             raise StepExecutionError("perspective", f"Failed to inject discovery script: {e}")
 
         # Execute discovery
-        options = {
-            "types": types,
-            "excludeSelectors": exclude_selectors
-        }
+        options = {"types": types, "excludeSelectors": exclude_selectors}
 
-        logger.info(f"Executing discoverPerspectiveComponents with selector='{selector}', options={options}")
+        logger.info(
+            f"Executing discoverPerspectiveComponents with selector='{selector}', options={options}"
+        )
         try:
             result = await page.evaluate(
                 f"discoverPerspectiveComponents('{selector}', {json.dumps(options)})"
@@ -83,27 +91,23 @@ class PerspectiveDiscoverPageHandler(StepHandler):
             raise StepExecutionError("perspective", f"Failed to execute discovery: {e}")
 
         if not result.get("success"):
-            error_msg = result.get('error', 'Unknown error')
+            error_msg = result.get("error", "Unknown error")
             logger.error(f"Component discovery reported failure: {error_msg}")
-            raise StepExecutionError(
-                "perspective",
-                f"Component discovery failed: {error_msg}"
-            )
+            raise StepExecutionError("perspective", f"Component discovery failed: {error_msg}")
 
-        component_count = result.get('count', 0)
-        logger.info(
-            f"Discovered {component_count} components "
-            f"(types: {types or 'all'})"
-        )
+        component_count = result.get("count", 0)
+        logger.info(f"Discovered {component_count} components " f"(types: {types or 'all'})")
 
         output = {
             "status": "discovered",
             "count": component_count,
             "inventory": result.get("components", []),
             "timestamp": result.get("timestamp"),
-            "root_selector": selector
+            "root_selector": selector,
         }
-        logger.info(f"Returning discovery output: count={component_count}, inventory_length={len(output['inventory'])}")
+        logger.info(
+            f"Returning discovery output: count={component_count}, inventory_length={len(output['inventory'])}"
+        )
         return output
 
 
@@ -118,11 +122,7 @@ class PerspectiveExtractMetadataHandler(StepHandler):
 
         if not components:
             logger.warning("No components provided for metadata extraction")
-            return {
-                "status": "skipped",
-                "enriched_inventory": [],
-                "count": 0
-            }
+            return {"status": "skipped", "enriched_inventory": [], "count": 0}
 
         # Enrich each component with additional metadata
         enriched = []
@@ -135,19 +135,15 @@ class PerspectiveExtractMetadataHandler(StepHandler):
                     "has_label": bool(component.get("label") or component.get("ariaLabel")),
                     "has_id": bool(component.get("id")),
                     "is_perspective_component": bool(component.get("componentPath")),
-                    "selector_reliability": self._assess_selector_reliability(component)
-                }
+                    "selector_reliability": self._assess_selector_reliability(component),
+                },
             }
 
             enriched.append(enriched_component)
 
         logger.info(f"Enriched metadata for {len(enriched)} components")
 
-        return {
-            "status": "enriched",
-            "enriched_inventory": enriched,
-            "count": len(enriched)
-        }
+        return {"status": "enriched", "enriched_inventory": enriched, "count": len(enriched)}
 
     def _assess_selector_reliability(self, component: dict) -> str:
         """Assess reliability of component selectors"""
@@ -174,10 +170,7 @@ class PerspectiveExecuteTestManifestHandler(StepHandler):
         baseline_url = params.get("baseline_url")
 
         if not manifest:
-            raise StepExecutionError(
-                "perspective",
-                "No test manifest provided"
-            )
+            raise StepExecutionError("perspective", "No test manifest provided")
 
         page = await self.manager.get_page()
         results = []
@@ -198,7 +191,7 @@ class PerspectiveExecuteTestManifestHandler(StepHandler):
                 "component_id": component_id,
                 "action": action,
                 "expected": expected,
-                "started_at": datetime.now().isoformat()
+                "started_at": datetime.now().isoformat(),
             }
 
             try:
@@ -267,7 +260,7 @@ class PerspectiveExecuteTestManifestHandler(StepHandler):
             "passed": passed,
             "failed": failed,
             "skipped": skipped,
-            "results": results
+            "results": results,
         }
 
 
@@ -297,7 +290,7 @@ class PerspectiveVerifyNavigationHandler(StepHandler):
                     raise StepExecutionError(
                         "perspective",
                         f"URL verification failed. Expected pattern: '{expected_url_pattern}', "
-                        f"Actual URL: '{current_url}'"
+                        f"Actual URL: '{current_url}'",
                     )
 
             # Verify title if pattern provided
@@ -306,20 +299,19 @@ class PerspectiveVerifyNavigationHandler(StepHandler):
                     raise StepExecutionError(
                         "perspective",
                         f"Title verification failed. Expected pattern: '{expected_title_pattern}', "
-                        f"Actual title: '{current_title}'"
+                        f"Actual title: '{current_title}'",
                     )
 
             return {
                 "status": "verified",
                 "url": current_url,
                 "title": current_title,
-                "message": "Navigation verified successfully"
+                "message": "Navigation verified successfully",
             }
 
         except (TimeoutError, PlaywrightTimeoutError):
             raise StepExecutionError(
-                "perspective",
-                f"Navigation verification timed out after {timeout}ms"
+                "perspective", f"Navigation verification timed out after {timeout}ms"
             )
 
 
@@ -334,10 +326,7 @@ class PerspectiveVerifyDockHandler(StepHandler):
         timeout = params.get("timeout", 3000)
 
         if not dock_selector:
-            raise StepExecutionError(
-                "perspective",
-                "No dock_selector provided"
-            )
+            raise StepExecutionError("perspective", "No dock_selector provided")
 
         page = await self.manager.get_page()
 
@@ -350,18 +339,16 @@ class PerspectiveVerifyDockHandler(StepHandler):
 
             if not is_visible:
                 raise StepExecutionError(
-                    "perspective",
-                    f"Dock element found but not visible: {dock_selector}"
+                    "perspective", f"Dock element found but not visible: {dock_selector}"
                 )
 
             return {
                 "status": "verified",
                 "dock_selector": dock_selector,
-                "message": "Dock opened and visible"
+                "message": "Dock opened and visible",
             }
 
         except (TimeoutError, PlaywrightTimeoutError):
             raise StepExecutionError(
-                "perspective",
-                f"Dock did not open within {timeout}ms: {dock_selector}"
+                "perspective", f"Dock did not open within {timeout}ms: {dock_selector}"
             )

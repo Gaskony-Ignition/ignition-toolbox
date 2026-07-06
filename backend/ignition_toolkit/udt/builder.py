@@ -37,6 +37,7 @@ member/folder name to that style before validation. UDT *type* names,
 
 import json
 import logging
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -51,7 +52,13 @@ from ignition_toolkit.udt.models import UdtDefinition
 
 logger = logging.getLogger(__name__)
 
-TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+def _templates_dir() -> Path:
+    """Get path to the UDT template directory, handling frozen (PyInstaller) mode."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "udt" / "templates"
+    return Path(__file__).parent / "templates"
+
 
 # Questionnaire field types -> the Python type(s) an answer must satisfy.
 # Mirrors ParameterType in playbook/models.py, restricted to the shapes a
@@ -102,14 +109,14 @@ class TemplateMeta:
 
 
 def _template_path(template_id: str) -> Path:
-    return TEMPLATES_DIR / f"{template_id}.json"
+    return _templates_dir() / f"{template_id}.json"
 
 
 def _load_template(template_id: str) -> dict[str, Any]:
     """Load and JSON-parse a template file by id, raising a clear error if missing/invalid."""
     path = _template_path(template_id)
     if not path.is_file():
-        available = ", ".join(sorted(p.stem for p in TEMPLATES_DIR.glob("*.json")))
+        available = ", ".join(sorted(p.stem for p in _templates_dir().glob("*.json")))
         raise UdtBuilderError(f"Unknown template '{template_id}'. Available: {available}")
     try:
         with open(path, encoding="utf-8") as f:
@@ -140,7 +147,7 @@ def list_templates() -> list[TemplateMeta]:
         template id. Intended for a future ``/api/udt/templates`` endpoint.
     """
     templates = []
-    for path in sorted(TEMPLATES_DIR.glob("*.json")):
+    for path in sorted(_templates_dir().glob("*.json")):
         data = _load_template(path.stem)
         templates.append(
             TemplateMeta(

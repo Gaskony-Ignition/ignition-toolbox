@@ -96,6 +96,16 @@ datas = [
     (str(backend_dir / 'ignition_toolkit' / 'clouddesigner' / 'docker_files'), 'clouddesigner/docker_files'),
     # Include StackBuilder catalog and integration data
     (str(backend_dir / 'ignition_toolkit' / 'stackbuilder' / 'data'), 'stackbuilder/data'),
+    # Include UDT Builder device-class templates
+    (str(backend_dir / 'ignition_toolkit' / 'udt' / 'templates'), 'udt/templates'),
+    # Include API Explorer bundled docs data; api_explorer.py already expects _MEIPASS/api/data
+    (str(backend_dir / 'ignition_toolkit' / 'api' / 'data'), 'api/data'),
+    # Include Ignition Exchange scraper selectors; scraper.py already expects _MEIPASS/exchange/selectors.json
+    (str(backend_dir / 'ignition_toolkit' / 'exchange' / 'selectors.json'), 'exchange'),
+    # Include Perspective component discovery script
+    (str(backend_dir / 'ignition_toolkit' / 'browser' / 'component_discovery.js'), 'browser'),
+    # Include Designer PowerShell helper scripts
+    (str(backend_dir / 'ignition_toolkit' / 'designer' / 'scripts'), 'designer/scripts'),
 ]
 
 # Add Playwright driver (required for browser installation command)
