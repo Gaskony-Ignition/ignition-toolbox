@@ -172,8 +172,17 @@ app.on('window-all-closed', async () => {
   }
 });
 
-app.on('before-quit', async () => {
-  await stopPythonBackend();
+// Electron does not await async 'before-quit' listeners, so a plain async
+// handler lets the app (and the update installer) exit while the backend
+// kill is still in flight — that orphaned a backend holding its port
+// during the v3.3.1 -> v3.4.0 update. preventDefault, stop the backend
+// (stop() force-kills after 5s, so quit can't hang), then quit for real.
+let backendCleanupDone = false;
+app.on('before-quit', (event) => {
+  if (backendCleanupDone) return;
+  backendCleanupDone = true;
+  event.preventDefault();
+  stopPythonBackend().finally(() => app.quit());
 });
 
 // Handle uncaught exceptions

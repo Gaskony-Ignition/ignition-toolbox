@@ -54,6 +54,12 @@ export class PythonBackend {
    * Find a free port for the backend server.
    * Uses a fixed range (5000-5099) to avoid Windows Hyper-V ephemeral port
    * reservations that cause EACCES errors with random OS-assigned ports.
+   *
+   * Probes on 0.0.0.0, not 127.0.0.1: a wildcard bind only succeeds when NO
+   * other socket holds the port on any interface. Probing 127.0.0.1 succeeds
+   * on Windows even while another process (e.g. an orphaned backend with
+   * allowRemoteAccess) holds 0.0.0.0 on the same port — the backend then
+   * dies with WinError 10048 on a port we reported as free.
    */
   private async findFreePort(): Promise<number> {
     const net = require('net');
@@ -65,7 +71,7 @@ export class PythonBackend {
         const server = net.createServer();
         server.unref();
         server.on('error', () => resolve(false));
-        server.listen(port, '127.0.0.1', () => {
+        server.listen(port, '0.0.0.0', () => {
           server.close(() => resolve(true));
         });
       });
@@ -77,7 +83,7 @@ export class PythonBackend {
       const server = net.createServer();
       server.unref();
       server.on('error', reject);
-      server.listen(0, '127.0.0.1', () => {
+      server.listen(0, '0.0.0.0', () => {
         const port = server.address().port;
         server.close(() => resolve(port));
       });

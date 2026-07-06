@@ -163,6 +163,11 @@ export function registerIpcHandlers(pythonBackend: PythonBackend): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.UPDATES_INSTALL, async () => {
+    // Stop the backend BEFORE handing off to the installer:
+    // autoUpdater.quitAndInstall() exits without awaiting async quit
+    // listeners, which orphaned the backend (still holding its port) during
+    // the v3.3.1 -> v3.4.0 update.
+    await pythonBackend.stop();
     quitAndInstall();
     return { success: true };
   });
