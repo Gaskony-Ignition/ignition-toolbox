@@ -278,6 +278,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Guard the exact bug that 404'd v3.4.1: electron-builder writes a
+      # space in productName as a dash in latest.yml, but GitHub's asset
+      # upload sanitises it to a dot — so the manifest pointed at a
+      # nonexistent file. We check the *uploaded* asset names (post-GitHub
+      # sanitisation), not the local files, and keep the release a draft if
+      # any manifest reference is missing, so a broken update never ships.
+      - name: Verify auto-update manifests resolve to real assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
+            --json assets -q '.assets[].name' | sort > /tmp/assets.txt
+          echo "Uploaded assets:"; cat /tmp/assets.txt
+          missing=0
+          for yml in $(find artifacts -name 'latest*.yml'); do
+            for f in $(grep -oE 'url:[[:space:]]*.*' "$yml" | sed 's/url:[[:space:]]*//' | tr -d '\r'); do
+              if ! grep -qxF "$f" /tmp/assets.txt; then
+                echo "::error::$yml references '$f' but no such asset exists (auto-update would 404). Release left as draft."
+                missing=1
+              fi
+            done
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          echo "All auto-update manifest references resolve to real assets."
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
