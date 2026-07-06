@@ -182,24 +182,25 @@ jobs:
             if [ -d "$dir" ]; then echo "  OK: $dir"; else echo "  MISSING: $dir"; fi
           done
 
+      # --publish never: platform jobs must NOT publish directly (with a GH
+      # token present electron-builder auto-publishes per platform, so
+      # updaters see a half-populated release mid-build — a v3.3.1 client
+      # 404'd on latest.yml during the v3.4.0 build. It also uploaded
+      # dot-sanitised duplicate assets). The release job below is the only
+      # publisher, and it flips the draft public only when everything is up.
       - name: Build Windows installer
         if: matrix.platform == 'win'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64
+        run: npx electron-builder --win --x64 --publish never
 
       - name: Build macOS installer
         if: matrix.platform == 'mac'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx electron-builder --mac --${{ matrix.arch }}
+        run: npx electron-builder --mac --${{ matrix.arch }} --publish never
 
       - name: Build Linux installer
         if: matrix.platform == 'linux'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --linux --x64
+        run: npx electron-builder --linux --x64 --publish never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -259,7 +260,9 @@ jobs:
       - name: List all release artifacts
         run: find artifacts -type f | sort
 
-      - name: Create GitHub Release
+      # Created as a draft so auto-updaters never see it until every asset
+      # (including latest*.yml) is uploaded; published atomically below.
+      - name: Create draft GitHub Release with all assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -269,8 +272,16 @@ jobs:
             artifacts/**/*.dmg.blockmap
             artifacts/**/*.AppImage
             artifacts/**/latest*.yml
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --draft=false --latest
