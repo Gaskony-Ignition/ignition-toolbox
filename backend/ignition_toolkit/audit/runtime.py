@@ -33,6 +33,12 @@ logger = logging.getLogger(__name__)
 # all) -> "/".
 _CLIENT_URL_PATH_RE = re.compile(r"/data/perspective/client/[^/]+(/.*)?$")
 
+# Sentinel path reported for a browser.navigate step that FAILED: the target
+# URL is unrecoverable (failed navigates record no output), but the failed
+# visit must still appear in the report rather than being blamed on the
+# previous page or silently dropped.
+FAILED_NAVIGATION_PATH = "(navigation failed)"
+
 
 def _extract_page_path(url: str) -> str:
     """Best-effort extraction of the page-config route from a client URL.
@@ -150,14 +156,10 @@ def build_runtime_results_from_execution(execution: ExecutionState) -> RuntimeAu
     not a boundary — it only supplies ``load_time_ms`` if no ``browser.wait``
     already did.
 
-    Known limitation: if the ``browser.navigate`` step itself fails (e.g.
-    the gateway is unreachable), :class:`~ignition_toolkit.playbook.step_executor.StepExecutor`
-    records no ``output`` for that step (only ``error``), so there is no
-    URL to recover the page path from — that visit is skipped from
-    ``pages`` entirely rather than reported with an empty path. The
-    execution's own ``status``/``error`` still reflect the failure; callers
-    that need "did the whole execution succeed" should check those, not
-    just ``RuntimeAuditResults.all_pages_loaded_ok``.
+    A failed ``browser.navigate`` (recognised via ``StepResult.step_type``)
+    closes the previous page's run untouched and emits its own failed page
+    entry. Its target URL is unrecoverable (a failed navigate records no
+    ``output``), so the entry's path is ``FAILED_NAVIGATION_PATH``.
     """
     pages: list[PageRuntimeResult] = []
 
@@ -185,7 +187,7 @@ def build_runtime_results_from_execution(execution: ExecutionState) -> RuntimeAu
             )
         )
 
-    def start_run(path: str, started_at: datetime | None) -> None:
+    def start_run(path: str | None, started_at: datetime | None) -> None:
         nonlocal current_path, current_started_at, current_rendered_at
         nonlocal current_screenshot, current_failed, current_error
         current_path = path
@@ -195,29 +197,50 @@ def build_runtime_results_from_execution(execution: ExecutionState) -> RuntimeAu
         current_failed = False
         current_error = None
 
-    def is_navigate_output(output: dict[str, Any]) -> bool:
+    def is_navigate_step(step: Any, output: dict[str, Any]) -> bool:
+        # Prefer the declared step type; fall back to output shape for
+        # results persisted before StepResult.step_type existed.
+        if step.step_type is not None:
+            return step.step_type == "browser.navigate"
         return output.get("status") == "navigated" and "url" in output
 
-    def is_verify_navigation_output(output: dict[str, Any]) -> bool:
-        # perspective.verify_navigation's success shape includes both "url"
-        # and "title"; browser.verify_text/verify happen to share the same
-        # "status": "verified" string but never carry "url"/"title", so
-        # checking for those keys disambiguates the two step types without
-        # needing the step's declared type here (StepResult doesn't carry it).
+    def is_verify_navigation_step(step: Any, output: dict[str, Any]) -> bool:
+        # Prefer the declared step type; the shape fallback (both "url" and
+        # "title" present alongside "status": "verified") only applies to
+        # pre-step_type results, where perspective.verify_navigation was the
+        # only step emitting that combination.
+        if step.step_type is not None:
+            return step.step_type == "perspective.verify_navigation"
         return output.get("status") == "verified" and "url" in output and "title" in output
 
     for step in execution.step_results:
         output = step.output or {}
 
-        if is_navigate_output(output):
+        if is_navigate_step(step, output):
+            # A navigation always closes the previous page's run - success
+            # or failure, it must never be attributed to the page we just
+            # left (a failed navigate used to mark the PREVIOUS page as
+            # failed and drop the failing page from the report entirely).
             flush()
-            start_run(_extract_page_path(output["url"]), step.started_at)
             if step.status == StepStatus.FAILED:
+                # The target URL is unrecoverable (failed navigates record
+                # no output), so report the visit under a sentinel path.
+                start_run(FAILED_NAVIGATION_PATH, step.started_at)
                 current_failed = True
                 current_error = step.error
+                flush()
+                start_run(None, None)  # no open page run after a failure
+            elif "url" in output:
+                start_run(_extract_page_path(output["url"]), step.started_at)
+            else:
+                start_run(None, None)
             continue
 
-        if is_verify_navigation_output(output) and step.status == StepStatus.COMPLETED:
+        if (
+            is_verify_navigation_step(step, output)
+            and step.status == StepStatus.COMPLETED
+            and "url" in output
+        ):
             observed_path = _extract_page_path(output["url"])
             if current_path is None:
                 start_run(observed_path, step.started_at)

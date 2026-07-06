@@ -217,6 +217,43 @@ class TestStackGeneration:
         assert response.status_code == 422
         assert "conflict" in response.json()["detail"].lower()
 
+    def test_offline_bundle_conflicting_stack_returns_422(self, sample_traefik_instance):
+        """generate-offline-bundle calls the same generator and must map
+        StackBuilderError to 422 like /generate does (regression: it used to
+        fall through to the generic 500 handler)."""
+        nginx_instance = {
+            "app_id": "nginx-proxy-manager",
+            "instance_name": "nginx",
+            "config": {},
+        }
+        stack_config = {
+            "instances": [sample_traefik_instance, nginx_instance],
+            "global_settings": {"stack_name": "conflict-stack"},
+        }
+        response = client.post("/api/stackbuilder/generate-offline-bundle", json=stack_config)
+        assert response.status_code == 422
+        assert "conflict" in response.json()["detail"].lower()
+
+    def test_deploy_conflicting_stack_returns_422(self, sample_traefik_instance):
+        """/deploy generates before running docker and must reject a
+        conflicting stack with 422 without ever touching docker (regression:
+        it used to return a generic 500)."""
+        nginx_instance = {
+            "app_id": "nginx-proxy-manager",
+            "instance_name": "nginx",
+            "config": {},
+        }
+        payload = {
+            "stack_name": "conflict-stack",
+            "stack_config": {
+                "instances": [sample_traefik_instance, nginx_instance],
+                "global_settings": {"stack_name": "conflict-stack"},
+            },
+        }
+        response = client.post("/api/stackbuilder/deploy", json=payload)
+        assert response.status_code == 422
+        assert "conflict" in response.json()["detail"].lower()
+
     def test_generate_stack_with_traefik(
         self, sample_ignition_instance, sample_traefik_instance
     ):

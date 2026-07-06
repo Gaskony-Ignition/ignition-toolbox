@@ -306,6 +306,7 @@ class PlaybookEngine:
                 error=None,
                 started_at=None,
                 completed_at=None,
+                step_type=step.type.value,
             )
             for step in playbook.steps
         ]
@@ -481,6 +482,7 @@ class PlaybookEngine:
                         status=StepStatus.SKIPPED,
                         started_at=datetime.now(),
                         completed_at=datetime.now(),
+                        step_type=step.type.value,
                     )
                     execution_state.add_step_result(step_result)
 
@@ -504,6 +506,7 @@ class PlaybookEngine:
                     step_name=step.name,
                     status=StepStatus.RUNNING,
                     started_at=datetime.now(),
+                    step_type=step.type.value,
                 )
                 execution_state.add_step_result(running_step_result)
                 execution_state.current_step_index = step_index  # Update current step BEFORE notifying

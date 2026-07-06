@@ -74,7 +74,12 @@ def _load_project_or_400(zip_path: Path, filename: str | None) -> PerspectivePro
         )
     try:
         return PerspectiveProject.load(zip_path)
-    except (FileNotFoundError, OSError, zipfile.BadZipFile) as exc:
+    except (FileNotFoundError, OSError, zipfile.BadZipFile, ValueError) as exc:
+        # ValueError covers malformed content inside the zip: corrupt
+        # view.json (json.JSONDecodeError) and schema-invalid views
+        # (pydantic.ValidationError) are both ValueError subclasses. Anything
+        # else is a genuine server bug and must surface as a 500, not be
+        # blamed on the customer's upload.
         raise HTTPException(
             status_code=400, detail=f"Could not read project export '{display_name}': {exc}"
         ) from exc
@@ -113,14 +118,7 @@ async def audit_perspective_project(file: UploadFile = File(...)) -> dict:
     layout, bindings, scripts, consistency, hygiene) and the temp copy is
     deleted before the response is returned.
     """
-    try:
-        report = await _run_audit(file)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Perspective audit failed")
-        raise HTTPException(status_code=400, detail=f"Audit failed: {exc}") from exc
-
+    report = await _run_audit(file)
     return report.to_dict()
 
 
@@ -131,14 +129,7 @@ async def audit_perspective_project_markdown(file: UploadFile = File(...)) -> Re
     markdown report instead of JSON. Re-runs the audit against the same
     upload — nothing from a prior call is cached or persisted server-side.
     """
-    try:
-        report = await _run_audit(file)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Perspective audit failed")
-        raise HTTPException(status_code=400, detail=f"Audit failed: {exc}") from exc
-
+    report = await _run_audit(file)
     markdown = report.to_markdown()
     safe_name = (
         "".join(c if c.isalnum() or c in "-_" else "_" for c in report.project_name) or "project"

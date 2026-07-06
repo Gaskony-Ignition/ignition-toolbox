@@ -11,6 +11,7 @@ can actually consume.
 from datetime import datetime, timedelta
 
 from ignition_toolkit.audit.runtime import (
+    FAILED_NAVIGATION_PATH,
     PageRuntimeResult,
     RuntimeAuditResults,
     _extract_page_path,
@@ -302,11 +303,12 @@ class TestBuildRuntimeResultsFromExecution:
         assert result.all_pages_loaded_ok is True  # vacuously true
 
     def test_navigate_step_itself_failing_produces_no_page_entry(self) -> None:
-        """Documented limitation: a failed browser.navigate has no output
-        (StepExecutor only sets ``error`` on failure), so there is no URL to
-        derive a page path from - the visit is skipped rather than reported
-        with a fabricated empty path. The execution's own status/error is
-        the source of truth for this case, not the page list."""
+        """Legacy fallback: a failed browser.navigate WITHOUT step_type has
+        no output (StepExecutor only sets ``error`` on failure), so it can't
+        be recognised as a navigation at all - the visit is skipped rather
+        than reported. Results with step_type set (everything produced since
+        the field was added) get a failed-page entry instead - see
+        TestFailedNavigateWithStepType."""
         steps = [
             _navigate(
                 "step1",
@@ -320,6 +322,97 @@ class TestBuildRuntimeResultsFromExecution:
         result = build_runtime_results_from_execution(execution)
 
         assert result.pages == []
+
+
+class TestFailedNavigateWithStepType:
+    """Regression tests for the failed-navigate misattribution bug.
+
+    Before the fix, a FAILED browser.navigate after a successful page visit
+    was folded into the previous page's still-open run: the previously
+    successful page was reported as loaded_ok=False carrying the new page's
+    error, and the failing page never appeared in the report at all. With
+    StepResult.step_type available, a navigation is recognised regardless
+    of output shape and always closes the previous run.
+    """
+
+    @staticmethod
+    def _typed(step: StepResult, step_type: str) -> StepResult:
+        step.step_type = step_type
+        return step
+
+    def test_failed_navigate_after_successful_page(self) -> None:
+        base = "http://localhost:8088/data/perspective/client/ToolboxAudit"
+        steps = [
+            self._typed(_navigate("step1", f"{base}/", T0), "browser.navigate"),
+            self._typed(_wait("step2", T0 + timedelta(seconds=1)), "browser.wait"),
+            self._typed(
+                _navigate(
+                    "step3", f"{base}/page2", T0 + timedelta(seconds=2), status=StepStatus.FAILED
+                ),
+                "browser.navigate",
+            ),
+        ]
+        execution = _execution(steps)
+
+        result = build_runtime_results_from_execution(execution)
+
+        assert len(result.pages) == 2
+        first, second = result.pages
+        # The successful page keeps its clean result...
+        assert first.path == "/"
+        assert first.loaded_ok is True
+        assert first.error is None
+        # ...and the failed navigation gets its own failed entry.
+        assert second.path == FAILED_NAVIGATION_PATH
+        assert second.loaded_ok is False
+        assert second.error == "navigation failed"
+        assert result.all_pages_loaded_ok is False
+
+    def test_failed_navigate_as_first_step_reports_failed_page(self) -> None:
+        steps = [
+            self._typed(
+                _navigate(
+                    "step1",
+                    "http://localhost:8088/data/perspective/client/ToolboxAudit/",
+                    T0,
+                    status=StepStatus.FAILED,
+                ),
+                "browser.navigate",
+            ),
+        ]
+        execution = _execution(steps)
+
+        result = build_runtime_results_from_execution(execution)
+
+        assert len(result.pages) == 1
+        assert result.pages[0].path == FAILED_NAVIGATION_PATH
+        assert result.pages[0].loaded_ok is False
+
+    def test_steps_after_failed_navigate_are_not_attributed_to_any_page(self) -> None:
+        base = "http://localhost:8088/data/perspective/client/ToolboxAudit"
+        steps = [
+            self._typed(
+                _navigate("step1", f"{base}/", T0, status=StepStatus.FAILED),
+                "browser.navigate",
+            ),
+            self._typed(
+                _wait(
+                    "step2",
+                    T0 + timedelta(seconds=1),
+                    status=StepStatus.FAILED,
+                    error="wait failed too",
+                ),
+                "browser.wait",
+            ),
+        ]
+        execution = _execution(steps)
+
+        result = build_runtime_results_from_execution(execution)
+
+        # Only the failed-navigation entry; the subsequent failed wait must
+        # not resurrect or mutate the closed run.
+        assert len(result.pages) == 1
+        assert result.pages[0].error == "navigation failed"
 
 
 class TestRuntimeAuditResultsToDict:

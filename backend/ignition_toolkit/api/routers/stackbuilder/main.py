@@ -482,6 +482,9 @@ async def generate_offline_bundle(stack_config: StackConfig):
             },
         )
 
+    except StackBuilderError as e:
+        logger.info(f"Rejected invalid stack configuration: {e}")
+        raise HTTPException(status_code=422, detail=e.message)
     except Exception as e:
         logger.error(f"Error generating offline bundle: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -701,6 +704,9 @@ async def deploy_stack(request: DeployStackRequest):
             error=deploy_result.error,
         )
 
+    except StackBuilderError as e:
+        logger.info(f"Rejected invalid stack configuration: {e}")
+        raise HTTPException(status_code=422, detail=e.message)
     except Exception as e:
         logger.error(f"Error deploying stack: {e}")
         raise HTTPException(status_code=500, detail=str(e))

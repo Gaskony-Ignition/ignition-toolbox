@@ -272,6 +272,10 @@ class StepResult:
         output: Step output data
         error: Error message if failed
         retry_count: Number of retries attempted
+        step_type: The step's declared type string (e.g. "browser.navigate")
+            so consumers (e.g. audit runtime reporting) can classify results
+            without inferring from output shape. Optional for backwards
+            compatibility with results persisted before the field existed.
     """
 
     step_id: str
@@ -282,6 +286,7 @@ class StepResult:
     output: dict[str, Any] | None = None
     error: str | None = None
     retry_count: int = 0
+    step_type: str | None = None
 
 
 @dataclass

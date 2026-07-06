@@ -222,6 +222,7 @@ class StepExecutor:
             step_name=step.name,
             status=StepStatus.RUNNING,
             started_at=datetime.now(),
+            step_type=step.type.value,
         )
 
         retry_count = 0
