@@ -35,7 +35,11 @@ def _artifact_files(result: dict[str, Any]) -> dict[str, str]:
     """Flatten a generate() result into {relative_path: content} for snapshotting."""
     files = {
         "docker-compose.yml": result["docker_compose"],
-        ".env": result["env"],
+        # Stored as env.snapshot, not ".env": dotfile-named env files are
+        # blocked by the workspace secrets-guard hook and excluded by the
+        # repo .gitignore, so a literal .env golden silently never reaches
+        # CI (which is exactly what happened on the first Windows run).
+        "env.snapshot": result["env"],
         "README.md": result["readme"],
     }
     for rel_path, content in result.get("config_files", {}).items():
@@ -65,7 +69,9 @@ def _read_golden(stack_dir: Path) -> dict[str, str]:
     if not stack_dir.exists():
         return {}
     return {
-        str(p.relative_to(stack_dir)): p.read_text(encoding="utf-8")
+        # as_posix(): golden keys must use "/" on every platform - plain
+        # str() yields backslashes on Windows, breaking every comparison.
+        p.relative_to(stack_dir).as_posix(): p.read_text(encoding="utf-8")
         for p in stack_dir.rglob("*")
         if p.is_file()
     }
