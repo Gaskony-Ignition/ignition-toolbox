@@ -76,7 +76,7 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: 
   { id: 'designer', label: 'Browser Designer', icon: <DesignerIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
-  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" /> },
+  { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Beta' },
   { id: 'exchange', label: 'Exchange', icon: <StorefrontOutlined fontSize="small" /> },
   { id: 'audit', label: 'Audit', icon: <AuditIcon fontSize="small" /> },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
@@ -91,7 +91,7 @@ const stackSubTabs: { id: StackSubTab; label: string; icon: React.ReactNode }[] 
 const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
-  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} />, badge: 'Coming Soon' },
+  { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} />, badge: 'Beta' },
   { id: 'active-execution', label: 'Active Execution', icon: <ActiveExecutionIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'past-executions', label: 'Past Executions', icon: <PastExecutionsIcon sx={{ fontSize: '1rem' }} /> },
 ];
