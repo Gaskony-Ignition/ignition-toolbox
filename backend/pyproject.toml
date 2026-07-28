@@ -55,8 +55,11 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
-    "black>=24.10.0",
-    "ruff>=0.8.0",
+    # Pinned to match the CI lint job — a newer formatter would reformat the
+    # tree locally and then fail black --check in CI. Bump both together with
+    # the resulting reformat commit.
+    "black==26.5.1",
+    "ruff==0.15.18",
     "mypy>=1.13.0",
 ]
 ai = [

@@ -98,7 +98,10 @@ jobs:
       - name: Install Python dev dependencies
         run: |
           cd backend
-          pip install ruff black
+          # Pinned deliberately: formatting is version-sensitive, so an
+          # unpinned upgrade would fail black --check on code nobody touched.
+          # Bump these together with a reformat commit, never on their own.
+          pip install ruff==0.15.18 black==26.5.1
 
       - name: Lint frontend
         run: |
