@@ -4,16 +4,16 @@ Tests for context API endpoints.
 Tests the /api/context/summary and /api/context/full endpoints, verifying they
 return well-structured responses and handle empty databases gracefully.
 
-All external dependencies (database, CredentialVault, CloudDesigner, log capture,
-playbook loader, active_engines) are mocked so no real I/O happens.
+All external dependencies (database, CredentialVault, log capture, playbook
+loader, active_engines) are mocked so no real I/O happens.
 """
 
 import asyncio
-import pytest
 from contextlib import contextmanager
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Shared mock builders
@@ -46,20 +46,10 @@ def _make_mock_vault(credentials=None):
     return vault
 
 
-def _mock_clouddesigner_status(status="stopped", port=None):
-    """Return a mock CloudDesigner status object."""
-    s = MagicMock()
-    s.status = status
-    s.port = port
-    return s
-
-
 def _make_patch_stack(
     *,
     db=None,
     vault_creds=None,
-    cloud_status="stopped",
-    cloud_port=None,
     playbooks_dir_exists=False,
     log_capture=None,
 ):
@@ -70,10 +60,6 @@ def _make_patch_stack(
     """
     mock_db = db or _make_mock_db()
     mock_vault = _make_mock_vault(vault_creds)
-    cloud_stat = _mock_clouddesigner_status(cloud_status, cloud_port)
-
-    mock_manager = MagicMock()
-    mock_manager.get_container_status.return_value = cloud_stat
 
     # Playbooks directory — non-existent by default so no YAML loading happens
     mock_pb_dir = MagicMock(spec=Path)
@@ -84,7 +70,6 @@ def _make_patch_stack(
     return {
         "db": mock_db,
         "vault": mock_vault,
-        "manager": mock_manager,
         "pb_dir": mock_pb_dir,
         "log_capture": log_capture,
     }
@@ -99,23 +84,23 @@ def _run_summary(mocks):
     """Run get_context_summary() with the given mock objects applied."""
     from ignition_toolkit.api.routers.context import get_context_summary
 
-    with patch(
-        "ignition_toolkit.api.routers.context.get_database", return_value=mocks["db"]
-    ), patch(
-        "ignition_toolkit.api.routers.context.CredentialVault", return_value=mocks["vault"]
-    ), patch(
-        "ignition_toolkit.clouddesigner.manager.get_clouddesigner_manager",
-        return_value=mocks["manager"],
-    ), patch(
-        "ignition_toolkit.api.routers.context.get_log_capture",
-        return_value=mocks["log_capture"],
-    ), patch(
-        # get_playbooks_dir is imported locally inside _get_playbooks_summary()
-        "ignition_toolkit.core.paths.get_playbooks_dir",
-        return_value=mocks["pb_dir"],
-    ), patch(
-        # active_engines is imported locally inside _get_system_summary()
-        "ignition_toolkit.api.app.active_engines", {}
+    with (
+        patch("ignition_toolkit.api.routers.context.get_database", return_value=mocks["db"]),
+        patch("ignition_toolkit.api.routers.context.CredentialVault", return_value=mocks["vault"]),
+        patch(
+            "ignition_toolkit.api.routers.context.get_log_capture",
+            return_value=mocks["log_capture"],
+        ),
+        patch(
+            # get_playbooks_dir is imported locally inside _get_playbooks_summary()
+            "ignition_toolkit.core.paths.get_playbooks_dir",
+            return_value=mocks["pb_dir"],
+        ),
+        patch(
+            # active_engines is imported locally inside _get_system_summary()
+            "ignition_toolkit.api.app.active_engines",
+            {},
+        ),
     ):
         return asyncio.run(get_context_summary())
 
@@ -124,21 +109,18 @@ def _run_full(mocks, **kwargs):
     """Run get_full_context() with the given mock objects applied."""
     from ignition_toolkit.api.routers.context import get_full_context
 
-    with patch(
-        "ignition_toolkit.api.routers.context.get_database", return_value=mocks["db"]
-    ), patch(
-        "ignition_toolkit.api.routers.context.CredentialVault", return_value=mocks["vault"]
-    ), patch(
-        "ignition_toolkit.clouddesigner.manager.get_clouddesigner_manager",
-        return_value=mocks["manager"],
-    ), patch(
-        "ignition_toolkit.api.routers.context.get_log_capture",
-        return_value=mocks["log_capture"],
-    ), patch(
-        "ignition_toolkit.core.paths.get_playbooks_dir",
-        return_value=mocks["pb_dir"],
-    ), patch(
-        "ignition_toolkit.api.app.active_engines", {}
+    with (
+        patch("ignition_toolkit.api.routers.context.get_database", return_value=mocks["db"]),
+        patch("ignition_toolkit.api.routers.context.CredentialVault", return_value=mocks["vault"]),
+        patch(
+            "ignition_toolkit.api.routers.context.get_log_capture",
+            return_value=mocks["log_capture"],
+        ),
+        patch(
+            "ignition_toolkit.core.paths.get_playbooks_dir",
+            return_value=mocks["pb_dir"],
+        ),
+        patch("ignition_toolkit.api.app.active_engines", {}),
     ):
         return asyncio.run(get_full_context(**kwargs))
 
@@ -168,7 +150,6 @@ class TestGetContextSummary:
         assert hasattr(result, "playbooks")
         assert hasattr(result, "recent_executions")
         assert hasattr(result, "credentials")
-        assert hasattr(result, "clouddesigner")
         assert hasattr(result, "system")
         assert hasattr(result, "recent_logs")
 
@@ -192,23 +173,6 @@ class TestGetContextSummary:
         result = _run_summary(mocks)
 
         assert result.credentials == []
-
-    def test_clouddesigner_status_reflects_mock(self):
-        """The clouddesigner status must match the mock manager's return value."""
-        mocks = _make_patch_stack(cloud_status="running", cloud_port=8087)
-        result = _run_summary(mocks)
-
-        assert result.clouddesigner.status == "running"
-        assert result.clouddesigner.port == 8087
-
-    def test_clouddesigner_unknown_when_manager_raises(self):
-        """When the CloudDesigner manager raises, clouddesigner.status must be 'unknown'."""
-        mocks = _make_patch_stack()
-        mocks["manager"].get_container_status.side_effect = RuntimeError("Docker not running")
-
-        result = _run_summary(mocks)
-
-        assert result.clouddesigner.status == "unknown"
 
     def test_system_active_executions_is_zero_when_dict_is_empty(self):
         """With no active engines, system.active_executions must be 0."""
@@ -289,7 +253,6 @@ class TestGetFullContext:
         assert hasattr(result, "playbooks")
         assert hasattr(result, "executions")
         assert hasattr(result, "credentials")
-        assert hasattr(result, "clouddesigner")
         assert hasattr(result, "system")
         assert hasattr(result, "logs")
         assert hasattr(result, "error_logs")
@@ -318,13 +281,6 @@ class TestGetFullContext:
         assert isinstance(result.executions, list)
         assert isinstance(result.logs, list)
 
-    def test_clouddesigner_stopped_by_default(self):
-        """With the default mock, clouddesigner.status must be 'stopped'."""
-        mocks = _make_patch_stack(cloud_status="stopped")
-        result = _run_full(mocks)
-
-        assert result.clouddesigner.status == "stopped"
-
 
 # ---------------------------------------------------------------------------
 # get_execution_context tests
@@ -337,12 +293,12 @@ class TestGetExecutionContext:
     def test_returns_404_for_unknown_execution(self, mock_db):
         """When the execution is not in the DB, HTTP 404 must be raised."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.context import get_execution_context
 
-        with patch(
-            "ignition_toolkit.api.routers.context.get_database", return_value=mock_db
-        ), patch(
-            "ignition_toolkit.api.routers.context.get_log_capture", return_value=None
+        with (
+            patch("ignition_toolkit.api.routers.context.get_database", return_value=mock_db),
+            patch("ignition_toolkit.api.routers.context.get_log_capture", return_value=None),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(get_execution_context("nonexistent-execution-id"))
@@ -352,6 +308,7 @@ class TestGetExecutionContext:
     def test_returns_503_when_database_is_none(self):
         """When get_database() returns None, HTTP 503 must be raised."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.context import get_execution_context
 
         with patch("ignition_toolkit.api.routers.context.get_database", return_value=None):
@@ -378,10 +335,9 @@ class TestGetExecutionContext:
         # Wire the session to return this execution
         mock_db._session.query.return_value.filter.return_value.first.return_value = mock_execution
 
-        with patch(
-            "ignition_toolkit.api.routers.context.get_database", return_value=mock_db
-        ), patch(
-            "ignition_toolkit.api.routers.context.get_log_capture", return_value=None
+        with (
+            patch("ignition_toolkit.api.routers.context.get_database", return_value=mock_db),
+            patch("ignition_toolkit.api.routers.context.get_log_capture", return_value=None),
         ):
             result = asyncio.run(get_execution_context("abc-123"))
 

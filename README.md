@@ -30,7 +30,6 @@ graph TB
         GW["Gateway Client"]
         Vault["Credential Vault<br/>(Fernet)"]
         DB["SQLite"]
-        CDM["CloudDesigner<br/>Manager"]
         SBM["Stack Builder"]
     end
 
@@ -47,11 +46,9 @@ graph TB
     Engine --> GW
     Engine --> Vault
     Engine --> DB
-    API --> CDM
     API --> SBM
     GW --> IG
     PW -->|browser| IG
-    CDM -->|Docker CLI| Docker
     SBM -->|Docker Compose| Docker
 ```
 
@@ -71,7 +68,6 @@ graph TB
 │  ├── Gateway REST Client                               │
 │  ├── Credential Vault (Fernet)                         │
 │  ├── SQLite Database                                   │
-│  ├── CloudDesigner Manager                             │
 │  └── Stack Builder                                     │
 └────────┬──────────────────────────────┬────────────────┘
          │                              │
@@ -90,7 +86,6 @@ graph TB
 | **Execution Detail** | Step-by-step results, screenshots, and log output |
 | **Credentials** | Fernet-encrypted credential vault for gateway/Perspective auth |
 | **AI Credentials** | Manage API keys for Claude AI-assisted playbook creation |
-| **Designer** | CloudDesigner: launch Ignition Designers in Docker containers |
 | **Stack Builder** | Generate Docker Compose deployments for IIoT/SCADA infrastructure |
 | **API Explorer** | Interactive REST API browser for the backend |
 | **Settings** | Application configuration and preferences |
@@ -199,7 +194,6 @@ ignition-toolbox/
 │   │   ├── gateway/               # Ignition Gateway REST client
 │   │   ├── credentials/           # Fernet-encrypted credential vault
 │   │   ├── storage/               # SQLite database
-│   │   ├── clouddesigner/         # Docker-based Designer launcher
 │   │   ├── stackbuilder/          # Docker Compose generator
 │   │   ├── auth/                  # API key auth + RBAC
 │   │   ├── execution/             # Parallel execution queue

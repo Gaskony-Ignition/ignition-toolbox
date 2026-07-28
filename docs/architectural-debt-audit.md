@@ -110,10 +110,10 @@ Replace all `startswith("browser.")` calls with `step.type.domain == "browser"`.
 **Problem**: Tab union types (`MainTab`, `PlaybookSubTab`, `StackSubTab`) defined in `store/index.ts`, then tab config arrays defined independently in page components. Adding a tab requires updating both.
 **Fix**: `frontend/src/constants/navigation.ts` with typed tab arrays + derived union types using `typeof TABS[number]`.
 
-### T2-G: Clouddesigner Type Dead Code (Electron)
+### T2-G: Clouddesigner Type Dead Code (Electron) — ✅ OBSOLETE
 **Severity**: LOW
 **Problem**: `frontend/src/types/electron.d.ts` declares optional `cloudDesigner.openWindow()` but `electron/preload.ts` doesn't expose this method. Dead type declaration.
-**Fix**: Remove `cloudDesigner` from `electron.d.ts` or implement it in `preload.ts`.
+**Fix**: No longer applicable — the CloudDesigner (browser-based Designer) feature was removed from the Toolbox entirely, along with this declaration.
 
 ---
 
@@ -210,7 +210,7 @@ Add `/api/step-types/domains` endpoint returning domain metadata (label, icon). 
 | T2-B: Fix "started" status | `api/routers/executions/main.py` |
 | T2-C: Status enum refs | `websocket_manager.py`, `execution_service.py`, `execution_response_builder.py` |
 | T2-D: Frontend type fixes | `frontend/src/types/api.ts` |
-| T2-G: Remove dead cloudDesigner | `frontend/src/types/electron.d.ts` |
+| ~~T2-G: Remove dead cloudDesigner~~ (obsolete — CloudDesigner feature removed) | — |
 
 ### Phase 3 — Step Type System (~8 hours, plan carefully)
 | Task | Impact |

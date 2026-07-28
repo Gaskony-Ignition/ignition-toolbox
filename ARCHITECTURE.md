@@ -35,7 +35,6 @@ graph TB
         GW["Gateway Client"]
         Vault["Credential Vault<br/>(Fernet)"]
         DB["SQLite"]
-        CDM["CloudDesigner<br/>Manager"]
         SBM["Stack Builder"]
     end
 
@@ -52,11 +51,9 @@ graph TB
     Engine --> GW
     Engine --> Vault
     Engine --> DB
-    API --> CDM
     API --> SBM
     GW --> IG
     PW -->|browser| IG
-    CDM -->|Docker CLI| Docker
     SBM -->|Docker Compose| Docker
 ```
 
@@ -194,7 +191,6 @@ frontend/src/
 │   ├── ExecutionDetail.tsx   # Step-by-step results + screenshots
 │   ├── Credentials.tsx       # Credential management
 │   ├── AICredentials.tsx     # AI API key management
-│   ├── Designer.tsx          # CloudDesigner (Docker-based)
 │   ├── StackBuilder.tsx      # Docker Compose generator
 │   ├── APIExplorer.tsx       # Interactive API browser
 │   ├── Settings.tsx          # Application settings
@@ -273,10 +269,6 @@ ignition_toolkit/
 ├── ai/                       # AI assistant (optional)
 │   ├── client.py            # Claude API integration
 │   └── prompts.py            # Prompt templates
-│
-├── clouddesigner/            # CloudDesigner
-│   ├── manager.py            # Docker container lifecycle for Designers
-│   └── docker_files/         # Dockerfiles, nginx config, compose
 │
 ├── stackbuilder/             # Stack Builder
 │   ├── builder.py            # Docker Compose generation
@@ -774,7 +766,7 @@ We needed a format for playbook definitions that would be:
 ## ADR-003: No Docker / Native Python (for core app)
 
 **Date:** 2025-10-24
-**Status:** Accepted ✅ (Superseded in part: Docker is now used for CloudDesigner and Stack Builder features, but the core app still runs natively)
+**Status:** Accepted ✅ (Superseded in part: Docker is now used by the Stack Builder feature, but the core app still runs natively)
 
 ### Context
 
@@ -1348,7 +1340,6 @@ ignition_toolkit/api/
     ├── updates.py           # Playbook update checking
     ├── api_explorer.py      # Interactive API explorer
     ├── stackbuilder/        # Stack Builder endpoints
-    ├── clouddesigner.py     # Cloud Designer endpoints
     ├── context.py           # Execution context endpoints
     ├── websockets.py        # WebSocket endpoints + broadcast
     ├── logs.py              # Log streaming endpoints

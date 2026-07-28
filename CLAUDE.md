@@ -170,7 +170,6 @@ The Python backend is the full Ignition Automation Toolkit:
 | `ignition_toolkit/gateway/` | Ignition Gateway REST client |
 | `ignition_toolkit/credentials/` | Fernet-encrypted credential vault |
 | `ignition_toolkit/storage/` | SQLite database |
-| `ignition_toolkit/clouddesigner/` | Docker-based Designer launcher |
 | `ignition_toolkit/stackbuilder/` | Docker Compose generator (25+ services) |
 | `ignition_toolkit/auth/` | API key authentication + RBAC |
 | `ignition_toolkit/execution/` | Parallel execution queue |
@@ -189,7 +188,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 | ----------- | --------- |
-| `src/pages/` | 11 pages: Playbooks, Executions, ExecutionDetail, Credentials, Designer, StackBuilder, UdtBuilder, APIExplorer, Exchange, Audit, Settings |
+| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, StackBuilder, UdtBuilder, APIExplorer, Exchange, Audit, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
 | `src/data/` | Static data (ignitionApiDocs.ts) |
@@ -197,7 +196,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 | `src/store/` | Zustand global state |
 | `src/api/` | HTTP API client |
 
-> **Docker features:** CloudDesigner and StackBuilder are *features* that manage Docker containers for Ignition infrastructure — the Toolbox itself is a desktop app, not deployed via Docker.
+> **Docker features:** StackBuilder is a *feature* that manages Docker containers for Ignition infrastructure — the Toolbox itself is a desktop app, not deployed via Docker.
 
 ## Core Principles
 

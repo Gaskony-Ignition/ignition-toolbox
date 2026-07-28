@@ -22,7 +22,6 @@ import { useWebSocket } from './hooks/useWebSocket';
 import { useStore } from './store';
 
 // Lazy-loaded pages for code splitting (reduces initial bundle size)
-const Designer = lazy(() => import('./pages/Designer').then(m => ({ default: m.Designer })));
 const ExecutionDetail = lazy(() => import('./pages/ExecutionDetail').then(m => ({ default: m.ExecutionDetail })));
 const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ default: m.APIExplorer })));
 const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
@@ -187,12 +186,6 @@ function AppContent() {
           default:
             return <Playbooks domainFilter="gateway" />;
         }
-      case 'designer':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Designer hidePlaybooks />
-          </Suspense>
-        );
       case 'api':
         return (
           <Suspense fallback={<PageLoader />}>

@@ -12,11 +12,6 @@ import type {
   CredentialInfo,
   CredentialCreate,
   HealthResponse,
-  DockerStatus,
-  CloudDesignerStatus,
-  CloudDesignerStartResponse,
-  CloudDesignerStopResponse,
-  CloudDesignerConfig,
   DetailedHealthResponse,
   DatabaseStats,
   StorageStats,
@@ -1010,55 +1005,6 @@ export const api = {
         `/api/stackbuilder/deployment/${encodeURIComponent(stackName)}`,
         { method: 'DELETE' }
       ),
-  },
-
-  /**
-   * CloudDesigner - Browser-based Ignition Designer
-   */
-  cloudDesigner: {
-    getDockerStatus: () =>
-      fetchJSON<DockerStatus>('/api/clouddesigner/docker-status'),
-
-    getStatus: () =>
-      fetchJSON<CloudDesignerStatus>('/api/clouddesigner/status'),
-
-    start: (gatewayUrl: string, credentialName?: string, forceRebuild?: boolean) =>
-      fetchJSON<CloudDesignerStartResponse>('/api/clouddesigner/start', {
-        method: 'POST',
-        body: JSON.stringify({
-          gateway_url: gatewayUrl,
-          credential_name: credentialName,
-          force_rebuild: forceRebuild || false,
-        }),
-      }),
-
-    stop: () =>
-      fetchJSON<CloudDesignerStopResponse>('/api/clouddesigner/stop', {
-        method: 'POST',
-      }),
-
-    cleanup: () =>
-      fetchJSON<CloudDesignerStopResponse>('/api/clouddesigner/cleanup', {
-        method: 'POST',
-      }),
-
-    getImageStatus: () =>
-      fetchJSON<{
-        images: Record<string, { exists: boolean; source: string }>;
-        all_ready: boolean;
-      }>('/api/clouddesigner/images'),
-
-    prepare: (forceRebuild?: boolean) =>
-      fetchJSON<{ success: boolean; output?: string; error?: string }>('/api/clouddesigner/prepare', {
-        method: 'POST',
-        body: JSON.stringify({ force_rebuild: forceRebuild || false }),
-      }),
-
-    getConfig: () =>
-      fetchJSON<CloudDesignerConfig>('/api/clouddesigner/config'),
-
-    getAllStatuses: () =>
-      fetchJSON<{ statuses: Record<string, string> }>('/api/clouddesigner/all-statuses'),
   },
 
   /**

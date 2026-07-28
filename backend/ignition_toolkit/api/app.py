@@ -24,7 +24,6 @@ from ignition_toolkit.api.routers import health_router
 from ignition_toolkit.api.routers.api_explorer import router as api_explorer_router
 from ignition_toolkit.api.routers.audit import router as audit_router
 from ignition_toolkit.api.routers.auth import router as auth_router
-from ignition_toolkit.api.routers.clouddesigner import router as clouddesigner_router
 from ignition_toolkit.api.routers.config import router as config_router
 from ignition_toolkit.api.routers.context import router as context_router
 from ignition_toolkit.api.routers.credentials import router as credentials_router
@@ -95,9 +94,6 @@ app.include_router(exchange_router)
 
 # Register Remote Data Updates router
 app.include_router(remote_data_router)
-
-# Register CloudDesigner router
-app.include_router(clouddesigner_router)
 
 # Register Context router (used by MCP server)
 app.include_router(context_router)

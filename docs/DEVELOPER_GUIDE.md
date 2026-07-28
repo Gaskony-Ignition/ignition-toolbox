@@ -7,7 +7,7 @@ Guide for setting up, running, and contributing to Ignition Toolbox.
 - **Node.js 22+** (Electron + frontend build)
 - **Python 3.13+** (backend)
 - **npm** (package management)
-- **Docker** (optional, for CloudDesigner and Stack Builder features)
+- **Docker** (optional, for the Stack Builder feature)
 
 ## Setup
 
@@ -80,7 +80,6 @@ ignition-toolbox/
 │   │   ├── gateway/         # Ignition Gateway REST client
 │   │   ├── credentials/     # Fernet-encrypted vault
 │   │   ├── storage/         # SQLite (SQLAlchemy)
-│   │   ├── clouddesigner/   # Docker-based Designer launcher
 │   │   ├── stackbuilder/    # Docker Compose generator
 │   │   ├── auth/            # API key auth + RBAC
 │   │   ├── execution/       # Parallel execution queue
@@ -121,7 +120,7 @@ The project includes a `docker-compose.yml` for containerized deployment:
 docker compose up
 ```
 
-This runs the backend and frontend in containers. Note that this is separate from the CloudDesigner and Stack Builder features, which use Docker to manage Ignition infrastructure.
+This runs the backend and frontend in containers. Note that this is separate from the Stack Builder feature, which uses Docker to manage Ignition infrastructure.
 
 ## Key Patterns
 

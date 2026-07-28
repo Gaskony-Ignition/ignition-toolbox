@@ -27,16 +27,6 @@ export const helpContent = {
       'Select a credential from the header dropdown to use it across all playbooks, or specify credentials per-playbook.',
   },
 
-  // Designer section
-  designer: {
-    overview:
-      'CloudDesigner provides a browser-accessible Ignition Designer through Docker. Requires Docker Desktop (Windows/Mac) or Docker Engine (Linux).',
-    wslSetup:
-      'On Windows with WSL2, Docker Desktop must be installed and running. The Docker daemon should be accessible from WSL.',
-    requirements:
-      'CloudDesigner needs approximately 4GB RAM and 10GB disk space for the Docker images.',
-  },
-
   // Playbooks section
   playbooks: {
     overview:

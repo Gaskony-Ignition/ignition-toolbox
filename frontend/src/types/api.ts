@@ -172,39 +172,6 @@ export type ParameterType =
   | 'dict'
   | 'selector';
 
-// CloudDesigner types
-export interface DockerStatus {
-  installed: boolean;
-  running: boolean;
-  version?: string;
-  docker_path?: string;
-}
-
-export interface CloudDesignerStatus {
-  status: 'running' | 'exited' | 'paused' | 'restarting' | 'created' | 'not_created' | 'unknown';
-  port?: number;
-  error?: string;
-}
-
-export interface CloudDesignerStartResponse {
-  success: boolean;
-  output?: string;
-  error?: string;
-}
-
-export interface CloudDesignerStopResponse {
-  success: boolean;
-  output?: string;
-  error?: string;
-}
-
-export interface CloudDesignerConfig {
-  compose_dir: string;
-  compose_dir_exists: boolean;
-  container_name: string;
-  default_port: number;
-}
-
 // Health and Diagnostics types
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 

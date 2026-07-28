@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Ignition Designer
-Comment=Launch Ignition Designer Launcher
-Exec=/home/designer/.local/share/designerlauncher/designerlauncher.sh
-Icon=/home/designer/.local/share/designerlauncher/app/launcher.png
-Terminal=false
-Categories=Development;

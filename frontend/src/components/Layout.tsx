@@ -21,7 +21,6 @@ import {
 } from '@mui/material';
 import {
   Storage as GatewayIcon,
-  Dns as ContainerIcon,
   DesignServices as DesignerIcon,
   Visibility as PerspectiveIcon,
   Settings as SettingsIcon,
@@ -72,7 +71,6 @@ function getBadgeSx(badge: string) {
 
 const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: boolean; badge?: string }[] = [
   { id: 'playbooks', label: 'Playbooks', icon: <PlaybooksIcon fontSize="small" /> },
-  { id: 'designer', label: 'Browser Designer', icon: <DesignerIcon fontSize="small" /> },
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
   { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Beta' },
@@ -175,15 +173,6 @@ export function Layout({ children }: LayoutProps) {
     () => [...executionUpdates.values()].filter((e) => e.status === 'running' || e.status === 'paused'),
     [executionUpdates],
   );
-
-  // Cloud Designer container status (poll every 10s)
-  const { data: containerStatus } = useQuery({
-    queryKey: ['clouddesigner-status-header'],
-    queryFn: api.cloudDesigner.getStatus,
-    refetchInterval: 10_000,
-    retry: false,
-  });
-  const isDesignerRunning = containerStatus?.status === 'running';
 
   const handleCredentialClick = (event: React.MouseEvent<HTMLElement>) => {
     setCredentialAnchor(event.currentTarget);
@@ -382,35 +371,6 @@ export function Layout({ children }: LayoutProps) {
                       '0%, 100%': { opacity: 1, transform: 'scale(1)' },
                       '50%': { opacity: 0.6, transform: 'scale(1.2)' },
                     },
-                  }}
-                />
-              </IconButton>
-            </Tooltip>
-          )}
-
-          {/* Browser Designer Running Indicator */}
-          {isDesignerRunning && (
-            <Tooltip
-              title={`Browser Designer running${containerStatus?.port ? ` (port ${containerStatus.port})` : ''}`}
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={() => setMainTab('designer')}
-                sx={{ position: 'relative', color: 'text.secondary' }}
-              >
-                <ContainerIcon />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: 4,
-                    width: 8,
-                    height: 8,
-                    bgcolor: '#22c55e',
-                    borderRadius: '50%',
-                    border: '1.5px solid',
-                    borderColor: 'background.paper',
                   }}
                 />
               </IconButton>

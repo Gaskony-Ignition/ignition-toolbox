@@ -6,83 +6,10 @@ Common issues and solutions for Ignition Toolbox.
 
 ## Table of Contents
 
-1. [CloudDesigner Issues](#clouddesigner-issues)
-2. [Playbook Execution Issues](#playbook-execution-issues)
-3. [Connection Issues](#connection-issues)
-4. [Installation Issues](#installation-issues)
-5. [Debug Mode](#debug-mode)
-
----
-
-## CloudDesigner Issues
-
-### Container won't start
-
-**Symptoms:**
-- Clicking "Start Designer Container" does nothing
-- No logs appear in the debug panel
-
-**Solutions:**
-
-1. **Check Docker is running:**
-   - Open Docker Desktop or run `docker --version` in terminal
-   - For WSL users: ensure Docker is accessible via `wsl docker --version`
-
-2. **Check credential selection:**
-   - Ensure a credential with a gateway URL is selected in the header dropdown
-   - The gateway URL must be accessible from Docker (use host IP, not `localhost`)
-
-3. **Check the debug panel:**
-   - Expand "Show Debug Info" section on the Designer page
-   - Look for error messages in the logs
-
-4. **Try cleanup:**
-   - Click "Cleanup All" to remove stale containers
-   - Then try starting again
-
-### Container starts but Designer doesn't load
-
-**Symptoms:**
-- Container shows as "Running"
-- Browser shows connection error at localhost:8080
-
-**Solutions:**
-
-1. **Wait for full startup:**
-   - First run can take several minutes while images are pulled
-   - Watch the logs for "Designer ready" message
-
-2. **Check port availability:**
-   - Ensure port 8080 is not in use by another application
-   - Run `netstat -an | grep 8080` to check
-
-3. **Check Docker network:**
-   - Run `docker ps` to see container status
-   - Run `docker logs clouddesigner-guacamole-1` for Guacamole logs
-
-### WSL Docker not detected
-
-**Symptoms:**
-- "Docker not installed" message on Windows with WSL
-
-**Solutions:**
-
-1. **Verify WSL Docker:**
-   ```bash
-   wsl docker --version
-   ```
-
-2. **Check WSL default distro:**
-   ```bash
-   wsl --list --verbose
-   ```
-   Ensure the distro with Docker is set as default.
-
-3. **Restart WSL:**
-   ```bash
-   wsl --shutdown
-   ```
-   Then try again.
+1. [Playbook Execution Issues](#playbook-execution-issues)
+2. [Connection Issues](#connection-issues)
+3. [Installation Issues](#installation-issues)
+4. [Debug Mode](#debug-mode)
 
 ---
 
@@ -300,7 +227,6 @@ Report issues at: https://github.com/Gaskony-Ignition/ignition-toolbox/issues
 
 | Issue | First Step |
 |-------|------------|
-| CloudDesigner won't start | Check Docker + credential selection |
 | Playbook fails | Check YAML syntax + credentials |
 | WebSocket disconnected | Refresh page |
 | API errors | Check backend is running |

@@ -7,7 +7,6 @@
 
 export const MAIN_TABS = [
   'playbooks',
-  'designer',
   'api',
   'stackbuilder',
   'udtbuilder',

@@ -68,13 +68,6 @@ class CredentialSummary(BaseModel):
     gateway_url: str | None = None
 
 
-class CloudDesignerSummary(BaseModel):
-    """CloudDesigner status summary"""
-
-    status: str  # running, stopped, not_created, unknown
-    port: int | None = None
-
-
 class LogEntrySummary(BaseModel):
     """Summary of a log entry"""
 
@@ -99,7 +92,6 @@ class ContextSummaryResponse(BaseModel):
     playbooks: list[PlaybookSummary]
     recent_executions: list[ExecutionSummary]
     credentials: list[CredentialSummary]
-    clouddesigner: CloudDesignerSummary
     system: SystemSummary
     recent_logs: list[LogEntrySummary] = []
 
@@ -110,7 +102,6 @@ class FullContextResponse(BaseModel):
     playbooks: list[PlaybookSummary]
     executions: list[ExecutionSummary]
     credentials: list[CredentialSummary]
-    clouddesigner: CloudDesignerSummary
     system: SystemSummary
     logs: list[LogEntrySummary]
     error_logs: list[LogEntrySummary]
@@ -139,9 +130,6 @@ async def get_context_summary():
         # Get credential names
         credentials = await _get_credentials_summary()
 
-        # Get CloudDesigner status
-        clouddesigner = await _get_clouddesigner_summary()
-
         # Get system status
         system = await _get_system_summary()
 
@@ -152,7 +140,6 @@ async def get_context_summary():
             playbooks=playbooks,
             recent_executions=executions,
             credentials=credentials,
-            clouddesigner=clouddesigner,
             system=system,
             recent_logs=recent_logs,
         )
@@ -163,7 +150,9 @@ async def get_context_summary():
 
 @router.get("/full", response_model=FullContextResponse)
 async def get_full_context(
-    execution_limit: int = Query(default=20, ge=1, le=100, description="Number of executions to include"),
+    execution_limit: int = Query(
+        default=20, ge=1, le=100, description="Number of executions to include"
+    ),
     log_limit: int = Query(default=100, ge=1, le=500, description="Number of logs to include"),
 ):
     """
@@ -173,7 +162,6 @@ async def get_full_context(
     - All playbooks with details
     - Recent executions with step results
     - Credentials (names and gateway URLs, no secrets)
-    - CloudDesigner status
     - System status with log statistics
     - Recent logs (all levels)
     - Error logs specifically
@@ -188,9 +176,6 @@ async def get_full_context(
         # Get credentials with gateway URLs
         credentials = await _get_credentials_summary(include_gateway_url=True)
 
-        # Get CloudDesigner status
-        clouddesigner = await _get_clouddesigner_summary()
-
         # Get system status with log stats
         system = await _get_system_summary(include_log_stats=True)
 
@@ -204,7 +189,6 @@ async def get_full_context(
             playbooks=playbooks,
             executions=executions,
             credentials=credentials,
-            clouddesigner=clouddesigner,
             system=system,
             logs=logs,
             error_logs=error_logs,
@@ -265,7 +249,11 @@ async def get_execution_context(execution_id: str):
                     completed_at=execution.completed_at,
                     error=execution.error_message,
                     step_results=step_results,
-                    parameters=execution.execution_metadata.get("parameters") if execution.execution_metadata else None,
+                    parameters=(
+                        execution.execution_metadata.get("parameters")
+                        if execution.execution_metadata
+                        else None
+                    ),
                 ),
                 "logs": logs,
             }
@@ -314,7 +302,9 @@ async def _get_playbooks_summary() -> list[PlaybookSummary]:
     return playbooks
 
 
-async def _get_executions_summary(limit: int = 10, include_steps: bool = False) -> list[ExecutionSummary]:
+async def _get_executions_summary(
+    limit: int = 10, include_steps: bool = False
+) -> list[ExecutionSummary]:
     """Get summary of recent executions"""
     db = get_database()
     executions = []
@@ -358,7 +348,11 @@ async def _get_executions_summary(limit: int = 10, include_steps: bool = False) 
                         completed_at=db_exec.completed_at,
                         error=db_exec.error_message,
                         step_results=step_results,
-                        parameters=db_exec.execution_metadata.get("parameters") if db_exec.execution_metadata else None,
+                        parameters=(
+                            db_exec.execution_metadata.get("parameters")
+                            if db_exec.execution_metadata
+                            else None
+                        ),
                     )
                 )
     except Exception as e:
@@ -387,25 +381,6 @@ async def _get_credentials_summary(include_gateway_url: bool = False) -> list[Cr
         logger.warning(f"Error loading credentials summary: {e}")
 
     return credentials
-
-
-async def _get_clouddesigner_summary() -> CloudDesignerSummary:
-    """Get CloudDesigner status summary"""
-    import asyncio
-
-    try:
-        from ignition_toolkit.clouddesigner.manager import get_clouddesigner_manager
-
-        manager = get_clouddesigner_manager()
-        status = await asyncio.to_thread(manager.get_container_status)
-
-        return CloudDesignerSummary(
-            status=status.status,
-            port=status.port,
-        )
-    except Exception as e:
-        logger.warning(f"Error getting CloudDesigner status: {e}")
-        return CloudDesignerSummary(status="unknown")
 
 
 async def _get_system_summary(include_log_stats: bool = False) -> SystemSummary:

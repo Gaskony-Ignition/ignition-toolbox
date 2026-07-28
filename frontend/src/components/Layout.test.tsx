@@ -13,9 +13,6 @@ vi.mock('../api/client', () => ({
     credentials: {
       list: vi.fn().mockResolvedValue([]),
     },
-    cloudDesigner: {
-      getStatus: vi.fn().mockResolvedValue({ status: 'stopped' }),
-    },
   },
 }));
 
@@ -68,7 +65,6 @@ describe('Layout', () => {
   it('renders main navigation tabs', () => {
     renderLayout();
     expect(screen.getByRole('button', { name: /playbooks/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /browser designer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /api/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /stacks/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /udts/i })).toBeInTheDocument();
@@ -95,9 +91,7 @@ describe('Layout', () => {
     // Playbooks is the default tab — sub-tabs should be visible.
     // Sub-tabs: Gateway, Designer, Perspective, Active Execution
     expect(screen.getByRole('button', { name: /gateway/i })).toBeInTheDocument();
-    // "Designer" sub-tab exists (main nav has "Browser Designer", sub-tab has "Designer")
-    const designerButtons = screen.getAllByRole('button', { name: /designer/i });
-    expect(designerButtons.length).toBeGreaterThanOrEqual(2); // main tab + sub-tab
+    expect(screen.getByRole('button', { name: /designer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /active execution/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /perspective/i })).toBeInTheDocument();
   });
