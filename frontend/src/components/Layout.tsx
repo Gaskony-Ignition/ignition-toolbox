@@ -36,7 +36,6 @@ import {
   Apps as ServicesIcon,
   Extension as IntegrationsIcon,
   Code as PreviewIcon,
-  StorefrontOutlined,
 } from '@mui/icons-material';
 import { useStore, type MainTab, type PlaybookSubTab, type StackSubTab } from '../store';
 import { api } from '../api/client';
@@ -74,7 +73,6 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode; iconOnly?: 
   { id: 'api', label: 'API', icon: <ApiIcon fontSize="small" /> },
   { id: 'stackbuilder', label: 'Stacks', icon: <StackIcon fontSize="small" />, badge: 'Beta' },
   { id: 'udtbuilder', label: 'UDTs', icon: <UdtIcon fontSize="small" />, badge: 'Beta' },
-  { id: 'exchange', label: 'Exchange', icon: <StorefrontOutlined fontSize="small" /> },
   { id: 'settings', label: 'Settings', icon: <SettingsIcon fontSize="small" />, iconOnly: true },
 ];
 

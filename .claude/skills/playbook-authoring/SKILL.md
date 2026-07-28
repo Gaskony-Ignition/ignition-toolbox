@@ -63,4 +63,4 @@ from GitHub (`playbook/registry.py`) and installs playbooks from it.
 `playbook/submitter.py` builds the PR that updates the index. Schema:
 `docs/playbooks-index-schema.json`. If you add/rename a library playbook,
 the index entry must match, and `toolbox-manifest.json` governs other remote
-data components (stackbuilder catalog, exchange selectors).
+data components (stackbuilder catalog, API docs).

@@ -14,12 +14,6 @@
       "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/data/stackbuilder/integrations.json",
       "schema_version": 1
     },
-    "exchange_selectors": {
-      "version": "1.0.0",
-      "checksum": "",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/data/exchange/selectors.json",
-      "schema_version": 1
-    },
     "api_docs": {
       "version": "1.0.0",
       "checksum": "",

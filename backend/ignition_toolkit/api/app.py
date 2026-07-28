@@ -27,7 +27,6 @@ from ignition_toolkit.api.routers.auth import router as auth_router
 from ignition_toolkit.api.routers.config import router as config_router
 from ignition_toolkit.api.routers.context import router as context_router
 from ignition_toolkit.api.routers.credentials import router as credentials_router
-from ignition_toolkit.api.routers.exchange import router as exchange_router
 from ignition_toolkit.api.routers.execution_queue import router as execution_queue_router
 from ignition_toolkit.api.routers.executions import router as executions_router
 from ignition_toolkit.api.routers.filesystem import router as filesystem_router
@@ -88,9 +87,6 @@ app.include_router(api_explorer_router)
 
 # Register Stack Builder router
 app.include_router(stackbuilder_router)
-
-# Register Exchange router
-app.include_router(exchange_router)
 
 # Register Remote Data Updates router
 app.include_router(remote_data_router)

@@ -266,61 +266,6 @@ export interface StepTypesResponse {
   domains: string[];
 }
 
-// Exchange scraper types
-export interface ExchangeItem {
-  id: string;
-  url: string;
-  title: string;
-  contributor: string;
-  category: string;
-  categories?: string[];
-  download_count: number;
-  version: string;
-  updated_date: string;
-  tagline: string;
-  description?: string;
-  image_url?: string;
-  resource_type?: string;
-  ignition_version?: string;
-  skill_level?: string;
-  tags?: string[];
-  scope?: string;
-  scraped_at: string;
-}
-
-export interface ExchangeStatus {
-  status: string;
-  is_running: boolean;
-  last_run: string | null;
-  last_error: string | null;
-  item_count: number;
-  progress_current: number;
-  progress_total: number;
-}
-
-export interface ExchangeChanges {
-  new: ExchangeItem[];
-  updated: ExchangeItem[];
-  removed: ExchangeItem[];
-}
-
-export interface ExchangeHistoryEntry {
-  timestamp: string;
-  success: boolean;
-  start_time: string;
-  end_time: string;
-  duration_seconds: number;
-  items_scraped: number;
-  changes: { new: number; updated: number; removed: number };
-  error: string | null;
-}
-
-export interface ExchangeConfig {
-  headless: boolean;
-  max_resources: number;
-  schedule: { enabled: boolean; cron: string };
-}
-
 // Perspective project audit types
 export type AuditSeverity = 'critical' | 'high' | 'medium' | 'info';
 

@@ -180,7 +180,6 @@ The Python backend is the full Ignition Automation Toolkit:
 | `ignition_toolkit/update/` | Version update checking |
 | `ignition_toolkit/designer/` | Designer integration |
 | `ignition_toolkit/modules/` | Ignition module management |
-| `ignition_toolkit/exchange/` | Ignition Exchange scraper (Playwright + BeautifulSoup) |
 
 ### Frontend (`frontend/`)
 
@@ -188,7 +187,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 | Directory | Purpose |
 | ----------- | --------- |
-| `src/pages/` | 10 pages: Playbooks, Executions, ExecutionDetail, Credentials, StackBuilder, UdtBuilder, APIExplorer, Exchange, Audit, Settings |
+| `src/pages/` | 9 pages: Playbooks, Executions, ExecutionDetail, Credentials, StackBuilder, UdtBuilder, APIExplorer, Audit, Settings |
 | `src/components/` | Reusable UI components |
 | `src/components/api-explorer/` | API Explorer sub-components (ResponseViewer, JsonViewer, TableView, EndpointDocPanel, DocumentationCard) |
 | `src/data/` | Static data (ignitionApiDocs.ts) |

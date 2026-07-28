@@ -10,7 +10,6 @@ export const MAIN_TABS = [
   'api',
   'stackbuilder',
   'udtbuilder',
-  'exchange',
   'settings',
 ] as const;
 

@@ -25,7 +25,6 @@ import { useStore } from './store';
 const ExecutionDetail = lazy(() => import('./pages/ExecutionDetail').then(m => ({ default: m.ExecutionDetail })));
 const APIExplorer = lazy(() => import('./pages/APIExplorer').then(m => ({ default: m.APIExplorer })));
 const StackBuilder = lazy(() => import('./pages/StackBuilder').then(m => ({ default: m.StackBuilder })));
-const Exchange = lazy(() => import('./pages/Exchange').then(m => ({ default: m.Exchange })));
 const Audit = lazy(() => import('./pages/Audit').then(m => ({ default: m.Audit })));
 const UdtBuilder = lazy(() => import('./pages/UdtBuilder').then(m => ({ default: m.UdtBuilder })));
 
@@ -202,12 +201,6 @@ function AppContent() {
         return (
           <Suspense fallback={<PageLoader />}>
             <UdtBuilder />
-          </Suspense>
-        );
-      case 'exchange':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Exchange />
           </Suspense>
         );
       case 'settings':

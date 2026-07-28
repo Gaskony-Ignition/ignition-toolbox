@@ -98,8 +98,6 @@ datas = [
     (str(backend_dir / 'ignition_toolkit' / 'udt' / 'templates'), 'udt/templates'),
     # Include API Explorer bundled docs data; api_explorer.py already expects _MEIPASS/api/data
     (str(backend_dir / 'ignition_toolkit' / 'api' / 'data'), 'api/data'),
-    # Include Ignition Exchange scraper selectors; scraper.py already expects _MEIPASS/exchange/selectors.json
-    (str(backend_dir / 'ignition_toolkit' / 'exchange' / 'selectors.json'), 'exchange'),
     # Include Perspective component discovery script
     (str(backend_dir / 'ignition_toolkit' / 'browser' / 'component_discovery.js'), 'browser'),
     # Include Designer PowerShell helper scripts

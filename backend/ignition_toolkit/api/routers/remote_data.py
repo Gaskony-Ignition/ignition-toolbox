@@ -2,8 +2,7 @@
 Remote Data Updates API Router
 
 Provides generic endpoints for checking and applying updates to
-remotely-updatable data components (stack builder catalog, exchange
-selectors, etc.).
+remotely-updatable data components (stack builder catalog, API docs, etc.).
 """
 
 from __future__ import annotations
