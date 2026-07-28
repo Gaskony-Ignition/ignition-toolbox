@@ -8,8 +8,8 @@ Covers: ParameterResolver construction, plain string pass-through,
 
 import pytest
 
-from ignition_toolkit.playbook.parameters import ParameterResolver
 from ignition_toolkit.playbook.exceptions import ParameterResolutionError
+from ignition_toolkit.playbook.parameters import ParameterResolver
 
 
 class TestParameterResolverConstruction:

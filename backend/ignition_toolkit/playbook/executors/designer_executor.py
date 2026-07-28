@@ -51,10 +51,15 @@ class DesignerLaunchShortcutHandler(StepHandler):
 
         # DEBUG logging
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"[DESIGNER HANDLER] Received params: {list(params.keys())}")
-        logger.info(f"[DESIGNER HANDLER] gateway_credential type: {type(gateway_credential)}, value: {gateway_credential}")
-        logger.info(f"[DESIGNER HANDLER] username: {username}, password: {'***' if password else None}")
+        logger.info(
+            f"[DESIGNER HANDLER] gateway_credential type: {type(gateway_credential)}, value: {gateway_credential}"
+        )
+        logger.info(
+            f"[DESIGNER HANDLER] username: {username}, password: {'***' if password else None}"
+        )
 
         # Validate required parameters
         if not designer_shortcut:
@@ -73,9 +78,13 @@ class DesignerLaunchShortcutHandler(StepHandler):
         # Fallback: handle separate username/password parameters (for backward compatibility)
         if not username or not password:
             if not username:
-                raise StepExecutionError("designer", "username parameter or gateway_credential is required")
+                raise StepExecutionError(
+                    "designer", "username parameter or gateway_credential is required"
+                )
             if not password:
-                raise StepExecutionError("designer", "password parameter or gateway_credential is required")
+                raise StepExecutionError(
+                    "designer", "password parameter or gateway_credential is required"
+                )
 
         # Handle credential object passed as password parameter (legacy compatibility)
         if hasattr(password, "password"):
@@ -89,17 +98,13 @@ class DesignerLaunchShortcutHandler(StepHandler):
             username=username,
             password=password,
             project_name=project_name,
-            timeout=timeout
+            timeout=timeout,
         )
 
         if not success:
             raise StepExecutionError("designer", "Failed to launch Designer with shortcut")
 
-        return {
-            "status": "launched_and_opened",
-            "project": project_name,
-            "username": username
-        }
+        return {"status": "launched_and_opened", "project": project_name, "username": username}
 
 
 class DesignerLoginHandler(StepHandler):

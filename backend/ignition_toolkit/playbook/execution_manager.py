@@ -158,9 +158,7 @@ class ExecutionManager:
         """
         cutoff = datetime.now() - timedelta(minutes=self._ttl_minutes)
         expired = [
-            eid
-            for eid, completed_at in self._completion_times.items()
-            if completed_at < cutoff
+            eid for eid, completed_at in self._completion_times.items() if completed_at < cutoff
         ]
 
         async with self._lock:

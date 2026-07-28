@@ -4,22 +4,22 @@ Tests for playbook execution engine
 Tests execution state management, parameter validation, and control flow.
 """
 
-import pytest
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock
+
+import pytest
 
 from ignition_toolkit.playbook.engine import PlaybookEngine
 from ignition_toolkit.playbook.models import (
     ExecutionState,
     ExecutionStatus,
-    Playbook,
-    PlaybookStep,
-    PlaybookParameter,
-    StepType,
-    StepStatus,
     ParameterType,
+    Playbook,
+    PlaybookParameter,
+    PlaybookStep,
     StepResult,
+    StepStatus,
+    StepType,
 )
 from ignition_toolkit.playbook.state_manager import StateManager
 
@@ -275,12 +275,15 @@ class TestExecutionStateCreation:
 
     def test_step_result_initialization(self):
         """Test that step results are created with pending status"""
-        from ignition_toolkit.playbook.models import StepResult, StepStatus
 
         # This tests the pattern used in execute_playbook to pre-populate step results
         steps = [
-            PlaybookStep(id="step1", name="Step 1", type=StepType.LOG, parameters={"message": "Hello"}),
-            PlaybookStep(id="step2", name="Step 2", type=StepType.LOG, parameters={"message": "World"}),
+            PlaybookStep(
+                id="step1", name="Step 1", type=StepType.LOG, parameters={"message": "Hello"}
+            ),
+            PlaybookStep(
+                id="step2", name="Step 2", type=StepType.LOG, parameters={"message": "World"}
+            ),
         ]
 
         # Simulate the step result initialization logic from execute_playbook
@@ -303,7 +306,6 @@ class TestExecutionStateCreation:
 
     def test_execution_state_fields(self):
         """Test ExecutionState can be created with expected fields"""
-        from ignition_toolkit.playbook.models import ExecutionState, ExecutionStatus
 
         state = ExecutionState(
             execution_id="test-123",
@@ -351,9 +353,7 @@ class TestCredentialParameterProcessing:
             steps=[],
         )
 
-        result = engine._preprocess_credential_parameters(
-            playbook, {"auth_credential": "my_cred"}
-        )
+        result = engine._preprocess_credential_parameters(playbook, {"auth_credential": "my_cred"})
 
         # Should replace string with Credential object
         assert result["auth_credential"] is mock_credential
@@ -385,9 +385,7 @@ class TestCredentialParameterProcessing:
 
         # Should raise error when credential not found in vault
         with pytest.raises(PlaybookExecutionError, match="not found in vault"):
-            engine._preprocess_credential_parameters(
-                playbook, {"auth_credential": "nonexistent"}
-            )
+            engine._preprocess_credential_parameters(playbook, {"auth_credential": "nonexistent"})
 
     def test_preprocess_no_credential_value_skipped(self):
         """Test preprocessing skips credential params with no value"""
@@ -440,7 +438,7 @@ class TestDomainDetection:
             step.type.value.startswith("browser.") or step.type.value.startswith("perspective.")
             for step in playbook.steps
         )
-        playbook_domain = playbook.metadata.get('domain')
+        playbook_domain = playbook.metadata.get("domain")
         needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
 
         assert needs_browser is True
@@ -468,7 +466,7 @@ class TestDomainDetection:
             step.type.value.startswith("browser.") or step.type.value.startswith("perspective.")
             for step in playbook.steps
         )
-        playbook_domain = playbook.metadata.get('domain')
+        playbook_domain = playbook.metadata.get("domain")
         needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
 
         assert needs_browser is False

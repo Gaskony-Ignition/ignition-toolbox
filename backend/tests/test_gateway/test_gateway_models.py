@@ -5,10 +5,7 @@ Covers: dataclass construction, enum values, property calculations, and
         exception hierarchy / message formatting.
 """
 
-from datetime import datetime
-
 import pytest
-
 
 # ============================================================================
 # Enum tests
@@ -177,7 +174,9 @@ class TestHealthStatus:
     def test_memory_usage_percent_calculated(self):
         from ignition_toolkit.gateway.models import HealthStatus
 
-        h = HealthStatus(healthy=True, uptime_seconds=100, memory_used_mb=256.0, memory_max_mb=512.0)
+        h = HealthStatus(
+            healthy=True, uptime_seconds=100, memory_used_mb=256.0, memory_max_mb=512.0
+        )
         assert h.memory_usage_percent == pytest.approx(50.0)
 
     def test_memory_usage_percent_none_when_missing(self):
@@ -271,7 +270,7 @@ class TestGatewayConnectionError:
 
 class TestModuleInstallationError:
     def test_is_gateway_exception(self):
-        from ignition_toolkit.gateway.exceptions import ModuleInstallationError, GatewayException
+        from ignition_toolkit.gateway.exceptions import GatewayException, ModuleInstallationError
 
         assert isinstance(ModuleInstallationError(), GatewayException)
 
@@ -284,21 +283,21 @@ class TestModuleInstallationError:
 
 class TestGatewayRestartError:
     def test_is_gateway_exception(self):
-        from ignition_toolkit.gateway.exceptions import GatewayRestartError, GatewayException
+        from ignition_toolkit.gateway.exceptions import GatewayException, GatewayRestartError
 
         assert isinstance(GatewayRestartError(), GatewayException)
 
 
 class TestResourceNotFoundError:
     def test_is_gateway_exception(self):
-        from ignition_toolkit.gateway.exceptions import ResourceNotFoundError, GatewayException
+        from ignition_toolkit.gateway.exceptions import GatewayException, ResourceNotFoundError
 
         assert isinstance(ResourceNotFoundError(), GatewayException)
 
 
 class TestInvalidParameterError:
     def test_is_gateway_exception(self):
-        from ignition_toolkit.gateway.exceptions import InvalidParameterError, GatewayException
+        from ignition_toolkit.gateway.exceptions import GatewayException, InvalidParameterError
 
         assert isinstance(InvalidParameterError(), GatewayException)
 

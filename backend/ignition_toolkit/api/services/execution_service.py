@@ -122,8 +122,7 @@ class ExecutionService:
         playbook_domain = playbook.metadata.get("domain")
         logger.info(f"  Playbook domain: {playbook_domain}")
         has_browser_steps = any(
-            step.type.domain in ("browser", "perspective")
-            for step in playbook.steps
+            step.type.domain in ("browser", "perspective") for step in playbook.steps
         )
         needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
         if needs_browser:
@@ -179,9 +178,7 @@ class ExecutionService:
         # Step 7: Start timeout watchdog
         task = self.execution_manager.get_task(execution_id)
         if task:
-            asyncio.create_task(
-                self._timeout_watchdog(execution_id, task, engine, timeout_seconds)
-            )
+            asyncio.create_task(self._timeout_watchdog(execution_id, task, engine, timeout_seconds))
             logger.info(f"  Timeout watchdog started ({timeout_seconds}s)")
 
         logger.info(
@@ -279,7 +276,9 @@ class ExecutionService:
             domain=playbook.metadata.get("domain"),  # Include playbook domain
         )
         await self.state_update_callback(initial_state)
-        logger.info(f"Broadcasted initial state with {len(initial_step_results)} steps for execution {execution_id}")
+        logger.info(
+            f"Broadcasted initial state with {len(initial_step_results)} steps for execution {execution_id}"
+        )
 
     def _create_runner(
         self,
@@ -364,9 +363,7 @@ class ExecutionService:
 
         return run_execution
 
-    async def _update_cancelled_status(
-        self, execution_id: str, engine: PlaybookEngine
-    ) -> None:
+    async def _update_cancelled_status(self, execution_id: str, engine: PlaybookEngine) -> None:
         """
         Update database and broadcast cancellation status
 
@@ -378,11 +375,7 @@ class ExecutionService:
         with self.database.session_scope() as session:
             from ignition_toolkit.storage import ExecutionModel
 
-            execution = (
-                session.query(ExecutionModel)
-                .filter_by(execution_id=execution_id)
-                .first()
-            )
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             if execution:
                 execution.status = ExecutionStatus.CANCELLED.value
                 execution.completed_at = datetime.now()
@@ -413,17 +406,15 @@ class ExecutionService:
         with self.database.session_scope() as session:
             from ignition_toolkit.storage import ExecutionModel
 
-            execution = (
-                session.query(ExecutionModel)
-                .filter_by(execution_id=execution_id)
-                .first()
-            )
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             if execution:
                 execution.status = ExecutionStatus.FAILED.value
                 execution.completed_at = datetime.now()
                 execution.error_message = error_message
                 session.commit()
-                logger.info(f"Updated execution {execution_id} status to 'failed' with error: {error_message}")
+                logger.info(
+                    f"Updated execution {execution_id} status to 'failed' with error: {error_message}"
+                )
 
         # Broadcast failure
         if self.state_update_callback:

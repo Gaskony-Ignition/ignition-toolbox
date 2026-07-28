@@ -6,12 +6,11 @@ Uses real tmp_path directories and mocks ALLOWED_BASE_PATHS.
 """
 
 import asyncio
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -221,9 +220,12 @@ class TestListModuleFiles:
         """list_module_files returns empty list when no .modl files are present."""
         from ignition_toolkit.api.routers.filesystem import list_module_files
 
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
         ):
             result = asyncio.run(list_module_files(str(tmp_path)))
 
@@ -242,12 +244,16 @@ class TestListModuleFiles:
         mock_metadata.id = "com.example.module"
 
         # parse_module_metadata is imported lazily inside the function
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.modules.parse_module_metadata",
-            return_value=mock_metadata,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.modules.parse_module_metadata",
+                return_value=mock_metadata,
+            ),
         ):
             result = asyncio.run(list_module_files(str(tmp_path)))
 
@@ -264,12 +270,16 @@ class TestListModuleFiles:
         unsigned_file.write_bytes(b"fake unsigned content")
 
         # parse_module_metadata is imported lazily inside the function
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.modules.parse_module_metadata",
-            return_value=None,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.modules.parse_module_metadata",
+                return_value=None,
+            ),
         ):
             result = asyncio.run(list_module_files(str(tmp_path)))
 
@@ -285,9 +295,12 @@ class TestListModuleFiles:
         outside = tmp_path / "outside"
         outside.mkdir()
 
-        with _patch_allowed_paths([allowed]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=allowed,
+        with (
+            _patch_allowed_paths([allowed]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=allowed,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(list_module_files(str(outside)))
@@ -300,9 +313,12 @@ class TestListModuleFiles:
 
         nonexistent = tmp_path / "no_such_dir"
 
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(list_module_files(str(nonexistent)))
@@ -318,9 +334,12 @@ class TestListModuleFiles:
         (tmp_path / "data.yaml").write_text("ignore me")
         (tmp_path / "script.py").write_text("ignore me")
 
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
         ):
             result = asyncio.run(list_module_files(str(tmp_path)))
 
@@ -330,9 +349,12 @@ class TestListModuleFiles:
         """list_module_files defaults to get_data_dir() when path is None."""
         from ignition_toolkit.api.routers.filesystem import list_module_files
 
-        with _patch_allowed_paths([tmp_path]), patch(
-            "ignition_toolkit.api.routers.filesystem.get_data_dir",
-            return_value=tmp_path,
+        with (
+            _patch_allowed_paths([tmp_path]),
+            patch(
+                "ignition_toolkit.api.routers.filesystem.get_data_dir",
+                return_value=tmp_path,
+            ),
         ):
             result = asyncio.run(list_module_files(None))
 

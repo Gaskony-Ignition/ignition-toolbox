@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParallelExecution:
     """Tracks a parallel execution"""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     playbook_path: str = ""
     execution_id: str | None = None
@@ -104,9 +105,7 @@ class ParallelExecutionManager:
             )
             executions.append(execution)
 
-            task = asyncio.create_task(
-                self._run_single(execution, config, execution_fn)
-            )
+            task = asyncio.create_task(self._run_single(execution, config, execution_fn))
             execution.task = task
             tasks.append(task)
 
@@ -124,7 +123,9 @@ class ParallelExecutionManager:
         failed = sum(1 for e in executions if e.status == "failed")
         cancelled = sum(1 for e in executions if e.status == "cancelled")
 
-        logger.info(f"Parallel execution complete: {completed} succeeded, {failed} failed, {cancelled} cancelled")
+        logger.info(
+            f"Parallel execution complete: {completed} succeeded, {failed} failed, {cancelled} cancelled"
+        )
 
         return {
             "results": [
@@ -162,7 +163,10 @@ class ParallelExecutionManager:
                 playbook_path = config.get("playbook_path", "")
 
                 # Browser-based playbooks need browser resource
-                if any(domain in playbook_path.lower() for domain in ["perspective", "browser", "designer"]):
+                if any(
+                    domain in playbook_path.lower()
+                    for domain in ["perspective", "browser", "designer"]
+                ):
                     await self.resource_limiter.acquire(ResourceType.BROWSER)
                     resources_acquired.append(ResourceType.BROWSER)
 
@@ -176,7 +180,9 @@ class ParallelExecutionManager:
                 result = await execution_fn(config)
 
                 execution.result = result
-                execution.execution_id = result.get("execution_id") if isinstance(result, dict) else None
+                execution.execution_id = (
+                    result.get("execution_id") if isinstance(result, dict) else None
+                )
                 execution.status = "completed"
                 execution.completed_at = datetime.now(UTC)
 
@@ -209,10 +215,7 @@ class ParallelExecutionManager:
         pending = set(tasks)
 
         while pending:
-            done, pending = await asyncio.wait(
-                pending,
-                return_when=asyncio.FIRST_COMPLETED
-            )
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
 
             for task in done:
                 try:

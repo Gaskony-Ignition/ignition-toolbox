@@ -76,7 +76,7 @@ class IntegrationEngine:
 
         # Direct file mode (testing)
         try:
-            with open(self.integrations_path, encoding='utf-8') as f:
+            with open(self.integrations_path, encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             logger.error(f"Integrations file not found: {self.integrations_path}")
@@ -140,9 +140,7 @@ class IntegrationEngine:
 
         # Detect available integrations
         for integration_type, type_config in self.integration_types.items():
-            providers = [
-                s for s in selected_services if s in type_config.get("providers", [])
-            ]
+            providers = [s for s in selected_services if s in type_config.get("providers", [])]
 
             if providers:
                 if integration_type == "reverse_proxy":
@@ -197,9 +195,7 @@ class IntegrationEngine:
 
         return conflicts
 
-    def check_dependencies(
-        self, selected_services: list[str], instances: list[dict]
-    ) -> dict:
+    def check_dependencies(self, selected_services: list[str], instances: list[dict]) -> dict:
         """Check for missing dependencies and requirements"""
         result: dict[str, list] = {"warnings": [], "auto_add": []}
 
@@ -222,16 +218,20 @@ class IntegrationEngine:
                     if req.get("auto_add", False):
                         preferred = req.get("preferred")
                         if preferred:
-                            result["auto_add"].append({
-                                "service": preferred,
-                                "reason": req.get("message", f"{service} requires {preferred}"),
-                            })
+                            result["auto_add"].append(
+                                {
+                                    "service": preferred,
+                                    "reason": req.get("message", f"{service} requires {preferred}"),
+                                }
+                            )
                     else:
-                        result["warnings"].append({
-                            "service": service,
-                            "message": req.get("message", f"{service} requires {req_type}"),
-                            "level": "error",
-                        })
+                        result["warnings"].append(
+                            {
+                                "service": service,
+                                "message": req.get("message", f"{service} requires {req_type}"),
+                                "level": "error",
+                            }
+                        )
 
             # Check recommendations
             if "recommends" in rule:
@@ -241,11 +241,13 @@ class IntegrationEngine:
                 providers = self._find_providers(rec_type, selected_services)
 
                 if not providers:
-                    result["warnings"].append({
-                        "service": service,
-                        "message": rec.get("message", f"{service} recommends {rec_type}"),
-                        "level": rec.get("level", "warning"),
-                    })
+                    result["warnings"].append(
+                        {
+                            "service": service,
+                            "message": rec.get("message", f"{service} recommends {rec_type}"),
+                            "level": rec.get("level", "warning"),
+                        }
+                    )
 
         return result
 
@@ -261,30 +263,36 @@ class IntegrationEngine:
 
             if if_selected and all(s in selected_services for s in if_selected):
                 if if_not_selected and all(s not in selected_services for s in if_not_selected):
-                    recommendations.append({
-                        "message": rule["message"],
-                        "level": rule.get("level", "info"),
-                        "suggest": rule.get("suggest", []),
-                    })
+                    recommendations.append(
+                        {
+                            "message": rule["message"],
+                            "level": rule.get("level", "info"),
+                            "suggest": rule.get("suggest", []),
+                        }
+                    )
                 elif "suggest" in rule and not if_not_selected:
                     missing = [s for s in rule["suggest"] if s not in selected_services]
                     if missing:
-                        recommendations.append({
-                            "message": rule["message"],
-                            "level": rule.get("level", "info"),
-                            "suggest": missing,
-                        })
+                        recommendations.append(
+                            {
+                                "message": rule["message"],
+                                "level": rule.get("level", "info"),
+                                "suggest": missing,
+                            }
+                        )
 
             if "suggest_for" in rule:
                 suggest_for = rule["suggest_for"]
                 if if_selected and all(s in selected_services for s in if_selected):
                     applicable = [s for s in suggest_for if s in selected_services]
                     if applicable:
-                        recommendations.append({
-                            "message": rule["message"],
-                            "level": rule.get("level", "info"),
-                            "applies_to": applicable,
-                        })
+                        recommendations.append(
+                            {
+                                "message": rule["message"],
+                                "level": rule.get("level", "info"),
+                                "applies_to": applicable,
+                            }
+                        )
 
         return recommendations
 
@@ -354,11 +362,13 @@ class IntegrationEngine:
             # Build provider info dict (matching db_provider format)
             instance = next((i for i in instances if i["app_id"] == provider_id), None)
             if instance:
-                integration["providers"].append({
-                    "service_id": provider_id,
-                    "instance_name": instance.get("instance_name"),
-                    "config": instance.get("config", {}),
-                })
+                integration["providers"].append(
+                    {
+                        "service_id": provider_id,
+                        "instance_name": instance.get("instance_name"),
+                        "config": instance.get("config", {}),
+                    }
+                )
             provider_caps = self.service_capabilities.get(provider_id, {})
             provider_integration = provider_caps.get("integrations", {}).get("oauth_provider", {})
 
@@ -425,8 +435,7 @@ class IntegrationEngine:
                     }
 
                     compatible_providers = [
-                        p for p in integration["providers"]
-                        if p["service_id"] in client["supports"]
+                        p for p in integration["providers"] if p["service_id"] in client["supports"]
                     ]
                     client["matched_providers"] = compatible_providers
 
@@ -470,8 +479,7 @@ class IntegrationEngine:
                     }
 
                     compatible_providers = [
-                        p for p in integration["providers"]
-                        if p["service_id"] in client["supports"]
+                        p for p in integration["providers"] if p["service_id"] in client["supports"]
                     ]
                     client["matched_providers"] = compatible_providers
 
@@ -581,13 +589,17 @@ class IntegrationEngine:
         if "reverse_proxy" in integrations:
             rp = integrations["reverse_proxy"]
             target_count = len(rp.get("targets", []))
-            items.append(f"Reverse Proxy: {rp['provider']} \u2014 {target_count} service{'s' if target_count != 1 else ''} configured")
+            items.append(
+                f"Reverse Proxy: {rp['provider']} \u2014 {target_count} service{'s' if target_count != 1 else ''} configured"
+            )
 
         if "oauth_provider" in integrations:
             oauth = integrations["oauth_provider"]
             provider_names = [p["service_id"] for p in oauth.get("providers", [])]
             client_count = len(oauth.get("clients", []))
-            items.append(f"OAuth/SSO: {', '.join(provider_names)} \u2014 {client_count} client{'s' if client_count != 1 else ''} configured")
+            items.append(
+                f"OAuth/SSO: {', '.join(provider_names)} \u2014 {client_count} client{'s' if client_count != 1 else ''} configured"
+            )
 
         if "db_provider" in integrations:
             db = integrations["db_provider"]
@@ -602,19 +614,25 @@ class IntegrationEngine:
             client_count = len(mqtt.get("clients", []))
             if provider_count > 0:
                 provider_name = mqtt["providers"][0].get("instance_name", "mqtt")
-                items.append(f"MQTT Broker: {provider_name} \u2014 {client_count} client{'s' if client_count != 1 else ''}")
+                items.append(
+                    f"MQTT Broker: {provider_name} \u2014 {client_count} client{'s' if client_count != 1 else ''}"
+                )
 
         if "visualization" in integrations:
             viz = integrations["visualization"]
             ds_count = len(viz.get("datasources", []))
             if viz.get("provider"):
-                items.append(f"Visualization: {viz['provider']} \u2014 {ds_count} datasource{'s' if ds_count != 1 else ''}")
+                items.append(
+                    f"Visualization: {viz['provider']} \u2014 {ds_count} datasource{'s' if ds_count != 1 else ''}"
+                )
 
         if "email_testing" in integrations:
             email = integrations["email_testing"]
             client_count = len(email.get("clients", []))
             if email.get("provider"):
-                items.append(f"Email Testing: {email['provider']} \u2014 {client_count} client{'s' if client_count != 1 else ''}")
+                items.append(
+                    f"Email Testing: {email['provider']} \u2014 {client_count} client{'s' if client_count != 1 else ''}"
+                )
 
         return items
 

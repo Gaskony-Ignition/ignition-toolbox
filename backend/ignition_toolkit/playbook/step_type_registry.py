@@ -11,6 +11,7 @@ To add a new step type:
   2. Add a new StepTypeDefinition entry in STEP_REGISTRY below
   3. Create the handler class in the appropriate executor file
 """
+
 from __future__ import annotations
 
 import logging
@@ -77,9 +78,7 @@ class StepTypeDefinition:
 # =============================================================================
 
 STEP_REGISTRY: list[StepTypeDefinition] = [
-
     # ── Gateway ───────────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.GATEWAY_LOGIN,
         description="Login to Ignition Gateway with username and password",
@@ -210,9 +209,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=TimeoutKeys.GATEWAY_RESTART,
     ),
-
     # ── Browser ───────────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.BROWSER_NAVIGATE,
         description="Navigate the browser to a URL",
@@ -512,9 +509,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=TimeoutKeys.BROWSER_OPERATION,
     ),
-
     # ── Designer ──────────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.DESIGNER_LAUNCH,
         description="Launch the Ignition Designer from a launcher file",
@@ -651,9 +646,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=TimeoutKeys.DESIGNER_LAUNCH,
     ),
-
     # ── Playbook ──────────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.PLAYBOOK_RUN,
         description="Execute another playbook as a nested step",
@@ -673,9 +666,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=None,
     ),
-
     # ── Utility ───────────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.SLEEP,
         description="Pause execution for a specified duration",
@@ -742,9 +733,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=None,
     ),
-
     # ── Perspective FAT ───────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.PERSPECTIVE_DISCOVER_PAGE,
         description="Discover interactive components on a Perspective page",
@@ -914,9 +903,7 @@ STEP_REGISTRY: list[StepTypeDefinition] = [
         ],
         timeout_category=TimeoutKeys.BROWSER_OPERATION,
     ),
-
     # ── FAT Reporting ─────────────────────────────────────────────────────────
-
     StepTypeDefinition(
         step_type=StepType.FAT_GENERATE_REPORT,
         description="Generate a Factory Acceptance Test report",

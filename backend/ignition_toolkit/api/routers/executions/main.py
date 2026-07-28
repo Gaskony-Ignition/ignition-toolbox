@@ -187,7 +187,11 @@ async def get_execution_status(execution_id: str):
                     current_step_index=len(step_results),
                     total_steps=len(step_results),
                     error=execution.error_message,
-                    debug_mode=execution.execution_metadata.get("debug_mode", False) if execution.execution_metadata else False,
+                    debug_mode=(
+                        execution.execution_metadata.get("debug_mode", False)
+                        if execution.execution_metadata
+                        else False
+                    ),
                     step_results=step_results,
                     domain=domain,
                 )
@@ -244,16 +248,17 @@ async def _force_cancel_status(execution_id: str, execution_manager, app) -> Non
         with db.session_scope() as session:
             from ignition_toolkit.storage import ExecutionModel
 
-            execution = (
-                session.query(ExecutionModel)
-                .filter_by(execution_id=execution_id)
-                .first()
-            )
-            if execution and execution.status in (ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value):
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
+            if execution and execution.status in (
+                ExecutionStatus.RUNNING.value,
+                ExecutionStatus.PAUSED.value,
+            ):
                 execution.status = ExecutionStatus.CANCELLED.value
                 execution.completed_at = datetime.now()
                 session.commit()
-                logger.info(f"Force-updated execution {execution_id} status to 'cancelled' in database")
+                logger.info(
+                    f"Force-updated execution {execution_id} status to 'cancelled' in database"
+                )
 
     # Broadcast cancellation via WebSocket so frontend updates
     engine = execution_manager.get_engine(execution_id)
@@ -304,31 +309,34 @@ async def cancel_execution(execution_id: str):
     with db.session_scope() as session:
         from ignition_toolkit.storage import ExecutionModel
 
-        execution = (
-            session.query(ExecutionModel)
-            .filter_by(execution_id=execution_id)
-            .first()
-        )
+        execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
 
         if not execution:
             raise HTTPException(status_code=404, detail=f"Execution {execution_id} not found")
 
         # Mark old execution as cancelled in database
         if execution.status in [ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value]:
-            logger.info(f"Cancelling database-only execution {execution_id} (started {execution.started_at})")
+            logger.info(
+                f"Cancelling database-only execution {execution_id} (started {execution.started_at})"
+            )
             execution.status = ExecutionStatus.CANCELLED.value
             execution.completed_at = datetime.now()
             execution.error_message = "Cancelled by user (execution was from before server restart)"
             session.commit()
             logger.info(f"Database-only execution {execution_id} marked as cancelled")
-            return {"message": "Execution marked as cancelled in database", "execution_id": execution_id}
+            return {
+                "message": "Execution marked as cancelled in database",
+                "execution_id": execution_id,
+            }
         else:
             # Execution already completed - return success instead of error for better UX
-            logger.info(f"Cancel requested for already-completed execution {execution_id} (status: {execution.status})")
+            logger.info(
+                f"Cancel requested for already-completed execution {execution_id} (status: {execution.status})"
+            )
             return {
                 "message": f"Execution already completed with status: {execution.status}",
                 "execution_id": execution_id,
-                "already_completed": True
+                "already_completed": True,
             }
 
 
@@ -340,7 +348,7 @@ async def get_playbook_code(execution_id: str, engine: PlaybookEngine = Depends(
     if not playbook_path or not playbook_path.exists():
         raise HTTPException(status_code=404, detail="Playbook file not found")
 
-    yaml_content = playbook_path.read_text(encoding='utf-8')
+    yaml_content = playbook_path.read_text(encoding="utf-8")
 
     state = engine.get_current_execution()
     playbook_name = state.playbook_name if state else "Unknown"
@@ -357,7 +365,7 @@ async def get_playbook_code(execution_id: str, engine: PlaybookEngine = Depends(
 async def update_playbook_code(
     execution_id: str,
     request: PlaybookCodeUpdateRequest,
-    engine: PlaybookEngine = Depends(get_engine_or_404)
+    engine: PlaybookEngine = Depends(get_engine_or_404),
 ):
     """Update the playbook YAML during execution (for AI fixes)"""
 
@@ -376,11 +384,11 @@ async def update_playbook_code(
     backup_path = playbook_path.with_suffix(
         f".backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
     )
-    backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
+    backup_path.write_text(playbook_path.read_text(encoding="utf-8"), encoding="utf-8")
     logger.info(f"Created backup: {backup_path}")
 
     # Write new content
-    playbook_path.write_text(request.code, encoding='utf-8')
+    playbook_path.write_text(request.code, encoding="utf-8")
     logger.info(f"Updated playbook code: {playbook_path}")
 
     return {
@@ -437,7 +445,9 @@ async def delete_execution(execution_id: str):
             # because playbook.run steps include a "screenshots" array in their output containing
             # all screenshots created during nested execution (supports up to depth 3 nesting)
 
-            logger.info(f"Collected {len(screenshot_paths)} total screenshot paths (including nested playbooks)")
+            logger.info(
+                f"Collected {len(screenshot_paths)} total screenshot paths (including nested playbooks)"
+            )
 
             # THEN: Delete related step results
             session.query(StepResultModel).filter(
@@ -486,12 +496,14 @@ async def enable_debug_mode(execution_id: str, engine: PlaybookEngine = Depends(
         "status": "success",
         "execution_id": execution_id,
         "debug_mode": True,
-        "message": "Debug mode enabled - execution will pause on next failure"
+        "message": "Debug mode enabled - execution will pause on next failure",
     }
 
 
 @router.post("/{execution_id}/debug/disable")
-async def disable_debug_mode(execution_id: str, engine: PlaybookEngine = Depends(get_engine_or_404)):
+async def disable_debug_mode(
+    execution_id: str, engine: PlaybookEngine = Depends(get_engine_or_404)
+):
     """Disable debug mode for an active execution"""
     from ignition_toolkit.api.app import app
 
@@ -512,14 +524,13 @@ async def disable_debug_mode(execution_id: str, engine: PlaybookEngine = Depends
         "status": "success",
         "execution_id": execution_id,
         "debug_mode": False,
-        "message": "Debug mode disabled"
+        "message": "Debug mode disabled",
     }
 
 
 @router.post("/{execution_id}/browser/click")
 async def click_in_browser(
-    request: BrowserClickRequest,
-    engine: PlaybookEngine = Depends(get_engine_or_404)
+    request: BrowserClickRequest, engine: PlaybookEngine = Depends(get_engine_or_404)
 ):
     """
     Click at specific coordinates in the browser during execution
@@ -563,6 +574,4 @@ async def click_in_browser(
         }
     except Exception as e:
         logger.exception(f"Error clicking in browser: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to click in browser: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to click in browser: {str(e)}")

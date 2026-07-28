@@ -76,7 +76,9 @@ class RemoteDataManager:
     @property
     def _user_data_path(self) -> Path:
         """Path to the downloaded data file in user data dir."""
-        return get_user_data_dir() / "remote_data" / self.config.component_name / self.config.filename
+        return (
+            get_user_data_dir() / "remote_data" / self.config.component_name / self.config.filename
+        )
 
     @property
     def _meta_path(self) -> Path:
@@ -107,7 +109,8 @@ class RemoteDataManager:
             except (json.JSONDecodeError, OSError) as e:
                 logger.warning(
                     "Failed to load %s from user data dir: %s, falling back to bundled",
-                    self.config.component_name, e,
+                    self.config.component_name,
+                    e,
                 )
 
         # Fall back to bundled
@@ -209,7 +212,9 @@ class RemoteDataManager:
                     if remote_schema != local_schema:
                         logger.error(
                             "Schema version mismatch for %s: local=%s, remote=%s. Refusing update.",
-                            self.config.component_name, local_schema, remote_schema,
+                            self.config.component_name,
+                            local_schema,
+                            remote_schema,
                         )
                         return False
 
@@ -229,7 +234,11 @@ class RemoteDataManager:
 
             # Write metadata
             meta = {
-                "version": data.get("_meta", {}).get("version", "unknown") if isinstance(data, dict) else "unknown",
+                "version": (
+                    data.get("_meta", {}).get("version", "unknown")
+                    if isinstance(data, dict)
+                    else "unknown"
+                ),
                 "checksum": expected_checksum or self._compute_checksum(content),
                 "downloaded_at": datetime.now(timezone.utc).isoformat(),
                 "source": download_url,
@@ -244,7 +253,9 @@ class RemoteDataManager:
                 try:
                     self.config.on_update()
                 except Exception as e:
-                    logger.warning("on_update callback failed for %s: %s", self.config.component_name, e)
+                    logger.warning(
+                        "on_update callback failed for %s: %s", self.config.component_name, e
+                    )
 
             return True
 
@@ -312,7 +323,9 @@ class RemoteDataManager:
                 try:
                     self.config.on_update()
                 except Exception as e:
-                    logger.warning("on_update callback failed for %s: %s", self.config.component_name, e)
+                    logger.warning(
+                        "on_update callback failed for %s: %s", self.config.component_name, e
+                    )
 
         return reverted
 
@@ -344,7 +357,11 @@ class RemoteDataManager:
                 # Parse to get version
                 try:
                     data = json.loads(content)
-                    version = data.get("_meta", {}).get("version", "unknown") if isinstance(data, dict) else "unknown"
+                    version = (
+                        data.get("_meta", {}).get("version", "unknown")
+                        if isinstance(data, dict)
+                        else "unknown"
+                    )
                 except json.JSONDecodeError:
                     version = "unknown"
 

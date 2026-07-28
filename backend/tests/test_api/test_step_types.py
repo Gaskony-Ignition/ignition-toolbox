@@ -6,7 +6,6 @@ including correct domain values, required fields, and known entries.
 """
 
 import asyncio
-import pytest
 
 
 class TestGetStepTypes:
@@ -14,7 +13,7 @@ class TestGetStepTypes:
 
     def test_returns_step_types_response_object(self):
         """get_step_types() must return a StepTypesResponse model instance."""
-        from ignition_toolkit.api.routers.step_types import get_step_types, StepTypesResponse
+        from ignition_toolkit.api.routers.step_types import StepTypesResponse, get_step_types
 
         result = asyncio.run(get_step_types())
 
@@ -49,9 +48,9 @@ class TestGetStepTypes:
             assert step.type, f"Step {step} has empty/missing 'type'"
             assert step.domain, f"Step {step.type!r} has empty/missing 'domain'"
             assert step.description, f"Step {step.type!r} has empty/missing 'description'"
-            assert isinstance(step.parameters, list), (
-                f"Step {step.type!r} 'parameters' must be a list"
-            )
+            assert isinstance(
+                step.parameters, list
+            ), f"Step {step.type!r} 'parameters' must be a list"
 
     def test_domains_list_is_non_empty(self):
         """The domains list must contain at least one entry."""
@@ -107,9 +106,9 @@ class TestGetStepTypes:
         result = asyncio.run(get_step_types())
 
         type_names = [s.type for s in result.step_types]
-        assert "gateway.login" in type_names, (
-            f"Expected 'gateway.login' in step types. Got: {type_names}"
-        )
+        assert (
+            "gateway.login" in type_names
+        ), f"Expected 'gateway.login' in step types. Got: {type_names}"
 
     def test_known_step_type_utility_log_exists(self):
         """The well-known step type 'utility.log' must be present."""
@@ -118,9 +117,9 @@ class TestGetStepTypes:
         result = asyncio.run(get_step_types())
 
         type_names = [s.type for s in result.step_types]
-        assert "utility.log" in type_names, (
-            f"Expected 'utility.log' in step types. Got: {type_names}"
-        )
+        assert (
+            "utility.log" in type_names
+        ), f"Expected 'utility.log' in step types. Got: {type_names}"
 
     def test_gateway_login_step_has_correct_domain(self):
         """The 'gateway.login' step must have domain='gateway'."""
@@ -139,9 +138,10 @@ class TestGetStepTypes:
         result = asyncio.run(get_step_types())
 
         type_names = [s.type for s in result.step_types]
-        assert len(type_names) == len(set(type_names)), (
-            "Duplicate step type names detected: "
-            + str([t for t in type_names if type_names.count(t) > 1])
+        assert len(type_names) == len(
+            set(type_names)
+        ), "Duplicate step type names detected: " + str(
+            [t for t in type_names if type_names.count(t) > 1]
         )
 
     def test_step_parameter_fields_are_present(self):
@@ -152,12 +152,10 @@ class TestGetStepTypes:
 
         for step in result.step_types:
             for param in step.parameters:
-                assert param.name, (
-                    f"Step {step.type!r}: parameter {param} has empty/missing 'name'"
-                )
-                assert param.type, (
-                    f"Step {step.type!r}: parameter {param.name!r} has empty/missing 'type'"
-                )
-                assert isinstance(param.required, bool), (
-                    f"Step {step.type!r}: parameter {param.name!r} 'required' must be bool"
-                )
+                assert param.name, f"Step {step.type!r}: parameter {param} has empty/missing 'name'"
+                assert (
+                    param.type
+                ), f"Step {step.type!r}: parameter {param.name!r} has empty/missing 'type'"
+                assert isinstance(
+                    param.required, bool
+                ), f"Step {step.type!r}: parameter {param.name!r} 'required' must be bool"

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 try:
     from pywinauto import Application, Desktop
     from pywinauto.findwindows import ElementNotFoundError
+
     PYWINAUTO_AVAILABLE = True
 except ImportError:
     PYWINAUTO_AVAILABLE = False
@@ -25,7 +26,9 @@ class WindowsDesignerAutomation:
 
     def __init__(self):
         if not PYWINAUTO_AVAILABLE:
-            raise ImportError("pywinauto is required for Windows Designer automation. Install with: pip install pywinauto")
+            raise ImportError(
+                "pywinauto is required for Windows Designer automation. Install with: pip install pywinauto"
+            )
 
         self.app: Application | None = None
         self.main_window = None
@@ -99,7 +102,10 @@ class WindowsDesignerAutomation:
                 for win in windows:
                     title = win.window_text().lower()
                     # Common login dialog titles
-                    if any(keyword in title for keyword in ["login", "sign in", "authentication", "credentials"]):
+                    if any(
+                        keyword in title
+                        for keyword in ["login", "sign in", "authentication", "credentials"]
+                    ):
                         logger.info(f"Found login dialog: {win.window_text()}")
                         self.login_window = win
                         return True
@@ -150,7 +156,9 @@ class WindowsDesignerAutomation:
                 buttons = self.login_window.descendants(control_type="Button")
                 for button in buttons:
                     button_text = button.window_text().lower()
-                    if any(keyword in button_text for keyword in ["login", "sign in", "ok", "connect"]):
+                    if any(
+                        keyword in button_text for keyword in ["login", "sign in", "ok", "connect"]
+                    ):
                         logger.info(f"Clicking login button: {button.window_text()}")
                         button.click()
                         return True

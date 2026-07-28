@@ -4,10 +4,9 @@ Tests for playbook CRUD API endpoints
 Tests list, get, update, and delete operations for playbooks.
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -15,10 +14,11 @@ from fastapi.testclient import TestClient
 def test_client():
     """Create test client with mocked dependencies"""
     # Mock the database and other dependencies before importing app
-    with patch('ignition_toolkit.storage.get_database') as mock_db:
+    with patch("ignition_toolkit.storage.get_database") as mock_db:
         mock_db.return_value = MagicMock()
 
         from ignition_toolkit.api.app import app
+
         client = TestClient(app)
         yield client
 
@@ -91,9 +91,7 @@ class TestPlaybookMetadataValidation:
         from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         request = PlaybookMetadataUpdateRequest(
-            playbook_path="gateway/test.yaml",
-            name="New Name",
-            description="New description"
+            playbook_path="gateway/test.yaml", name="New Name", description="New description"
         )
 
         assert request.name == "New Name"
@@ -101,21 +99,22 @@ class TestPlaybookMetadataValidation:
 
     def test_name_too_long_raises_error(self):
         """Test that overly long names are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         with pytest.raises(ValidationError) as exc_info:
             PlaybookMetadataUpdateRequest(
-                playbook_path="test.yaml",
-                name="x" * 300  # Over 200 char limit
+                playbook_path="test.yaml", name="x" * 300  # Over 200 char limit
             )
 
         assert "too long" in str(exc_info.value).lower()
 
     def test_name_with_dangerous_chars_raises_error(self):
         """Test that dangerous characters in name are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         dangerous_names = [
             "Test<script>",
@@ -131,28 +130,26 @@ class TestPlaybookMetadataValidation:
 
         for name in dangerous_names:
             with pytest.raises(ValidationError):
-                PlaybookMetadataUpdateRequest(
-                    playbook_path="test.yaml",
-                    name=name
-                )
+                PlaybookMetadataUpdateRequest(playbook_path="test.yaml", name=name)
 
     def test_description_too_long_raises_error(self):
         """Test that overly long descriptions are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         with pytest.raises(ValidationError) as exc_info:
             PlaybookMetadataUpdateRequest(
-                playbook_path="test.yaml",
-                description="x" * 3000  # Over 2000 char limit
+                playbook_path="test.yaml", description="x" * 3000  # Over 2000 char limit
             )
 
         assert "too long" in str(exc_info.value).lower()
 
     def test_description_with_xss_patterns_raises_error(self):
         """Test that XSS patterns in description are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         dangerous_descriptions = [
             "<script>alert('xss')</script>",
@@ -164,21 +161,16 @@ class TestPlaybookMetadataValidation:
 
         for desc in dangerous_descriptions:
             with pytest.raises(ValidationError):
-                PlaybookMetadataUpdateRequest(
-                    playbook_path="test.yaml",
-                    description=desc
-                )
+                PlaybookMetadataUpdateRequest(playbook_path="test.yaml", description=desc)
 
     def test_empty_path_raises_error(self):
         """Test that empty playbook path is rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
         from pydantic import ValidationError
 
+        from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
+
         with pytest.raises(ValidationError):
-            PlaybookMetadataUpdateRequest(
-                playbook_path="",
-                name="Test"
-            )
+            PlaybookMetadataUpdateRequest(playbook_path="", name="Test")
 
     def test_whitespace_is_trimmed(self):
         """Test that whitespace is trimmed from inputs"""
@@ -187,7 +179,7 @@ class TestPlaybookMetadataValidation:
         request = PlaybookMetadataUpdateRequest(
             playbook_path="  gateway/test.yaml  ",
             name="  Trimmed Name  ",
-            description="  Trimmed Description  "
+            description="  Trimmed Description  ",
         )
 
         assert request.playbook_path == "gateway/test.yaml"
@@ -200,10 +192,13 @@ class TestPlaybookPathValidation:
 
     def test_directory_traversal_rejected(self, temp_playbooks_dir):
         """Test that directory traversal attempts are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import validate_playbook_path
         from fastapi import HTTPException
 
-        with patch('ignition_toolkit.core.paths.get_playbooks_dir', return_value=temp_playbooks_dir):
+        from ignition_toolkit.api.routers.playbook_crud import validate_playbook_path
+
+        with patch(
+            "ignition_toolkit.core.paths.get_playbooks_dir", return_value=temp_playbooks_dir
+        ):
             # These should all raise HTTPException
             dangerous_paths = [
                 "../etc/passwd",
@@ -219,10 +214,13 @@ class TestPlaybookPathValidation:
 
     def test_absolute_path_rejected(self, temp_playbooks_dir):
         """Test that absolute paths are rejected"""
-        from ignition_toolkit.api.routers.playbook_crud import validate_playbook_path
         from fastapi import HTTPException
 
-        with patch('ignition_toolkit.core.paths.get_playbooks_dir', return_value=temp_playbooks_dir):
+        from ignition_toolkit.api.routers.playbook_crud import validate_playbook_path
+
+        with patch(
+            "ignition_toolkit.core.paths.get_playbooks_dir", return_value=temp_playbooks_dir
+        ):
             with pytest.raises(HTTPException):
                 validate_playbook_path("/etc/passwd")
 
@@ -232,9 +230,7 @@ class TestPlaybookPathValidation:
 
         # Use PathValidator directly with explicit base_dir
         result = PathValidator.validate_playbook_path(
-            "gateway/test_playbook.yaml",
-            base_dir=temp_playbooks_dir,
-            must_exist=True
+            "gateway/test_playbook.yaml", base_dir=temp_playbooks_dir, must_exist=True
         )
         assert result.exists()
         assert result.name == "test_playbook.yaml"
@@ -250,7 +246,7 @@ class TestStepEditRequest:
         request = StepEditRequest(
             playbook_path="gateway/test.yaml",
             step_id="step1",
-            new_parameters={"message": "Updated message", "level": "info"}
+            new_parameters={"message": "Updated message", "level": "info"},
         )
 
         assert request.playbook_path == "gateway/test.yaml"
@@ -262,9 +258,7 @@ class TestStepEditRequest:
         from ignition_toolkit.api.routers.playbook_crud import StepEditRequest
 
         request = StepEditRequest(
-            playbook_path="gateway/test.yaml",
-            step_id="step1",
-            new_parameters={}
+            playbook_path="gateway/test.yaml", step_id="step1", new_parameters={}
         )
 
         assert request.new_parameters == {}
@@ -277,13 +271,10 @@ class TestStepEditRequest:
             playbook_path="gateway/test.yaml",
             step_id="step1",
             new_parameters={
-                "selector": {
-                    "type": "css",
-                    "value": "#my-button"
-                },
+                "selector": {"type": "css", "value": "#my-button"},
                 "timeout": 30,
-                "options": ["option1", "option2"]
-            }
+                "options": ["option1", "option2"],
+            },
         )
 
         assert request.new_parameters["selector"]["type"] == "css"
@@ -298,8 +289,7 @@ class TestPlaybookUpdateRequest:
         from ignition_toolkit.api.routers.playbook_crud import PlaybookUpdateRequest
 
         request = PlaybookUpdateRequest(
-            playbook_path="gateway/test.yaml",
-            yaml_content=sample_playbook_yaml
+            playbook_path="gateway/test.yaml", yaml_content=sample_playbook_yaml
         )
 
         assert request.playbook_path == "gateway/test.yaml"
@@ -310,9 +300,6 @@ class TestPlaybookUpdateRequest:
         from ignition_toolkit.api.routers.playbook_crud import PlaybookUpdateRequest
 
         # Pydantic allows empty string, validation happens at endpoint level
-        request = PlaybookUpdateRequest(
-            playbook_path="gateway/test.yaml",
-            yaml_content=""
-        )
+        request = PlaybookUpdateRequest(playbook_path="gateway/test.yaml", yaml_content="")
 
         assert request.yaml_content == ""

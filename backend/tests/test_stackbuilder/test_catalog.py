@@ -10,9 +10,6 @@ Tests the catalog.py module functionality:
 """
 
 import pytest
-import json
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 from ignition_toolkit.stackbuilder.catalog import ServiceCatalog, get_service_catalog
 

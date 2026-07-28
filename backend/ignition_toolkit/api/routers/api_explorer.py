@@ -51,6 +51,7 @@ def _get_api_docs_manager() -> RemoteDataManager:
         RemoteDataRegistry.register(_api_docs_manager)
     return _api_docs_manager
 
+
 # Create router
 router = APIRouter(prefix="/api/explorer", tags=["api-explorer"])
 
@@ -304,11 +305,7 @@ async def update_api_key(name: str, request: APIKeyUpdate):
     """Update an existing API key"""
     try:
         service = APIKeyService()
-        gateway_url = (
-            _normalize_gateway_url(request.gateway_url)
-            if request.gateway_url
-            else None
-        )
+        gateway_url = _normalize_gateway_url(request.gateway_url) if request.gateway_url else None
         return service.update_api_key(
             name=name,
             gateway_url=gateway_url,

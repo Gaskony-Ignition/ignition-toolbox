@@ -132,7 +132,8 @@ class ExchangeService:
         if search:
             search_lower = search.lower()
             results = [
-                r for r in results
+                r
+                for r in results
                 if search_lower in r.get("title", "").lower()
                 or search_lower in r.get("contributor", "").lower()
                 or search_lower in r.get("tagline", "").lower()
@@ -344,8 +345,6 @@ class ExchangeService:
             # Trim log if too long
             all_lines = log_file.read_text(encoding="utf-8").splitlines()
             if len(all_lines) > MAX_LOG_LINES:
-                log_file.write_text(
-                    "\n".join(all_lines[-MAX_LOG_LINES:]) + "\n", encoding="utf-8"
-                )
+                log_file.write_text("\n".join(all_lines[-MAX_LOG_LINES:]) + "\n", encoding="utf-8")
         except OSError as exc:
             logger.error("Failed to write activity log: %s", exc)

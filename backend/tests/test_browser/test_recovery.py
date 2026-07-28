@@ -10,8 +10,9 @@ session, instead of aborting the playbook.
 All browser internals are mocked — no real Chromium is launched.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from ignition_toolkit.browser.manager import (
     BrowserManager,
@@ -21,9 +22,7 @@ from ignition_toolkit.browser.manager import (
 
 def test_fatal_connection_error_detection():
     """The "connection closed while reading from the driver" crash is fatal."""
-    assert _is_fatal_connection_error(
-        Exception("Connection closed while reading from the driver")
-    )
+    assert _is_fatal_connection_error(Exception("Connection closed while reading from the driver"))
     assert _is_fatal_connection_error(Exception("Target page, context or browser has been closed"))
     # A plain per-call timeout is recoverable, not a dead connection.
     assert not _is_fatal_connection_error(Exception("Timeout 30000ms exceeded"))
@@ -39,7 +38,9 @@ async def test_navigate_recovers_and_retries_on_fatal_connection_error():
 
     # First page: its goto dies with the CDP "connection closed" error.
     dead_page = MagicMock()
-    dead_page.goto = AsyncMock(side_effect=Exception("Connection closed while reading from the driver"))
+    dead_page.goto = AsyncMock(
+        side_effect=Exception("Connection closed while reading from the driver")
+    )
     dead_page.is_closed = MagicMock(return_value=True)
 
     # Second page (after recovery): goto succeeds.
@@ -59,8 +60,10 @@ async def test_navigate_recovers_and_retries_on_fatal_connection_error():
 
     recover_mock.side_effect = _do_recover
 
-    with patch.object(manager, "recover", recover_mock), \
-         patch.object(manager, "_capture_storage_state", AsyncMock()):
+    with (
+        patch.object(manager, "recover", recover_mock),
+        patch.object(manager, "_capture_storage_state", AsyncMock()),
+    ):
         await manager.navigate("http://localhost:8088/web/config/system.modules")
 
     recover_mock.assert_awaited_once()
@@ -73,11 +76,15 @@ async def test_navigate_raises_if_recovery_fails():
     """If recovery cannot rebuild the browser, the original failure propagates."""
     manager = BrowserManager(headless=True)
     dead_page = MagicMock()
-    dead_page.goto = AsyncMock(side_effect=Exception("Connection closed while reading from the driver"))
+    dead_page.goto = AsyncMock(
+        side_effect=Exception("Connection closed while reading from the driver")
+    )
     manager._page = dead_page
 
-    with patch.object(manager, "recover", AsyncMock(return_value=False)), \
-         patch.object(manager, "_capture_storage_state", AsyncMock()):
+    with (
+        patch.object(manager, "recover", AsyncMock(return_value=False)),
+        patch.object(manager, "_capture_storage_state", AsyncMock()),
+    ):
         with pytest.raises(Exception, match="Connection closed"):
             await manager.navigate("http://localhost:8088/")
 
@@ -91,8 +98,10 @@ async def test_navigate_does_not_recover_on_ordinary_timeout():
     manager._page = page
 
     recover_mock = AsyncMock(return_value=True)
-    with patch.object(manager, "recover", recover_mock), \
-         patch.object(manager, "_capture_storage_state", AsyncMock()):
+    with (
+        patch.object(manager, "recover", recover_mock),
+        patch.object(manager, "_capture_storage_state", AsyncMock()),
+    ):
         with pytest.raises(Exception, match="Timeout"):
             await manager.navigate("http://localhost:8088/")
     recover_mock.assert_not_awaited()
@@ -143,9 +152,13 @@ async def test_recover_relaunches_with_captured_storage_state():
         manager._page.is_closed = MagicMock(return_value=False)
         launch_mock(storage_state=storage_state)
 
-    with patch.object(manager, "stop_screenshot_streaming", AsyncMock()), \
-         patch.object(manager, "_launch_browser", side_effect=_fake_launch):
+    with (
+        patch.object(manager, "stop_screenshot_streaming", AsyncMock()),
+        patch.object(manager, "_launch_browser", side_effect=_fake_launch),
+    ):
         ok = await manager.recover()
 
     assert ok is True
-    launch_mock.assert_called_once_with(storage_state={"cookies": [{"name": "session", "value": "abc"}]})
+    launch_mock.assert_called_once_with(
+        storage_state={"cookies": [{"name": "session", "value": "abc"}]}
+    )

@@ -23,6 +23,7 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 @dataclass
 class CurrentUser:
     """Represents the current authenticated user"""
+
     api_key: APIKey | None = None
     is_authenticated: bool = False
     role: str = "anonymous"
@@ -117,6 +118,7 @@ def require_permission(permission: Permission):
         ):
             pass
     """
+
     def dependency(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
         if not user.has_permission(permission):
             # Log access denied
@@ -147,6 +149,7 @@ def require_role(role: str):
         async def reset_system(user: CurrentUser = Depends(require_role("admin"))):
             pass
     """
+
     def dependency(user: CurrentUser = Depends(require_auth)) -> CurrentUser:
         if user.role != role and user.role != "admin":
             audit = get_audit_logger()

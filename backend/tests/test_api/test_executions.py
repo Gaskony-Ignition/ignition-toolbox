@@ -6,9 +6,10 @@ Uses direct function calls with mocking (same pattern as test_health.py).
 """
 
 import asyncio
-import pytest
 from contextlib import contextmanager
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -49,12 +50,15 @@ class TestListExecutions:
         """GET /api/executions returns a list (empty when no executions exist)."""
         from ignition_toolkit.api.routers.executions.main import list_executions
 
-        with patch(
-            "ignition_toolkit.api.routers.executions.main.get_active_engines",
-            return_value={},
-        ), patch(
-            "ignition_toolkit.api.routers.executions.main.get_database",
-            return_value=mock_db,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.executions.main.get_active_engines",
+                return_value={},
+            ),
+            patch(
+                "ignition_toolkit.api.routers.executions.main.get_database",
+                return_value=mock_db,
+            ),
         ):
             result = asyncio.run(list_executions())
 
@@ -65,14 +69,18 @@ class TestGetExecution:
     def test_get_execution_404_for_unknown_id(self, mock_db):
         """GET /api/executions/{id} returns 404 for an unknown execution id."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.executions.main import get_execution_status
 
-        with patch(
-            "ignition_toolkit.api.routers.executions.main.get_active_engines",
-            return_value={},
-        ), patch(
-            "ignition_toolkit.api.routers.executions.main.get_database",
-            return_value=mock_db,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.executions.main.get_active_engines",
+                return_value={},
+            ),
+            patch(
+                "ignition_toolkit.api.routers.executions.main.get_database",
+                return_value=mock_db,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(get_execution_status("nonexistent-execution-id"))
@@ -84,6 +92,7 @@ class TestPauseExecution:
     def test_pause_404_for_unknown_id(self, mock_services):
         """POST /api/executions/{id}/pause returns 404 for unknown execution."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.executions.helpers import get_engine_or_404
 
         with pytest.raises(HTTPException) as exc_info:
@@ -96,6 +105,7 @@ class TestResumeExecution:
     def test_resume_404_for_unknown_id(self, mock_services):
         """POST /api/executions/{id}/resume returns 404 for unknown execution."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.executions.helpers import get_engine_or_404
 
         with pytest.raises(HTTPException) as exc_info:
@@ -108,6 +118,7 @@ class TestSkipStep:
     def test_skip_404_for_unknown_id(self, mock_services):
         """POST /api/executions/{id}/skip returns 404 for unknown execution."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.executions.helpers import get_engine_or_404
 
         with pytest.raises(HTTPException) as exc_info:
@@ -120,6 +131,7 @@ class TestCancelExecution:
     def test_cancel_404_for_unknown_id(self, mock_services, mock_db):
         """POST /api/executions/{id}/cancel returns 404 for a completely unknown execution id."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.executions.main import cancel_execution
 
         with patch(

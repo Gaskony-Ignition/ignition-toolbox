@@ -96,19 +96,27 @@ class PlaybookEngine:
 
     def get_gateway_restart_timeout(self) -> int:
         """Get gateway restart timeout in seconds (default: 120)"""
-        return self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART)
+        return self.timeout_overrides.get(
+            TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART
+        )
 
     def get_module_install_timeout(self) -> int:
         """Get module installation timeout in seconds (default: 300)"""
-        return self.timeout_overrides.get(TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL)
+        return self.timeout_overrides.get(
+            TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL
+        )
 
     def get_browser_operation_timeout(self) -> int:
         """Get browser operation timeout in milliseconds (default: 30000)"""
-        return self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION)
+        return self.timeout_overrides.get(
+            TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION
+        )
 
     def get_designer_launch_timeout(self) -> int:
         """Get designer launch timeout in seconds (default: 60)"""
-        return self.timeout_overrides.get(TimeoutKeys.DESIGNER_LAUNCH, TimeoutDefaults.DESIGNER_LAUNCH)
+        return self.timeout_overrides.get(
+            TimeoutKeys.DESIGNER_LAUNCH, TimeoutDefaults.DESIGNER_LAUNCH
+        )
 
     def set_update_callback(self, callback: Callable[[ExecutionState], None]) -> None:
         """
@@ -216,15 +224,15 @@ class PlaybookEngine:
 
         # Set up browser manager if needed
         has_browser_steps = any(
-            step.type.domain in ("browser", "perspective")
-            for step in playbook.steps
+            step.type.domain in ("browser", "perspective") for step in playbook.steps
         )
-        playbook_domain = playbook.metadata.get('domain')
+        playbook_domain = playbook.metadata.get("domain")
         needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
 
         if needs_browser:
             screenshot_frame_callback = None
             if self.screenshot_callback:
+
                 async def screenshot_frame_callback(screenshot_b64: str):
                     await self.screenshot_callback(execution_id, screenshot_b64)
 
@@ -243,7 +251,9 @@ class PlaybookEngine:
 
             self._browser_manager = browser_manager
         else:
-            logger.debug(f"Skipping browser initialization (not needed for domain={playbook_domain})")
+            logger.debug(
+                f"Skipping browser initialization (not needed for domain={playbook_domain})"
+            )
 
         # Set up designer manager if needed
         has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
@@ -369,23 +379,26 @@ class PlaybookEngine:
 
             # Create browser manager for Perspective/browser playbooks (NOT for Designer)
             has_browser_steps = any(
-                step.type.domain in ("browser", "perspective")
-                for step in playbook.steps
+                step.type.domain in ("browser", "perspective") for step in playbook.steps
             )
-            playbook_domain = playbook.metadata.get('domain')
+            playbook_domain = playbook.metadata.get("domain")
             # Create browser for perspective, gateway domains, or any playbook with browser/perspective steps
             # This ensures nested playbooks can use the shared browser manager
             needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
 
-            logger.debug(f"Playbook domain: {playbook_domain}, has_browser_steps: {has_browser_steps}, needs_browser: {needs_browser}")
+            logger.debug(
+                f"Playbook domain: {playbook_domain}, has_browser_steps: {has_browser_steps}, needs_browser: {needs_browser}"
+            )
 
             if needs_browser:
                 # Create screenshot callback if available
                 screenshot_frame_callback = None
                 if self.screenshot_callback:
                     logger.debug("Creating browser manager with screenshot streaming")
+
                     async def screenshot_frame_callback(screenshot_b64: str):
                         await self.screenshot_callback(execution_id, screenshot_b64)
+
                 else:
                     logger.debug("Creating browser manager without screenshot streaming")
 
@@ -398,13 +411,17 @@ class PlaybookEngine:
 
                 if screenshot_frame_callback:
                     await browser_manager.start_screenshot_streaming()
-                    logger.info(f"Browser screenshot streaming started for execution {execution_id}")
+                    logger.info(
+                        f"Browser screenshot streaming started for execution {execution_id}"
+                    )
                 else:
                     logger.info(f"Browser started without streaming for execution {execution_id}")
 
                 self._browser_manager = browser_manager  # Store reference for pause/resume
             else:
-                logger.debug(f"Skipping browser initialization (not needed for domain={playbook_domain})")
+                logger.debug(
+                    f"Skipping browser initialization (not needed for domain={playbook_domain})"
+                )
 
             # Create designer manager if playbook has designer steps
             has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
@@ -509,11 +526,15 @@ class PlaybookEngine:
                     step_type=step.type.value,
                 )
                 execution_state.add_step_result(running_step_result)
-                execution_state.current_step_index = step_index  # Update current step BEFORE notifying
+                execution_state.current_step_index = (
+                    step_index  # Update current step BEFORE notifying
+                )
 
                 # DEBUG: Log step status before notify
                 step_statuses = [(r.step_id, r.status.value) for r in execution_state.step_results]
-                logger.info(f"[DEBUG] Before notify - Step {step_index + 1} ({step.id}): step_results statuses = {step_statuses}")
+                logger.info(
+                    f"[DEBUG] Before notify - Step {step_index + 1} ({step.id}): step_results statuses = {step_statuses}"
+                )
 
                 await self._notify_update(execution_state)
 
@@ -521,7 +542,9 @@ class PlaybookEngine:
                 try:
                     # Execute the step
                     step_result = await executor.execute_step(step)
-                    logger.debug(f"Step execution complete: {step.name} - status={step_result.status}")
+                    logger.debug(
+                        f"Step execution complete: {step.name} - status={step_result.status}"
+                    )
 
                     # Find and replace the running result with the completed result
                     for i, result in enumerate(execution_state.step_results):
@@ -532,7 +555,9 @@ class PlaybookEngine:
                     # Store step output for {{ step.step_id.key }} references
                     if step_result.output:
                         step_results_dict[step.id] = step_result.output
-                        logger.debug(f"Step {step.id} output stored: {list(step_result.output.keys())}")
+                        logger.debug(
+                            f"Step {step.id} output stored: {list(step_result.output.keys())}"
+                        )
 
                     # Handle set_variable step
                     if step.type.value == "utility.set_variable" and step_result.output:
@@ -625,12 +650,15 @@ class PlaybookEngine:
                 try:
                     # Get final screenshot in JPEG format (matching streaming format)
                     import base64
+
                     page = await browser_manager.get_page()
                     final_screenshot_bytes = await page.screenshot(type="jpeg", quality=80)
                     final_screenshot_b64 = base64.b64encode(final_screenshot_bytes).decode()
 
                     # Broadcast final screenshot
-                    await self.screenshot_callback(execution_state.execution_id, final_screenshot_b64)
+                    await self.screenshot_callback(
+                        execution_state.execution_id, final_screenshot_b64
+                    )
                     logger.info("Final screenshot captured and broadcast")
                 except Exception as e:
                     logger.warning(f"Error capturing final screenshot: {e}")
@@ -685,7 +713,9 @@ class PlaybookEngine:
             except ValueError as e:
                 raise PlaybookExecutionError(f"Parameter validation failed: {e}")
 
-    def _preprocess_credential_parameters(self, playbook: Playbook, parameters: dict[str, Any]) -> dict[str, Any]:
+    def _preprocess_credential_parameters(
+        self, playbook: Playbook, parameters: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Preprocess credential-type parameters
 
@@ -720,6 +750,7 @@ class PlaybookEngine:
 
                 # If value is already a Credential object, skip (for nested playbooks)
                 from ignition_toolkit.credentials import Credential
+
                 if isinstance(credential_name, Credential):
                     continue
 
@@ -737,7 +768,9 @@ class PlaybookEngine:
                         )
                     # Replace string with Credential object
                     result[param_name] = credential
-                    logger.info(f"Resolved credential parameter '{param_name}' to credential '{credential_name}'")
+                    logger.info(
+                        f"Resolved credential parameter '{param_name}' to credential '{credential_name}'"
+                    )
                 except Exception as e:
                     raise PlaybookExecutionError(
                         f"Error loading credential '{credential_name}' for parameter '{param_name}': {e}"
@@ -828,7 +861,9 @@ class PlaybookEngine:
 
                 # Store the database ID for later queries
                 execution_state.db_execution_id = execution_model.id
-                logger.info(f"Execution saved to database with ID: {execution_model.id} and {len(execution_state.step_results)} pending steps")
+                logger.info(
+                    f"Execution saved to database with ID: {execution_model.id} and {len(execution_state.step_results)} pending steps"
+                )
         except Exception as e:
             logger.exception(f"Error saving execution to database: {e}")
 

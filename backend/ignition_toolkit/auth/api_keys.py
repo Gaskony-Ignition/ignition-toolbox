@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class APIKey:
     """Represents an API key"""
+
     id: str
     name: str
     key_hash: str  # SHA-256 hash of the key

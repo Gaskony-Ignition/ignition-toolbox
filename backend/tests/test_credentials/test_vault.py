@@ -5,13 +5,12 @@ Tests encryption, storage, and retrieval of credentials.
 """
 
 import sys
+from datetime import UTC, datetime
 
 import pytest
-from pathlib import Path
-from datetime import datetime, UTC
 
-from ignition_toolkit.credentials.vault import CredentialVault
 from ignition_toolkit.credentials.models import Credential
+from ignition_toolkit.credentials.vault import CredentialVault
 
 
 class TestCredentialVaultBasic:
@@ -166,7 +165,9 @@ class TestCredentialVaultEncryption:
 
         assert vault.encryption_key_path.exists()
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="Unix file permissions not available on Windows")
+    @pytest.mark.skipif(
+        sys.platform == "win32", reason="Unix file permissions not available on Windows"
+    )
     def test_credentials_file_has_restricted_permissions(self, tmp_path):
         """Test that credentials file has restricted permissions"""
         vault = CredentialVault(vault_path=tmp_path)

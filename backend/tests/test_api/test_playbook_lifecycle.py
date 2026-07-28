@@ -6,12 +6,11 @@ Uses direct function calls with asyncio.run() and mocking.
 """
 
 import asyncio
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -79,15 +78,19 @@ class TestDeletePlaybook:
         mock_store = _make_metadata_store()
         mock_store._metadata = {}
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
-            return_value=playbook_file,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_relative_playbook_path",
-            return_value="gateway/test.yaml",
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
+                return_value=playbook_file,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_relative_playbook_path",
+                return_value="gateway/test.yaml",
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(delete_playbook("gateway/test.yaml"))
 
@@ -105,12 +108,15 @@ class TestDuplicatePlaybook:
         """Duplicating a playbook that does not exist → 404."""
         from ignition_toolkit.api.routers.playbook_lifecycle import duplicate_playbook
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
-            side_effect=HTTPException(status_code=404, detail="Playbook file not found"),
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=_make_metadata_store(),
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
+                side_effect=HTTPException(status_code=404, detail="Playbook file not found"),
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=_make_metadata_store(),
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(duplicate_playbook("gateway/nonexistent.yaml"))
@@ -120,7 +126,6 @@ class TestDuplicatePlaybook:
     def test_duplicate_creates_copy(self, tmp_path):
         """Duplicating an existing playbook creates a new file."""
         from ignition_toolkit.api.routers.playbook_lifecycle import duplicate_playbook
-        from ignition_toolkit.playbook.loader import PlaybookLoader
 
         # Set up source file
         source_dir = tmp_path / "gateway"
@@ -135,18 +140,23 @@ class TestDuplicatePlaybook:
 
         mock_store = _make_metadata_store()
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
-            return_value=source_file,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
-            return_value="gateway/test_playbook.yaml",
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
+                return_value=source_file,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
+                return_value="gateway/test_playbook.yaml",
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(duplicate_playbook("gateway/test_playbook.yaml"))
 
@@ -175,18 +185,23 @@ class TestDuplicatePlaybook:
             name = Path(path).name
             return f"gateway/{name}"
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
-            return_value=source_file,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
-            side_effect=_relative_side_effect,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
+                return_value=source_file,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
+                side_effect=_relative_side_effect,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(duplicate_playbook("gateway/original.yaml", new_name="my_copy"))
 
@@ -222,15 +237,19 @@ class TestExportPlaybook:
 
         mock_store = _make_metadata_store()
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
-            return_value=playbook_file,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
-            return_value="gateway/test_playbook.yaml",
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.validate_playbook_path",
+                return_value=playbook_file,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle._get_relative_to_any_playbook_dir",
+                return_value="gateway/test_playbook.yaml",
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(export_playbook("gateway/test_playbook.yaml"))
 
@@ -248,7 +267,10 @@ class TestExportPlaybook:
 class TestImportPlaybook:
     def test_import_invalid_domain_raises_400(self, tmp_path):
         """Importing with an invalid domain raises 400."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import import_playbook, PlaybookImportRequest
+        from ignition_toolkit.api.routers.playbook_lifecycle import (
+            PlaybookImportRequest,
+            import_playbook,
+        )
 
         user_dir = tmp_path / "user_playbooks"
         user_dir.mkdir()
@@ -261,12 +283,15 @@ class TestImportPlaybook:
             yaml_content=VALID_PLAYBOOK_YAML,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(import_playbook(request))
@@ -276,7 +301,10 @@ class TestImportPlaybook:
 
     def test_import_invalid_yaml_raises_400(self, tmp_path):
         """Importing malformed YAML raises 400."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import import_playbook, PlaybookImportRequest
+        from ignition_toolkit.api.routers.playbook_lifecycle import (
+            PlaybookImportRequest,
+            import_playbook,
+        )
 
         user_dir = tmp_path / "user_playbooks"
         user_dir.mkdir()
@@ -289,12 +317,15 @@ class TestImportPlaybook:
             yaml_content=INVALID_YAML,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(import_playbook(request))
@@ -304,7 +335,10 @@ class TestImportPlaybook:
 
     def test_import_valid_playbook_succeeds(self, tmp_path):
         """Importing a valid playbook creates the file and returns success."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import import_playbook, PlaybookImportRequest
+        from ignition_toolkit.api.routers.playbook_lifecycle import (
+            PlaybookImportRequest,
+            import_playbook,
+        )
 
         user_dir = tmp_path / "user_playbooks"
         user_dir.mkdir()
@@ -317,12 +351,15 @@ class TestImportPlaybook:
             yaml_content=VALID_PLAYBOOK_YAML,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
         ):
             result = asyncio.run(import_playbook(request))
 
@@ -334,7 +371,10 @@ class TestImportPlaybook:
 
     def test_import_overwrite_false_renames_on_conflict(self, tmp_path):
         """When overwrite=False and name conflicts, a counter suffix is added."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import import_playbook, PlaybookImportRequest
+        from ignition_toolkit.api.routers.playbook_lifecycle import (
+            PlaybookImportRequest,
+            import_playbook,
+        )
 
         user_dir = tmp_path / "user_playbooks"
         gateway_dir = user_dir / "gateway"
@@ -352,12 +392,15 @@ class TestImportPlaybook:
             overwrite=False,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
         ):
             result = asyncio.run(import_playbook(request))
 
@@ -367,7 +410,10 @@ class TestImportPlaybook:
 
     def test_create_playbook_delegates_to_import(self, tmp_path):
         """create_playbook is an alias for import_playbook and accepts same inputs."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import create_playbook, PlaybookImportRequest
+        from ignition_toolkit.api.routers.playbook_lifecycle import (
+            PlaybookImportRequest,
+            create_playbook,
+        )
 
         user_dir = tmp_path / "user_playbooks"
         user_dir.mkdir()
@@ -380,12 +426,15 @@ class TestImportPlaybook:
             yaml_content=VALID_PLAYBOOK_YAML,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=user_dir,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=user_dir,
+            ),
         ):
             result = asyncio.run(create_playbook(request))
 
@@ -394,16 +443,18 @@ class TestImportPlaybook:
 
     def test_import_pydantic_model_requires_name(self):
         """PlaybookImportRequest requires name field."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import PlaybookImportRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_lifecycle import PlaybookImportRequest
 
         with pytest.raises(ValidationError):
             PlaybookImportRequest(domain="gateway", yaml_content=VALID_PLAYBOOK_YAML)
 
     def test_import_pydantic_model_requires_domain(self):
         """PlaybookImportRequest requires domain field."""
-        from ignition_toolkit.api.routers.playbook_lifecycle import PlaybookImportRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_lifecycle import PlaybookImportRequest
 
         with pytest.raises(ValidationError):
             PlaybookImportRequest(name="test", yaml_content=VALID_PLAYBOOK_YAML)

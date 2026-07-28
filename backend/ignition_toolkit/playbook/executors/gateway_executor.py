@@ -112,7 +112,9 @@ class GatewayUploadModuleHandler(StepHandler):
 class GatewayWaitModuleHandler(StepHandler):
     """Handle gateway.wait_module step"""
 
-    def __init__(self, client: GatewayClient, default_timeout: int = TimeoutDefaults.MODULE_INSTALL):
+    def __init__(
+        self, client: GatewayClient, default_timeout: int = TimeoutDefaults.MODULE_INSTALL
+    ):
         self.client = client
         self.default_timeout = default_timeout
 
@@ -149,7 +151,9 @@ class GatewayGetProjectHandler(StepHandler):
 class GatewayRestartHandler(StepHandler):
     """Handle gateway.restart step"""
 
-    def __init__(self, client: GatewayClient, default_timeout: int = TimeoutDefaults.GATEWAY_RESTART):
+    def __init__(
+        self, client: GatewayClient, default_timeout: int = TimeoutDefaults.GATEWAY_RESTART
+    ):
         self.client = client
         self.default_timeout = default_timeout
 
@@ -163,7 +167,9 @@ class GatewayRestartHandler(StepHandler):
 class GatewayWaitReadyHandler(StepHandler):
     """Handle gateway.wait_ready step"""
 
-    def __init__(self, client: GatewayClient, default_timeout: int = TimeoutDefaults.GATEWAY_RESTART):
+    def __init__(
+        self, client: GatewayClient, default_timeout: int = TimeoutDefaults.GATEWAY_RESTART
+    ):
         self.client = client
         self.default_timeout = default_timeout
 

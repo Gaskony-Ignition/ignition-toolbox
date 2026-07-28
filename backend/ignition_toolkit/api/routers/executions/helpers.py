@@ -140,8 +140,7 @@ async def get_engine_or_404(execution_id: str) -> PlaybookEngine:
 
     if engine is None:
         raise HTTPException(
-            status_code=404,
-            detail=f"Execution {execution_id} not found or not active"
+            status_code=404, detail=f"Execution {execution_id} not found or not active"
         )
 
     return engine
@@ -265,9 +264,7 @@ def create_execution_runner(
                     from ignition_toolkit.storage import ExecutionModel
 
                     execution = (
-                        session.query(ExecutionModel)
-                        .filter_by(execution_id=execution_id)
-                        .first()
+                        session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
                     )
                     if execution:
                         execution.status = ExecutionStatus.CANCELLED.value
@@ -305,11 +302,12 @@ def create_execution_runner(
                     from ignition_toolkit.storage import ExecutionModel
 
                     execution = (
-                        session.query(ExecutionModel)
-                        .filter_by(execution_id=execution_id)
-                        .first()
+                        session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
                     )
-                    if execution and execution.status in (ExecutionStatus.RUNNING.value, ExecutionStatus.PAUSED.value):
+                    if execution and execution.status in (
+                        ExecutionStatus.RUNNING.value,
+                        ExecutionStatus.PAUSED.value,
+                    ):
                         execution.status = ExecutionStatus.FAILED.value
                         execution.completed_at = datetime.now()
                         execution.error_message = str(e)[:500]
@@ -326,9 +324,7 @@ def create_execution_runner(
                             execution_state.error = str(e)[:500]
 
                             websocket_manager = app.state.services.websocket_manager
-                            await websocket_manager.broadcast_execution_state(
-                                execution_state
-                            )
+                            await websocket_manager.broadcast_execution_state(execution_state)
                             logger.info(
                                 f"Broadcasted failure status via WebSocket for {execution_id}"
                             )
@@ -361,9 +357,7 @@ def create_timeout_watchdog(
         try:
             await asyncio.sleep(DEFAULT_EXECUTION_TIMEOUT_SECONDS)
             if not task.done():
-                logger.warning(
-                    f"Execution {execution_id} exceeded timeout - auto-cancelling"
-                )
+                logger.warning(f"Execution {execution_id} exceeded timeout - auto-cancelling")
                 await engine.cancel()
                 task.cancel()
         except asyncio.CancelledError:

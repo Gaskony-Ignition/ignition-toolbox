@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class VerificationStatus(str, Enum):
     """Status of AI verification"""
+
     PASSED = "passed"
     FAILED = "failed"
     UNCERTAIN = "uncertain"
@@ -24,6 +25,7 @@ class VerificationStatus(str, Enum):
 @dataclass
 class VerificationResult:
     """Result of AI visual verification"""
+
     status: VerificationStatus
     confidence: float  # 0.0 to 1.0
     passed: bool

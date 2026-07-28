@@ -5,24 +5,27 @@ Verifies model classes can be instantiated, required columns exist,
 defaults are correct, and to_dict() produces the expected structure.
 """
 
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timezone
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from ignition_toolkit.storage.models import (
+    AISettingsModel,
+    APIKeyModel,
     Base,
     ExecutionModel,
-    StepResultModel,
-    PlaybookConfigModel,
-    AISettingsModel,
-    ScheduledPlaybookModel,
-    FATReportModel,
     FATComponentTestModel,
-    TestSuiteModel as TestSuiteDBModel,
+    FATReportModel,
+    PlaybookConfigModel,
     SavedStackModel,
-    APIKeyModel,
+    ScheduledPlaybookModel,
+    StepResultModel,
     utcnow,
+)
+from ignition_toolkit.storage.models import (
+    TestSuiteModel as TestSuiteDBModel,
 )
 
 
@@ -46,6 +49,7 @@ def session(engine):
 # utcnow helper
 # ==============================================================================
 
+
 class TestUtcnow:
     def test_utcnow_returns_datetime(self):
         """utcnow() returns a timezone-aware datetime."""
@@ -57,6 +61,7 @@ class TestUtcnow:
 # ==============================================================================
 # ExecutionModel
 # ==============================================================================
+
 
 class TestExecutionModel:
     def test_execution_model_table_name(self):
@@ -97,9 +102,17 @@ class TestExecutionModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "execution_id", "playbook_name", "status",
-                    "started_at", "completed_at", "error_message",
-                    "config_data", "step_results"):
+        for key in (
+            "id",
+            "execution_id",
+            "playbook_name",
+            "status",
+            "started_at",
+            "completed_at",
+            "error_message",
+            "config_data",
+            "step_results",
+        ):
             assert key in d, f"Missing key: {key}"
 
     def test_execution_model_step_results_defaults_to_empty_list(self, session):
@@ -126,9 +139,9 @@ class TestExecutionModel:
         session.add(model)
         session.flush()
 
-        retrieved = session.query(ExecutionModel).filter_by(
-            execution_id="exec-uuid-persist"
-        ).first()
+        retrieved = (
+            session.query(ExecutionModel).filter_by(execution_id="exec-uuid-persist").first()
+        )
         assert retrieved is not None
         assert retrieved.playbook_name == "Persist Test"
         assert retrieved.playbook_version == "1.0"
@@ -137,6 +150,7 @@ class TestExecutionModel:
 # ==============================================================================
 # StepResultModel
 # ==============================================================================
+
 
 class TestStepResultModel:
     def test_step_result_model_table_name(self):
@@ -185,14 +199,25 @@ class TestStepResultModel:
         session.flush()
 
         d = step.to_dict()
-        for key in ("id", "execution_id", "step_id", "step_name", "status",
-                    "started_at", "completed_at", "output", "error_message", "artifacts"):
+        for key in (
+            "id",
+            "execution_id",
+            "step_id",
+            "step_name",
+            "status",
+            "started_at",
+            "completed_at",
+            "output",
+            "error_message",
+            "artifacts",
+        ):
             assert key in d, f"Missing key: {key}"
 
 
 # ==============================================================================
 # PlaybookConfigModel
 # ==============================================================================
+
 
 class TestPlaybookConfigModel:
     def test_playbook_config_table_name(self):
@@ -221,14 +246,22 @@ class TestPlaybookConfigModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "playbook_name", "config_name", "description",
-                    "parameters", "created_at", "updated_at"):
+        for key in (
+            "id",
+            "playbook_name",
+            "config_name",
+            "description",
+            "parameters",
+            "created_at",
+            "updated_at",
+        ):
             assert key in d
 
 
 # ==============================================================================
 # AISettingsModel
 # ==============================================================================
+
 
 class TestAISettingsModel:
     def test_ai_settings_table_name(self):
@@ -268,6 +301,7 @@ class TestAISettingsModel:
 # ScheduledPlaybookModel
 # ==============================================================================
 
+
 class TestScheduledPlaybookModel:
     def test_scheduled_playbook_table_name(self):
         """ScheduledPlaybookModel maps to the 'scheduled_playbooks' table."""
@@ -299,14 +333,22 @@ class TestScheduledPlaybookModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "name", "playbook_path", "schedule_type",
-                    "schedule_config", "enabled", "created_at"):
+        for key in (
+            "id",
+            "name",
+            "playbook_path",
+            "schedule_type",
+            "schedule_config",
+            "enabled",
+            "created_at",
+        ):
             assert key in d
 
 
 # ==============================================================================
 # FATReportModel
 # ==============================================================================
+
 
 class TestFATReportModel:
     def test_fat_report_table_name(self):
@@ -336,8 +378,16 @@ class TestFATReportModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "report_name", "total_components", "passed_tests",
-                    "failed_tests", "skipped_tests", "created_at", "component_tests"):
+        for key in (
+            "id",
+            "report_name",
+            "total_components",
+            "passed_tests",
+            "failed_tests",
+            "skipped_tests",
+            "created_at",
+            "component_tests",
+        ):
             assert key in d
         assert d["component_tests"] == []
 
@@ -345,6 +395,7 @@ class TestFATReportModel:
 # ==============================================================================
 # SavedStackModel
 # ==============================================================================
+
 
 class TestSavedStackModel:
     def test_saved_stack_table_name(self):
@@ -371,14 +422,22 @@ class TestSavedStackModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "stack_name", "description", "config_json",
-                    "global_settings", "created_at", "updated_at"):
+        for key in (
+            "id",
+            "stack_name",
+            "description",
+            "config_json",
+            "global_settings",
+            "created_at",
+            "updated_at",
+        ):
             assert key in d
 
 
 # ==============================================================================
 # APIKeyModel
 # ==============================================================================
+
 
 class TestAPIKeyModel:
     def test_api_key_table_name(self):
@@ -421,14 +480,22 @@ class TestAPIKeyModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "name", "gateway_url", "has_api_key",
-                    "description", "created_at", "last_used"):
+        for key in (
+            "id",
+            "name",
+            "gateway_url",
+            "has_api_key",
+            "description",
+            "created_at",
+            "last_used",
+        ):
             assert key in d
 
 
 # ==============================================================================
 # TestSuiteModel
 # ==============================================================================
+
 
 class TestTestSuiteModel:
     def test_test_suite_table_name(self):
@@ -452,8 +519,14 @@ class TestTestSuiteModel:
         session.flush()
 
         d = model.to_dict()
-        for key in ("id", "suite_name", "status", "total_playbooks",
-                    "started_at", "suite_executions"):
+        for key in (
+            "id",
+            "suite_name",
+            "status",
+            "total_playbooks",
+            "started_at",
+            "suite_executions",
+        ):
             assert key in d
         assert d["suite_executions"] == []
 
@@ -461,6 +534,7 @@ class TestTestSuiteModel:
 # ==============================================================================
 # FATComponentTestModel
 # ==============================================================================
+
 
 class TestFATComponentTestModel:
     def test_fat_component_test_table_name(self):
@@ -483,6 +557,13 @@ class TestFATComponentTestModel:
         session.flush()
 
         d = component.to_dict()
-        for key in ("id", "report_id", "component_id", "test_action",
-                    "status", "error_message", "tested_at"):
+        for key in (
+            "id",
+            "report_id",
+            "component_id",
+            "test_action",
+            "status",
+            "error_message",
+            "tested_at",
+        ):
             assert key in d

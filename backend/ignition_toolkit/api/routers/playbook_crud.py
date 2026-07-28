@@ -92,17 +92,19 @@ class PlaybookMetadataUpdateRequest(BaseModel):
     name: str | None = None
     description: str | None = None
 
-    @field_validator('playbook_path')
+    @field_validator("playbook_path")
     @classmethod
     def validate_playbook_path_field(cls, v: str) -> str:
         """Validate playbook path field"""
         if not v or not v.strip():
             raise ValueError("Playbook path cannot be empty")
         if len(v) > ValidationLimits.PLAYBOOK_PATH_MAX:
-            raise ValueError(f"Playbook path too long (max {ValidationLimits.PLAYBOOK_PATH_MAX} characters)")
+            raise ValueError(
+                f"Playbook path too long (max {ValidationLimits.PLAYBOOK_PATH_MAX} characters)"
+            )
         return v.strip()
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_name(cls, v: str | None) -> str | None:
         """Validate playbook name for security and sanity"""
@@ -116,7 +118,7 @@ class PlaybookMetadataUpdateRequest(BaseModel):
         if len(v) > ValidationLimits.PLAYBOOK_NAME_MAX:
             raise ValueError(f"Name too long (max {ValidationLimits.PLAYBOOK_NAME_MAX} characters)")
 
-        dangerous_chars = ['<', '>', '"', "'", '`', '{', '}', '$', '|', '&', ';']
+        dangerous_chars = ["<", ">", '"', "'", "`", "{", "}", "$", "|", "&", ";"]
         for char in dangerous_chars:
             if char in v:
                 raise ValueError(f"Name contains invalid character: {char}")
@@ -126,7 +128,7 @@ class PlaybookMetadataUpdateRequest(BaseModel):
 
         return v
 
-    @field_validator('description')
+    @field_validator("description")
     @classmethod
     def validate_description(cls, v: str | None) -> str | None:
         """Validate playbook description for security"""
@@ -136,16 +138,18 @@ class PlaybookMetadataUpdateRequest(BaseModel):
         v = v.strip()
 
         if len(v) > ValidationLimits.PLAYBOOK_DESCRIPTION_MAX:
-            raise ValueError(f"Description too long (max {ValidationLimits.PLAYBOOK_DESCRIPTION_MAX} characters)")
+            raise ValueError(
+                f"Description too long (max {ValidationLimits.PLAYBOOK_DESCRIPTION_MAX} characters)"
+            )
 
-        dangerous_patterns = ['<script', 'javascript:', 'onerror=', 'onload=', '<?php']
+        dangerous_patterns = ["<script", "javascript:", "onerror=", "onload=", "<?php"]
         v_lower = v.lower()
         for pattern in dangerous_patterns:
             if pattern in v_lower:
                 raise ValueError(f"Description contains potentially dangerous pattern: {pattern}")
 
         for c in v:
-            if ord(c) < 32 and c not in ['\n', '\r', '\t']:
+            if ord(c) < 32 and c not in ["\n", "\r", "\t"]:
                 raise ValueError("Description contains invalid control characters")
 
         return v
@@ -167,6 +171,7 @@ class StepEditRequest(BaseModel):
 def get_metadata_store():
     """Get shared metadata store from app"""
     from ignition_toolkit.api.app import metadata_store
+
     return metadata_store
 
 
@@ -204,9 +209,7 @@ def validate_playbook_path(path_str: str) -> Path:
     for playbook_dir in get_all_playbook_dirs():
         try:
             return PathValidator.validate_playbook_path(
-                path_str,
-                base_dir=playbook_dir,
-                must_exist=True
+                path_str, base_dir=playbook_dir, must_exist=True
             )
         except HTTPException:
             continue
@@ -324,7 +327,9 @@ async def list_playbooks():
                         if meta.revision == 0 and meta.origin in ("built-in", "unknown"):
                             yaml_file.unlink()
                             metadata_store.delete_metadata(relative_path)
-                            logger.info(f"Removed obsolete user-dir playbook (built-in deleted): {relative_path}")
+                            logger.info(
+                                f"Removed obsolete user-dir playbook (built-in deleted): {relative_path}"
+                            )
                             continue
 
                 if relative_path in seen_paths:
@@ -373,7 +378,9 @@ async def list_playbooks():
                     meta.origin = source
                     metadata_store.update_metadata(relative_path, meta)
 
-                relevant_timeouts = _compute_relevant_timeouts(playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain"))
+                relevant_timeouts = _compute_relevant_timeouts(
+                    playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain")
+                )
 
                 playbooks.append(
                     PlaybookInfo(
@@ -441,7 +448,9 @@ async def get_playbook(playbook_path: str):
         meta = metadata_store.get_metadata(relative_path)
 
         playbook_dirs = get_all_playbook_dirs()
-        relevant_timeouts = _compute_relevant_timeouts(playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain"))
+        relevant_timeouts = _compute_relevant_timeouts(
+            playbook.steps, playbook_dirs, domain=playbook.metadata.get("domain")
+        )
 
         return PlaybookInfo(
             name=playbook.name,
@@ -486,7 +495,7 @@ async def update_playbook(request: PlaybookUpdateRequest):
         backup_dir = _get_backup_dir()
         backup_name = f"{playbook_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
         backup_path = backup_dir / backup_name
-        backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
+        backup_path.write_text(playbook_path.read_text(encoding="utf-8"), encoding="utf-8")
         logger.info(f"Created backup: {backup_path}")
 
         try:
@@ -496,7 +505,7 @@ async def update_playbook(request: PlaybookUpdateRequest):
 
         # Ensure we write to a writable location
         writable_path = _ensure_writable_playbook(playbook_path)
-        writable_path.write_text(request.yaml_content, encoding='utf-8')
+        writable_path.write_text(request.yaml_content, encoding="utf-8")
         logger.info(f"Updated playbook: {writable_path}")
 
         metadata_store.increment_revision(request.playbook_path)
@@ -527,7 +536,7 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
         if not playbook_path.exists():
             raise HTTPException(status_code=404, detail="Playbook not found")
 
-        with open(playbook_path, encoding='utf-8') as f:
+        with open(playbook_path, encoding="utf-8") as f:
             playbook_data = yaml.safe_load(f)
 
         if request.name is not None:
@@ -539,11 +548,11 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
         backup_dir = _get_backup_dir()
         backup_name = f"{playbook_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
         backup_path = backup_dir / backup_name
-        backup_path.write_text(playbook_path.read_text(encoding='utf-8'), encoding='utf-8')
+        backup_path.write_text(playbook_path.read_text(encoding="utf-8"), encoding="utf-8")
 
         # Ensure we write to a writable location
         writable_path = _ensure_writable_playbook(playbook_path)
-        with open(writable_path, "w", encoding='utf-8') as f:
+        with open(writable_path, "w", encoding="utf-8") as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         metadata_store.increment_revision(request.playbook_path)
@@ -569,6 +578,7 @@ async def update_playbook_metadata(request: PlaybookMetadataUpdateRequest):
 
 class PlaybookDuplicateRequest(BaseModel):
     """Request to duplicate a playbook"""
+
     playbook_path: str  # Relative path of playbook to duplicate
     new_name: str | None = None  # Optional new name (defaults to "Original Name (Copy)")
 
@@ -590,7 +600,7 @@ async def duplicate_playbook(request: PlaybookDuplicateRequest):
             raise HTTPException(status_code=404, detail="Source playbook not found")
 
         # Load original playbook
-        with open(source_path, encoding='utf-8') as f:
+        with open(source_path, encoding="utf-8") as f:
             playbook_data = yaml.safe_load(f)
 
         original_name = playbook_data.get("name", "Untitled")
@@ -636,7 +646,7 @@ async def duplicate_playbook(request: PlaybookDuplicateRequest):
             counter += 1
 
         # Write new playbook
-        with open(dest_path, "w", encoding='utf-8') as f:
+        with open(dest_path, "w", encoding="utf-8") as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         # Calculate relative path for metadata
@@ -673,7 +683,7 @@ async def edit_step(request: StepEditRequest):
     try:
         playbook_path = validate_playbook_path(request.playbook_path)
 
-        with open(playbook_path, encoding='utf-8') as f:
+        with open(playbook_path, encoding="utf-8") as f:
             playbook_data = yaml.safe_load(f)
 
         step_found = False
@@ -690,7 +700,7 @@ async def edit_step(request: StepEditRequest):
 
         # Ensure we write to a writable location
         writable_path = _ensure_writable_playbook(playbook_path)
-        with open(writable_path, "w", encoding='utf-8') as f:
+        with open(writable_path, "w", encoding="utf-8") as f:
             yaml.safe_dump(playbook_data, f, default_flow_style=False, sort_keys=False)
 
         logger.info(f"Updated step '{request.step_id}' in {writable_path}")

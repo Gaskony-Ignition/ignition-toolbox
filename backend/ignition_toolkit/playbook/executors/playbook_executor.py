@@ -115,7 +115,9 @@ class PlaybookRunHandler(StepHandler):
             for param in nested_playbook.parameters:
                 if param.name not in child_params and param.default is not None:
                     child_params[param.name] = param.default
-                    logger.info(f"Applied default value for nested parameter '{param.name}': {param.default}")
+                    logger.info(
+                        f"Applied default value for nested parameter '{param.name}': {param.default}"
+                    )
 
             # Execute nested playbook using EXISTING browser and gateway from parent
             # This allows browser context to persist across nested calls
@@ -131,9 +133,11 @@ class PlaybookRunHandler(StepHandler):
             child_resolver = ParameterResolver(
                 parameters=child_params,
                 variables={},
-                credential_vault=self.parent_executor.parameter_resolver.credential_vault
-                if self.parent_executor.parameter_resolver
-                else None,
+                credential_vault=(
+                    self.parent_executor.parameter_resolver.credential_vault
+                    if self.parent_executor.parameter_resolver
+                    else None
+                ),
                 step_results=nested_step_results,
             )
 
@@ -168,7 +172,9 @@ class PlaybookRunHandler(StepHandler):
                     }
                     # Find the playbook.run step in parent's execution state and update its output
                     try:
-                        await self.parent_executor.parent_engine._update_nested_step_progress(progress_info)
+                        await self.parent_executor.parent_engine._update_nested_step_progress(
+                            progress_info
+                        )
                     except Exception as e:
                         logger.warning(f"Failed to update parent with nested step progress: {e}")
 
@@ -191,13 +197,17 @@ class PlaybookRunHandler(StepHandler):
                         nested_screenshots.extend(nested_playbook_screenshots)
 
                 # Store only JSON-serializable summary (not the full StepResult object)
-                nested_results.append({
-                    "step_id": step.id,
-                    "step_name": step.name,
-                    "status": step_result.status.value
-                    if hasattr(step_result.status, "value")
-                    else str(step_result.status),
-                })
+                nested_results.append(
+                    {
+                        "step_id": step.id,
+                        "step_name": step.name,
+                        "status": (
+                            step_result.status.value
+                            if hasattr(step_result.status, "value")
+                            else str(step_result.status)
+                        ),
+                    }
+                )
 
                 # Fail fast: abort nested playbook if a step fails (respecting on_failure)
                 if step_result.status == StepStatus.FAILED:
@@ -215,7 +225,9 @@ class PlaybookRunHandler(StepHandler):
                             f"Nested playbook '{playbook_path}' failed at step '{step.name}': {step_result.error}",
                         )
 
-            logger.info(f"Nested playbook '{playbook_path}' created {len(nested_screenshots)} screenshots")
+            logger.info(
+                f"Nested playbook '{playbook_path}' created {len(nested_screenshots)} screenshots"
+            )
 
             return {
                 "playbook": playbook_path,

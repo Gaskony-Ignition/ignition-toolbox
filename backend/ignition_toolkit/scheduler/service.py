@@ -67,9 +67,7 @@ class PlaybookScheduler:
         """Load all enabled schedules from database"""
         with self.db.session_scope() as session:
             result = session.execute(
-                select(ScheduledPlaybookModel).where(
-                    ScheduledPlaybookModel.enabled == "true"
-                )
+                select(ScheduledPlaybookModel).where(ScheduledPlaybookModel.enabled == "true")
             )
             schedules = result.scalars().all()
 
@@ -211,9 +209,7 @@ class PlaybookScheduler:
             # Get schedule from database
             with self.db.session_scope() as session:
                 result = session.execute(
-                    select(ScheduledPlaybookModel).where(
-                        ScheduledPlaybookModel.id == schedule_id
-                    )
+                    select(ScheduledPlaybookModel).where(ScheduledPlaybookModel.id == schedule_id)
                 )
                 schedule = result.scalar_one_or_none()
 
@@ -259,9 +255,7 @@ class PlaybookScheduler:
         try:
             with self.db.session_scope() as session:
                 result = session.execute(
-                    select(ScheduledPlaybookModel).where(
-                        ScheduledPlaybookModel.id == schedule_id
-                    )
+                    select(ScheduledPlaybookModel).where(ScheduledPlaybookModel.id == schedule_id)
                 )
                 schedule = result.scalar_one_or_none()
 
@@ -285,11 +279,13 @@ class PlaybookScheduler:
         for job in jobs:
             if job.id.startswith("schedule_"):
                 schedule_id = int(job.id.replace("schedule_", ""))
-                result.append({
-                    "schedule_id": schedule_id,
-                    "name": job.name,
-                    "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
-                })
+                result.append(
+                    {
+                        "schedule_id": schedule_id,
+                        "name": job.name,
+                        "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
+                    }
+                )
 
         return result
 

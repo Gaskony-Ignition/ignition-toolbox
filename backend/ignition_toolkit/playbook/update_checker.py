@@ -33,6 +33,7 @@ class PlaybookUpdate:
     """
     Information about an available playbook update
     """
+
     playbook_path: str
     current_version: str
     latest_version: str
@@ -82,6 +83,7 @@ class UpdateCheckResult:
     """
     Results of checking for playbook updates
     """
+
     updates: list[PlaybookUpdate]
     checked_at: str
     total_playbooks: int
@@ -178,7 +180,7 @@ class PlaybookUpdateChecker:
                 author=available_pb.author,
                 tags=available_pb.tags,
                 download_url=available_pb.download_url,
-                checksum=available_pb.checksum
+                checksum=available_pb.checksum,
             )
             updates.append(update)
 
@@ -190,7 +192,7 @@ class PlaybookUpdateChecker:
             checked_at=datetime.now(timezone.utc).isoformat(),
             total_playbooks=len(self.registry.installed),
             updates_available=len(updates),
-            last_fetched=self.registry.last_fetched
+            last_fetched=self.registry.last_fetched,
         )
 
         logger.info(

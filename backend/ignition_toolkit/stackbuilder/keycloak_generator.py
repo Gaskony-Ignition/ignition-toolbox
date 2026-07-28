@@ -225,9 +225,7 @@ def _generate_user(user_data: dict[str, Any], realm_name: str) -> dict[str, Any]
             }
         ],
         "realmRoles": roles,
-        "requiredActions": (
-            ["UPDATE_PASSWORD"] if user_data.get("temporary", True) else []
-        ),
+        "requiredActions": (["UPDATE_PASSWORD"] if user_data.get("temporary", True) else []),
     }
 
 
@@ -345,9 +343,7 @@ def _generate_ignition_client(base_domain: str, protocol: str) -> dict[str, Any]
     }
 
 
-def generate_keycloak_readme_section(
-    realm_name: str, clients: list[dict[str, Any]]
-) -> str:
+def generate_keycloak_readme_section(realm_name: str, clients: list[dict[str, Any]]) -> str:
     """
     Generate README section with Keycloak setup instructions.
 

@@ -73,9 +73,7 @@ async def add_credential(credential: CredentialCreate):
     try:
         # Validate credential name is not empty
         if not credential.name or not credential.name.strip():
-            raise HTTPException(
-                status_code=400, detail="Credential name cannot be empty"
-            )
+            raise HTTPException(status_code=400, detail="Credential name cannot be empty")
 
         vault = CredentialVault()
 
@@ -115,9 +113,7 @@ async def update_credential(name: str, credential: CredentialCreate):
     try:
         # Validate credential name is not empty
         if not name or not name.strip():
-            raise HTTPException(
-                status_code=400, detail="Credential name cannot be empty"
-            )
+            raise HTTPException(status_code=400, detail="Credential name cannot be empty")
 
         vault = CredentialVault()
 
@@ -155,9 +151,7 @@ async def delete_credential(name: str):
     try:
         # Validate credential name is not empty
         if not name or not name.strip():
-            raise HTTPException(
-                status_code=400, detail="Credential name cannot be empty"
-            )
+            raise HTTPException(status_code=400, detail="Credential name cannot be empty")
 
         vault = CredentialVault()
         success = vault.delete_credential(name)

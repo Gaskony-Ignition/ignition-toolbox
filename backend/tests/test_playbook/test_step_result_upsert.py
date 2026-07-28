@@ -70,20 +70,27 @@ async def test_save_step_result_updates_in_place(temp_db):
 
     # step1 transitions PENDING -> RUNNING -> COMPLETED (two saves, same row).
     await engine._save_step_result(
-        state, StepResult(step_id="step1", step_name="Step 1", status=StepStatus.RUNNING,
-                          started_at=datetime.now())
+        state,
+        StepResult(
+            step_id="step1",
+            step_name="Step 1",
+            status=StepStatus.RUNNING,
+            started_at=datetime.now(),
+        ),
     )
     await engine._save_step_result(
-        state, StepResult(step_id="step1", step_name="Step 1", status=StepStatus.COMPLETED,
-                          started_at=datetime.now(), completed_at=datetime.now())
+        state,
+        StepResult(
+            step_id="step1",
+            step_name="Step 1",
+            status=StepStatus.COMPLETED,
+            started_at=datetime.now(),
+            completed_at=datetime.now(),
+        ),
     )
 
     with temp_db.session_scope() as session:
-        rows = (
-            session.query(StepResultModel)
-            .filter_by(execution_id=db_execution_id)
-            .all()
-        )
+        rows = session.query(StepResultModel).filter_by(execution_id=db_execution_id).all()
         # Exactly two rows total (one per step), no duplicates.
         assert len(rows) == 2
         by_id = {r.step_id: r for r in rows}
@@ -118,8 +125,14 @@ async def test_save_step_result_inserts_when_not_preseeded(temp_db):
 
     # No pre-seeded row → falls back to insert.
     await engine._save_step_result(
-        state, StepResult(step_id="dyn", step_name="Dynamic", status=StepStatus.COMPLETED,
-                          started_at=datetime.now(), completed_at=datetime.now())
+        state,
+        StepResult(
+            step_id="dyn",
+            step_name="Dynamic",
+            status=StepStatus.COMPLETED,
+            started_at=datetime.now(),
+            completed_at=datetime.now(),
+        ),
     )
 
     with temp_db.session_scope() as session:

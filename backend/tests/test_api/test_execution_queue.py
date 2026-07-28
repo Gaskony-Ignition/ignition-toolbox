@@ -7,15 +7,15 @@ Uses direct function calls with mocking (same pattern as test_health.py).
 """
 
 import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_queued_execution(execution_id: str = "exec-001", priority: str = "NORMAL") -> MagicMock:
     """Return a mock QueuedExecution object."""
@@ -53,11 +53,15 @@ def _make_queue_mock(
     return queue
 
 
-def _make_parallel_manager_mock(status: dict | None = None, cancel_result: bool = True) -> MagicMock:
+def _make_parallel_manager_mock(
+    status: dict | None = None, cancel_result: bool = True
+) -> MagicMock:
     """Build a mock ParallelExecutionManager."""
     manager = MagicMock()
     manager.get_status.return_value = status or {"running": 0, "max_parallel": 10}
-    manager.run_parallel = AsyncMock(return_value={"results": [], "total": 0, "succeeded": 0, "failed": 0})
+    manager.run_parallel = AsyncMock(
+        return_value={"results": [], "total": 0, "succeeded": 0, "failed": 0}
+    )
     manager.cancel = AsyncMock(return_value=cancel_result)
     return manager
 
@@ -77,19 +81,25 @@ def _make_resource_limiter_mock(status: dict | None = None) -> MagicMock:
 # get_queue_status
 # ---------------------------------------------------------------------------
 
+
 class TestGetQueueStatus:
     def test_get_queue_status_returns_dict(self):
         """GET /execution-queue/status returns queue status dictionary."""
         from ignition_toolkit.api.routers.execution_queue import get_queue_status
 
-        mock_queue = _make_queue_mock(status={
-            "queued": 2,
-            "running": 1,
-            "available_slots": 4,
-            "max_concurrent": 5,
-        })
+        mock_queue = _make_queue_mock(
+            status={
+                "queued": 2,
+                "running": 1,
+                "available_slots": 4,
+                "max_concurrent": 5,
+            }
+        )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(get_queue_status())
 
         assert isinstance(result, dict)
@@ -103,7 +113,10 @@ class TestGetQueueStatus:
 
         mock_queue = _make_queue_mock(status={"queued": 0, "running": 0, "available_slots": 5})
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(get_queue_status())
 
         assert result["queued"] == 0
@@ -115,7 +128,10 @@ class TestGetQueueStatus:
 
         mock_queue = _make_queue_mock()
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             asyncio.run(get_queue_status())
 
         mock_queue.get_status.assert_called_once()
@@ -125,10 +141,11 @@ class TestGetQueueStatus:
 # enqueue_execution
 # ---------------------------------------------------------------------------
 
+
 class TestEnqueueExecution:
     def test_enqueue_returns_success_and_execution(self):
         """POST /execution-queue/enqueue returns success and execution dict."""
-        from ignition_toolkit.api.routers.execution_queue import enqueue_execution, EnqueueRequest
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest, enqueue_execution
 
         queued_exec = _make_queued_execution("new-exec-001", "NORMAL")
         mock_queue = _make_queue_mock(enqueue_result=queued_exec)
@@ -138,7 +155,10 @@ class TestEnqueueExecution:
             priority="normal",
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(enqueue_execution(request))
 
         assert result["success"] is True
@@ -147,7 +167,7 @@ class TestEnqueueExecution:
 
     def test_enqueue_high_priority(self):
         """POST /execution-queue/enqueue with priority=high passes HIGH enum to queue."""
-        from ignition_toolkit.api.routers.execution_queue import enqueue_execution, EnqueueRequest
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest, enqueue_execution
         from ignition_toolkit.execution import ExecutionPriority
 
         queued_exec = _make_queued_execution("hp-exec", "HIGH")
@@ -158,15 +178,18 @@ class TestEnqueueExecution:
             priority="high",
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
-            result = asyncio.run(enqueue_execution(request))
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
+            asyncio.run(enqueue_execution(request))
 
         call_kwargs = mock_queue.enqueue.call_args.kwargs
         assert call_kwargs["priority"] == ExecutionPriority.HIGH
 
     def test_enqueue_low_priority(self):
         """POST /execution-queue/enqueue with priority=low passes LOW enum to queue."""
-        from ignition_toolkit.api.routers.execution_queue import enqueue_execution, EnqueueRequest
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest, enqueue_execution
         from ignition_toolkit.execution import ExecutionPriority
 
         queued_exec = _make_queued_execution("lp-exec", "LOW")
@@ -177,15 +200,18 @@ class TestEnqueueExecution:
             priority="low",
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
-            result = asyncio.run(enqueue_execution(request))
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
+            asyncio.run(enqueue_execution(request))
 
         call_kwargs = mock_queue.enqueue.call_args.kwargs
         assert call_kwargs["priority"] == ExecutionPriority.LOW
 
     def test_enqueue_unknown_priority_defaults_to_normal(self):
         """POST /execution-queue/enqueue with unrecognised priority falls back to NORMAL."""
-        from ignition_toolkit.api.routers.execution_queue import enqueue_execution, EnqueueRequest
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest, enqueue_execution
         from ignition_toolkit.execution import ExecutionPriority
 
         queued_exec = _make_queued_execution()
@@ -196,15 +222,18 @@ class TestEnqueueExecution:
             priority="urgent",  # Not in the priority_map
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
-            result = asyncio.run(enqueue_execution(request))
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
+            asyncio.run(enqueue_execution(request))
 
         call_kwargs = mock_queue.enqueue.call_args.kwargs
         assert call_kwargs["priority"] == ExecutionPriority.NORMAL
 
     def test_enqueue_passes_parameters_and_credentials(self):
         """POST /execution-queue/enqueue forwards optional fields to queue."""
-        from ignition_toolkit.api.routers.execution_queue import enqueue_execution, EnqueueRequest
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest, enqueue_execution
 
         queued_exec = _make_queued_execution()
         mock_queue = _make_queue_mock(enqueue_result=queued_exec)
@@ -217,7 +246,10 @@ class TestEnqueueExecution:
             priority="normal",
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             asyncio.run(enqueue_execution(request))
 
         call_kwargs = mock_queue.enqueue.call_args.kwargs
@@ -227,8 +259,9 @@ class TestEnqueueExecution:
 
     def test_enqueue_playbook_path_required(self):
         """EnqueueRequest requires playbook_path; omitting raises ValidationError."""
-        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.execution_queue import EnqueueRequest
 
         with pytest.raises(ValidationError):
             EnqueueRequest()  # missing required playbook_path
@@ -238,6 +271,7 @@ class TestEnqueueExecution:
 # cancel_queued_execution
 # ---------------------------------------------------------------------------
 
+
 class TestCancelQueuedExecution:
     def test_cancel_queued_execution_success(self):
         """DELETE /execution-queue/cancel/{id} returns success when cancelled."""
@@ -245,7 +279,10 @@ class TestCancelQueuedExecution:
 
         mock_queue = _make_queue_mock(cancel_result=True)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(cancel_queued_execution("exec-001"))
 
         assert result["success"] is True
@@ -257,7 +294,10 @@ class TestCancelQueuedExecution:
 
         mock_queue = _make_queue_mock(cancel_result=False)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(cancel_queued_execution("nonexistent-exec"))
 
@@ -268,6 +308,7 @@ class TestCancelQueuedExecution:
 # get_running_executions
 # ---------------------------------------------------------------------------
 
+
 class TestGetRunningExecutions:
     def test_get_running_returns_list(self):
         """GET /execution-queue/running returns running executions list."""
@@ -276,7 +317,10 @@ class TestGetRunningExecutions:
         running_exec = _make_queued_execution("run-exec-001", "HIGH")
         mock_queue = _make_queue_mock(running=[running_exec])
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(get_running_executions())
 
         assert "running" in result
@@ -290,7 +334,10 @@ class TestGetRunningExecutions:
 
         mock_queue = _make_queue_mock(running=[])
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_execution_queue", return_value=mock_queue):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_execution_queue",
+            return_value=mock_queue,
+        ):
             result = asyncio.run(get_running_executions())
 
         assert result["running"] == []
@@ -301,10 +348,14 @@ class TestGetRunningExecutions:
 # run_parallel_executions
 # ---------------------------------------------------------------------------
 
+
 class TestRunParallelExecutions:
     def test_run_parallel_returns_results(self):
         """POST /execution-queue/parallel runs playbooks and returns results dict."""
-        from ignition_toolkit.api.routers.execution_queue import run_parallel_executions, ParallelExecutionRequest
+        from ignition_toolkit.api.routers.execution_queue import (
+            ParallelExecutionRequest,
+            run_parallel_executions,
+        )
 
         mock_manager = _make_parallel_manager_mock()
 
@@ -315,7 +366,10 @@ class TestRunParallelExecutions:
             ]
         )
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             result = asyncio.run(run_parallel_executions(request))
 
         assert "results" in result
@@ -323,13 +377,19 @@ class TestRunParallelExecutions:
 
     def test_run_parallel_400_for_empty_playbooks(self):
         """POST /execution-queue/parallel raises 400 when playbooks list is empty."""
-        from ignition_toolkit.api.routers.execution_queue import run_parallel_executions, ParallelExecutionRequest
+        from ignition_toolkit.api.routers.execution_queue import (
+            ParallelExecutionRequest,
+            run_parallel_executions,
+        )
 
         mock_manager = _make_parallel_manager_mock()
 
         request = ParallelExecutionRequest(playbooks=[])
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(run_parallel_executions(request))
 
@@ -337,7 +397,10 @@ class TestRunParallelExecutions:
 
     def test_run_parallel_400_for_too_many_playbooks(self):
         """POST /execution-queue/parallel raises 400 when more than 20 playbooks provided."""
-        from ignition_toolkit.api.routers.execution_queue import run_parallel_executions, ParallelExecutionRequest
+        from ignition_toolkit.api.routers.execution_queue import (
+            ParallelExecutionRequest,
+            run_parallel_executions,
+        )
 
         mock_manager = _make_parallel_manager_mock()
 
@@ -345,7 +408,10 @@ class TestRunParallelExecutions:
         playbooks = [{"playbook_path": f"playbooks/{i}.yaml"} for i in range(21)]
         request = ParallelExecutionRequest(playbooks=playbooks)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(run_parallel_executions(request))
 
@@ -353,14 +419,20 @@ class TestRunParallelExecutions:
 
     def test_run_parallel_at_limit_succeeds(self):
         """POST /execution-queue/parallel accepts exactly 20 playbooks."""
-        from ignition_toolkit.api.routers.execution_queue import run_parallel_executions, ParallelExecutionRequest
+        from ignition_toolkit.api.routers.execution_queue import (
+            ParallelExecutionRequest,
+            run_parallel_executions,
+        )
 
         mock_manager = _make_parallel_manager_mock()
 
         playbooks = [{"playbook_path": f"playbooks/{i}.yaml"} for i in range(20)]
         request = ParallelExecutionRequest(playbooks=playbooks)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             result = asyncio.run(run_parallel_executions(request))
 
         assert "results" in result
@@ -370,6 +442,7 @@ class TestRunParallelExecutions:
 # get_parallel_execution_status
 # ---------------------------------------------------------------------------
 
+
 class TestGetParallelExecutionStatus:
     def test_get_parallel_status_returns_dict(self):
         """GET /execution-queue/parallel/status returns status dictionary."""
@@ -378,7 +451,10 @@ class TestGetParallelExecutionStatus:
         status = {"running": 2, "max_parallel": 10, "completed_today": 5}
         mock_manager = _make_parallel_manager_mock(status=status)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             result = asyncio.run(get_parallel_execution_status())
 
         assert result["running"] == 2
@@ -389,6 +465,7 @@ class TestGetParallelExecutionStatus:
 # cancel_parallel_execution
 # ---------------------------------------------------------------------------
 
+
 class TestCancelParallelExecution:
     def test_cancel_parallel_succeeds(self):
         """DELETE /execution-queue/parallel/cancel/{id} returns success."""
@@ -396,7 +473,10 @@ class TestCancelParallelExecution:
 
         mock_manager = _make_parallel_manager_mock(cancel_result=True)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             result = asyncio.run(cancel_parallel_execution("par-exec-001"))
 
         assert result["success"] is True
@@ -408,7 +488,10 @@ class TestCancelParallelExecution:
 
         mock_manager = _make_parallel_manager_mock(cancel_result=False)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_parallel_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_parallel_manager",
+            return_value=mock_manager,
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(cancel_parallel_execution("nonexistent"))
 
@@ -418,6 +501,7 @@ class TestCancelParallelExecution:
 # ---------------------------------------------------------------------------
 # get_resource_status
 # ---------------------------------------------------------------------------
+
 
 class TestGetResourceStatus:
     def test_get_resource_status_returns_dict(self):
@@ -432,7 +516,10 @@ class TestGetResourceStatus:
         }
         mock_limiter = _make_resource_limiter_mock(status=status)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_resource_limiter", return_value=mock_limiter):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_resource_limiter",
+            return_value=mock_limiter,
+        ):
             result = asyncio.run(get_resource_status())
 
         assert "browser" in result
@@ -445,7 +532,10 @@ class TestGetResourceStatus:
 
         mock_limiter = _make_resource_limiter_mock()
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_resource_limiter", return_value=mock_limiter):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_resource_limiter",
+            return_value=mock_limiter,
+        ):
             asyncio.run(get_resource_status())
 
         mock_limiter.get_status.assert_called_once()
@@ -455,17 +545,24 @@ class TestGetResourceStatus:
 # update_resource_limits
 # ---------------------------------------------------------------------------
 
+
 class TestUpdateResourceLimits:
     def test_update_resource_limits_success(self):
         """PUT /execution-queue/resources/limits updates specified limits and returns status."""
-        from ignition_toolkit.api.routers.execution_queue import update_resource_limits, ResourceLimitUpdate
+        from ignition_toolkit.api.routers.execution_queue import (
+            ResourceLimitUpdate,
+            update_resource_limits,
+        )
         from ignition_toolkit.execution import ResourceType
 
         mock_limiter = _make_resource_limiter_mock()
 
         request = ResourceLimitUpdate(browser_limit=3, gateway_limit=8)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_resource_limiter", return_value=mock_limiter):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_resource_limiter",
+            return_value=mock_limiter,
+        ):
             result = asyncio.run(update_resource_limits(request))
 
         assert result["success"] is True
@@ -478,7 +575,10 @@ class TestUpdateResourceLimits:
 
     def test_update_resource_limits_only_updates_provided_fields(self):
         """PUT /execution-queue/resources/limits only calls set_limit for non-None fields."""
-        from ignition_toolkit.api.routers.execution_queue import update_resource_limits, ResourceLimitUpdate
+        from ignition_toolkit.api.routers.execution_queue import (
+            ResourceLimitUpdate,
+            update_resource_limits,
+        )
         from ignition_toolkit.execution import ResourceType
 
         mock_limiter = _make_resource_limiter_mock()
@@ -486,7 +586,10 @@ class TestUpdateResourceLimits:
         # Only provide browser_limit — others should be skipped
         request = ResourceLimitUpdate(browser_limit=2)
 
-        with patch("ignition_toolkit.api.routers.execution_queue.get_resource_limiter", return_value=mock_limiter):
+        with patch(
+            "ignition_toolkit.api.routers.execution_queue.get_resource_limiter",
+            return_value=mock_limiter,
+        ):
             asyncio.run(update_resource_limits(request))
 
         call_types = [call.args[0] for call in mock_limiter.set_limit.call_args_list]
@@ -497,8 +600,9 @@ class TestUpdateResourceLimits:
 
     def test_update_resource_limits_validation_browser_range(self):
         """ResourceLimitUpdate validates browser_limit is 1-20."""
-        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
 
         with pytest.raises(ValidationError):
             ResourceLimitUpdate(browser_limit=0)
@@ -514,8 +618,9 @@ class TestUpdateResourceLimits:
 
     def test_update_resource_limits_validation_gateway_range(self):
         """ResourceLimitUpdate validates gateway_limit is 1-50."""
-        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
 
         with pytest.raises(ValidationError):
             ResourceLimitUpdate(gateway_limit=0)
@@ -528,8 +633,9 @@ class TestUpdateResourceLimits:
 
     def test_update_resource_limits_validation_cpu_range(self):
         """ResourceLimitUpdate validates cpu_limit is 1-16."""
-        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.execution_queue import ResourceLimitUpdate
 
         with pytest.raises(ValidationError):
             ResourceLimitUpdate(cpu_limit=17)
@@ -552,11 +658,13 @@ class TestUpdateResourceLimits:
 # QueueSettingsUpdate model validation
 # ---------------------------------------------------------------------------
 
+
 class TestQueueSettingsUpdateModel:
     def test_max_concurrent_range(self):
         """QueueSettingsUpdate validates max_concurrent is 1-20."""
-        from ignition_toolkit.api.routers.execution_queue import QueueSettingsUpdate
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.execution_queue import QueueSettingsUpdate
 
         with pytest.raises(ValidationError):
             QueueSettingsUpdate(max_concurrent=0)

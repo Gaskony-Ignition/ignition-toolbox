@@ -55,6 +55,7 @@ MAX_POLL_ERRORS = 5
 # HTTP helpers
 # ---------------------------------------------------------------------------
 
+
 async def _request(
     method: str,
     path: str,
@@ -177,7 +178,10 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Playbook path (e.g. 'gateway/module_install.yaml')"},
+                "path": {
+                    "type": "string",
+                    "description": "Playbook path (e.g. 'gateway/module_install.yaml')",
+                },
             },
             "required": ["path"],
         },
@@ -189,9 +193,19 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "name": {"type": "string", "description": "Playbook name (used as filename)"},
-                "domain": {"type": "string", "description": "Domain: gateway, perspective, or designer"},
-                "yaml_content": {"type": "string", "description": "Full YAML content for the playbook"},
-                "overwrite": {"type": "boolean", "description": "Overwrite if exists", "default": False},
+                "domain": {
+                    "type": "string",
+                    "description": "Domain: gateway, perspective, or designer",
+                },
+                "yaml_content": {
+                    "type": "string",
+                    "description": "Full YAML content for the playbook",
+                },
+                "overwrite": {
+                    "type": "boolean",
+                    "description": "Overwrite if exists",
+                    "default": False,
+                },
             },
             "required": ["name", "domain", "yaml_content"],
         },
@@ -202,12 +216,14 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "path": {"type": "string", "description": "Playbook path (e.g. 'gateway/module_install.yaml')"},
+                "path": {
+                    "type": "string",
+                    "description": "Playbook path (e.g. 'gateway/module_install.yaml')",
+                },
             },
             "required": ["path"],
         },
     ),
-
     # ── Execution ────────────────────────────────────────────────────────
     Tool(
         name="run_playbook",
@@ -216,9 +232,18 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "playbook_path": {"type": "string", "description": "Path to the playbook file"},
-                "credential_name": {"type": "string", "description": "Name of stored credential to use"},
-                "gateway_url": {"type": "string", "description": "Gateway URL (e.g. http://localhost:8088)"},
-                "parameters": {"type": "object", "description": "Playbook parameters (key-value pairs)"},
+                "credential_name": {
+                    "type": "string",
+                    "description": "Name of stored credential to use",
+                },
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Gateway URL (e.g. http://localhost:8088)",
+                },
+                "parameters": {
+                    "type": "object",
+                    "description": "Playbook parameters (key-value pairs)",
+                },
                 "debug": {"type": "boolean", "description": "Enable debug mode", "default": False},
             },
             "required": ["playbook_path"],
@@ -231,8 +256,16 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "execution_id": {"type": "string", "description": "Execution ID to wait for"},
-                "timeout": {"type": "number", "description": "Max seconds to wait (default: 600)", "default": 600},
-                "poll_interval": {"type": "number", "description": "Seconds between polls (default: 3)", "default": 3},
+                "timeout": {
+                    "type": "number",
+                    "description": "Max seconds to wait (default: 600)",
+                    "default": 600,
+                },
+                "poll_interval": {
+                    "type": "number",
+                    "description": "Seconds between polls (default: 3)",
+                    "default": 3,
+                },
             },
             "required": ["execution_id"],
         },
@@ -244,7 +277,10 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "limit": {"type": "integer", "description": "Max results to return", "default": 20},
-                "status": {"type": "string", "description": "Filter by status (running, completed, failed, cancelled)"},
+                "status": {
+                    "type": "string",
+                    "description": "Filter by status (running, completed, failed, cancelled)",
+                },
             },
             "required": [],
         },
@@ -267,7 +303,11 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "execution_id": {"type": "string", "description": "Execution ID"},
-                "limit": {"type": "integer", "description": "Max log entries (1-2000)", "default": 500},
+                "limit": {
+                    "type": "integer",
+                    "description": "Max log entries (1-2000)",
+                    "default": 500,
+                },
             },
             "required": ["execution_id"],
         },
@@ -283,7 +323,6 @@ TOOLS: list[Tool] = [
             "required": ["execution_id"],
         },
     ),
-
     # ── Credentials ──────────────────────────────────────────────────────
     Tool(
         name="list_credentials",
@@ -299,13 +338,15 @@ TOOLS: list[Tool] = [
                 "name": {"type": "string", "description": "Credential name (must be unique)"},
                 "username": {"type": "string", "description": "Username"},
                 "password": {"type": "string", "description": "Password"},
-                "gateway_url": {"type": "string", "description": "Associated gateway URL (optional)"},
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Associated gateway URL (optional)",
+                },
                 "description": {"type": "string", "description": "Description (optional)"},
             },
             "required": ["name", "username", "password"],
         },
     ),
-
     # ── Gateway Operations ───────────────────────────────────────────────
     Tool(
         name="test_gateway",
@@ -313,8 +354,14 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "gateway_url": {"type": "string", "description": "Gateway URL (e.g. http://localhost:8088)"},
-                "api_key_name": {"type": "string", "description": "Name of stored API key for authentication"},
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Gateway URL (e.g. http://localhost:8088)",
+                },
+                "api_key_name": {
+                    "type": "string",
+                    "description": "Name of stored API key for authentication",
+                },
             },
             "required": ["gateway_url"],
         },
@@ -325,8 +372,14 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "gateway_url": {"type": "string", "description": "Gateway URL (e.g. http://localhost:8088)"},
-                "api_key_name": {"type": "string", "description": "Name of stored API key for authentication"},
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Gateway URL (e.g. http://localhost:8088)",
+                },
+                "api_key_name": {
+                    "type": "string",
+                    "description": "Name of stored API key for authentication",
+                },
             },
             "required": ["gateway_url"],
         },
@@ -341,13 +394,30 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "gateway_url": {"type": "string", "description": "Gateway URL (e.g. http://localhost:8088)"},
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Gateway URL (e.g. http://localhost:8088)",
+                },
                 "resource_type": {
                     "type": "string",
                     "description": "Resource type to list",
-                    "enum": ["databases", "opc", "tags", "projects", "devices", "users", "schedules", "alarm-journals", "email-profiles", "audit-profiles"],
+                    "enum": [
+                        "databases",
+                        "opc",
+                        "tags",
+                        "projects",
+                        "devices",
+                        "users",
+                        "schedules",
+                        "alarm-journals",
+                        "email-profiles",
+                        "audit-profiles",
+                    ],
                 },
-                "api_key_name": {"type": "string", "description": "Name of stored API key for authentication"},
+                "api_key_name": {
+                    "type": "string",
+                    "description": "Name of stored API key for authentication",
+                },
             },
             "required": ["gateway_url", "resource_type"],
         },
@@ -358,10 +428,19 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "gateway_url": {"type": "string", "description": "Gateway URL (e.g. http://localhost:8088)"},
+                "gateway_url": {
+                    "type": "string",
+                    "description": "Gateway URL (e.g. http://localhost:8088)",
+                },
                 "method": {"type": "string", "description": "HTTP method", "default": "GET"},
-                "path": {"type": "string", "description": "API path (e.g. /data/api/v1/gateway-info)"},
-                "api_key_name": {"type": "string", "description": "Name of stored API key for authentication"},
+                "path": {
+                    "type": "string",
+                    "description": "API path (e.g. /data/api/v1/gateway-info)",
+                },
+                "api_key_name": {
+                    "type": "string",
+                    "description": "Name of stored API key for authentication",
+                },
                 "headers": {"type": "object", "description": "Additional request headers"},
                 "query_params": {"type": "object", "description": "Query parameters"},
                 "body": {"description": "Request body (for POST/PUT)"},
@@ -369,7 +448,6 @@ TOOLS: list[Tool] = [
             "required": ["gateway_url", "path"],
         },
     ),
-
     # ── System ───────────────────────────────────────────────────────────
     Tool(
         name="get_system_health",
@@ -382,9 +460,19 @@ TOOLS: list[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "limit": {"type": "integer", "description": "Max log entries (1-1000)", "default": 100},
-                "level": {"type": "string", "description": "Filter by level: DEBUG, INFO, WARNING, ERROR"},
-                "logger_filter": {"type": "string", "description": "Filter by logger name (substring match)"},
+                "limit": {
+                    "type": "integer",
+                    "description": "Max log entries (1-1000)",
+                    "default": 100,
+                },
+                "level": {
+                    "type": "string",
+                    "description": "Filter by level: DEBUG, INFO, WARNING, ERROR",
+                },
+                "logger_filter": {
+                    "type": "string",
+                    "description": "Filter by logger name (substring match)",
+                },
             },
             "required": [],
         },
@@ -397,12 +485,14 @@ TOOLS: list[Tool] = [
             "properties": {
                 "pattern": {"type": "string", "description": "Logger name pattern to search for"},
                 "limit": {"type": "integer", "description": "Max results", "default": 100},
-                "level": {"type": "string", "description": "Filter by level: DEBUG, INFO, WARNING, ERROR"},
+                "level": {
+                    "type": "string",
+                    "description": "Filter by level: DEBUG, INFO, WARNING, ERROR",
+                },
             },
             "required": ["pattern"],
         },
     ),
-
     # ── Module Operations ────────────────────────────────────────────────
     Tool(
         name="upgrade_module",
@@ -443,7 +533,6 @@ TOOLS: list[Tool] = [
             "required": ["module_folder"],
         },
     ),
-
     # ── Playbook Library ──────────────────────────────────────────────
     Tool(
         name="update_playbooks",
@@ -651,7 +740,9 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
     elif name == "upgrade_module":
         module_folder = arguments["module_folder"]
         prefer_unsigned = arguments.get("prefer_unsigned", False)
-        timeout = min(float(arguments.get("timeout", EXECUTION_POLL_TIMEOUT)), EXECUTION_POLL_MAX_TIMEOUT)
+        timeout = min(
+            float(arguments.get("timeout", EXECUTION_POLL_TIMEOUT)), EXECUTION_POLL_MAX_TIMEOUT
+        )
 
         # Translate WSL absolute paths to Windows UNC paths. The Toolbox backend
         # runs on Windows and cannot access /linux/paths directly (shared helper).
@@ -754,6 +845,7 @@ async def _handle_tool(name: str, arguments: dict[str, Any]) -> str:
 # MCP Server setup
 # ---------------------------------------------------------------------------
 
+
 def create_server() -> Server:
     """Create and configure the MCP server."""
     server = Server("ignition-toolbox")
@@ -788,13 +880,13 @@ def create_server() -> Server:
     async def handle_read_resource(uri: str) -> str:
         uri_str = str(uri)
         if uri_str.startswith("playbook://"):
-            path = uri_str[len("playbook://"):]
+            path = uri_str[len("playbook://") :]
             encoded_path = quote(path, safe="")
             result = await _get(f"/api/playbooks/{encoded_path}")
             return json.dumps(result, indent=2, default=str)
 
         elif uri_str.startswith("execution://"):
-            execution_id = uri_str[len("execution://"):]
+            execution_id = uri_str[len("execution://") :]
             result = await _get(f"/api/executions/{execution_id}")
             return json.dumps(result, indent=2, default=str)
 

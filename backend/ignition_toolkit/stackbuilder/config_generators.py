@@ -133,9 +133,7 @@ def generate_mosquitto_config(
     return "\n".join(config)
 
 
-def generate_emqx_config(
-    username: str = "", password: str = "", enable_tls: bool = False
-) -> str:
+def generate_emqx_config(username: str = "", password: str = "", enable_tls: bool = False) -> str:
     """
     Generate EMQX MQTT broker configuration snippet.
 
@@ -150,11 +148,13 @@ def generate_emqx_config(
     config: dict[str, Any] = {"authentication": []}
 
     if username and password:
-        config["authentication"].append({
-            "mechanism": "password_based",
-            "backend": "built_in_database",
-            "user_id_type": "username",
-        })
+        config["authentication"].append(
+            {
+                "mechanism": "password_based",
+                "backend": "built_in_database",
+                "user_id_type": "username",
+            }
+        )
 
     return yaml.dump(config, default_flow_style=False)
 
@@ -181,14 +181,16 @@ def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
         config = ds.get("config", {})
 
         if ds_type == "prometheus":
-            provisioning["datasources"].append({
-                "name": "Prometheus",
-                "type": "prometheus",
-                "access": "proxy",
-                "url": f"http://{instance_name}:9090",
-                "isDefault": idx == 0,
-                "editable": True,
-            })
+            provisioning["datasources"].append(
+                {
+                    "name": "Prometheus",
+                    "type": "prometheus",
+                    "access": "proxy",
+                    "url": f"http://{instance_name}:9090",
+                    "isDefault": idx == 0,
+                    "editable": True,
+                }
+            )
 
         elif ds_type == "postgres":
             db_name = config.get("database", "postgres")
@@ -196,17 +198,19 @@ def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
             db_password = config.get("password", "postgres")
             port = config.get("port", 5432)
 
-            provisioning["datasources"].append({
-                "name": f"PostgreSQL-{instance_name}",
-                "type": "postgres",
-                "access": "proxy",
-                "url": f"{instance_name}:{port}",
-                "database": db_name,
-                "user": db_user,
-                "secureJsonData": {"password": db_password},
-                "jsonData": {"sslmode": "disable", "postgresVersion": 1400},
-                "editable": True,
-            })
+            provisioning["datasources"].append(
+                {
+                    "name": f"PostgreSQL-{instance_name}",
+                    "type": "postgres",
+                    "access": "proxy",
+                    "url": f"{instance_name}:{port}",
+                    "database": db_name,
+                    "user": db_user,
+                    "secureJsonData": {"password": db_password},
+                    "jsonData": {"sslmode": "disable", "postgresVersion": 1400},
+                    "editable": True,
+                }
+            )
 
         elif ds_type in ("mysql", "mariadb"):
             db_name = config.get("database", "mysql")
@@ -214,16 +218,18 @@ def generate_grafana_datasources(datasources: list[dict[str, Any]]) -> str:
             db_password = config.get("password", "password")
             port = config.get("port", 3306)
 
-            provisioning["datasources"].append({
-                "name": f"MySQL-{instance_name}",
-                "type": "mysql",
-                "access": "proxy",
-                "url": f"{instance_name}:{port}",
-                "database": db_name,
-                "user": db_user,
-                "secureJsonData": {"password": db_password},
-                "editable": True,
-            })
+            provisioning["datasources"].append(
+                {
+                    "name": f"MySQL-{instance_name}",
+                    "type": "mysql",
+                    "access": "proxy",
+                    "url": f"{instance_name}:{port}",
+                    "database": db_name,
+                    "user": db_user,
+                    "secureJsonData": {"password": db_password},
+                    "editable": True,
+                }
+            )
 
     return yaml.dump(provisioning, default_flow_style=False, sort_keys=False)
 
@@ -315,9 +321,7 @@ def generate_traefik_dynamic_config(
         }
 
         if enable_https:
-            config["http"]["routers"][router_name]["tls"] = {
-                "certResolver": "letsencrypt"
-            }
+            config["http"]["routers"][router_name]["tls"] = {"certResolver": "letsencrypt"}
 
         # Service configuration
         config["http"]["services"][instance_name] = {
@@ -356,26 +360,30 @@ def generate_oauth_env_vars(
         client_secret = generate_secure_secret(32)
 
     if service_id == "grafana":
-        env_vars.update({
-            "GF_AUTH_GENERIC_OAUTH_ENABLED": "true",
-            "GF_AUTH_GENERIC_OAUTH_NAME": "Keycloak",
-            "GF_AUTH_GENERIC_OAUTH_CLIENT_ID": "grafana",
-            "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET": client_secret,
-            "GF_AUTH_GENERIC_OAUTH_SCOPES": "openid profile email",
-            "GF_AUTH_GENERIC_OAUTH_AUTH_URL": f"{keycloak_base}/auth",
-            "GF_AUTH_GENERIC_OAUTH_TOKEN_URL": f"{keycloak_base}/token",
-            "GF_AUTH_GENERIC_OAUTH_API_URL": f"{keycloak_base}/userinfo",
-            "GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP": "true",
-        })
+        env_vars.update(
+            {
+                "GF_AUTH_GENERIC_OAUTH_ENABLED": "true",
+                "GF_AUTH_GENERIC_OAUTH_NAME": "Keycloak",
+                "GF_AUTH_GENERIC_OAUTH_CLIENT_ID": "grafana",
+                "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET": client_secret,
+                "GF_AUTH_GENERIC_OAUTH_SCOPES": "openid profile email",
+                "GF_AUTH_GENERIC_OAUTH_AUTH_URL": f"{keycloak_base}/auth",
+                "GF_AUTH_GENERIC_OAUTH_TOKEN_URL": f"{keycloak_base}/token",
+                "GF_AUTH_GENERIC_OAUTH_API_URL": f"{keycloak_base}/userinfo",
+                "GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP": "true",
+            }
+        )
 
     elif service_id == "n8n":
-        env_vars.update({
-            "N8N_OAUTH_ENABLED": "true",
-            "N8N_OAUTH_CLIENT_ID": "n8n",
-            "N8N_OAUTH_CLIENT_SECRET": client_secret,
-            "N8N_OAUTH_AUTH_URL": f"{keycloak_base}/auth",
-            "N8N_OAUTH_TOKEN_URL": f"{keycloak_base}/token",
-        })
+        env_vars.update(
+            {
+                "N8N_OAUTH_ENABLED": "true",
+                "N8N_OAUTH_CLIENT_ID": "n8n",
+                "N8N_OAUTH_CLIENT_SECRET": client_secret,
+                "N8N_OAUTH_AUTH_URL": f"{keycloak_base}/auth",
+                "N8N_OAUTH_TOKEN_URL": f"{keycloak_base}/token",
+            }
+        )
 
     return env_vars
 
@@ -401,34 +409,42 @@ def generate_email_env_vars(
     env_vars: dict[str, str] = {}
 
     if service_id == "grafana":
-        env_vars.update({
-            "GF_SMTP_ENABLED": "true",
-            "GF_SMTP_HOST": f"{mailhog_instance}:1025",
-            "GF_SMTP_FROM_ADDRESS": from_address,
-            "GF_SMTP_FROM_NAME": "Grafana",
-            "GF_SMTP_SKIP_VERIFY": "true",
-        })
+        env_vars.update(
+            {
+                "GF_SMTP_ENABLED": "true",
+                "GF_SMTP_HOST": f"{mailhog_instance}:1025",
+                "GF_SMTP_FROM_ADDRESS": from_address,
+                "GF_SMTP_FROM_NAME": "Grafana",
+                "GF_SMTP_SKIP_VERIFY": "true",
+            }
+        )
 
     elif service_id == "ignition":
-        env_vars.update({
-            "GATEWAY_SMTP_HOST": mailhog_instance,
-            "GATEWAY_SMTP_PORT": "1025",
-            "GATEWAY_SMTP_FROM": from_address,
-        })
+        env_vars.update(
+            {
+                "GATEWAY_SMTP_HOST": mailhog_instance,
+                "GATEWAY_SMTP_PORT": "1025",
+                "GATEWAY_SMTP_FROM": from_address,
+            }
+        )
 
     elif service_id == "n8n":
-        env_vars.update({
-            "N8N_EMAIL_MODE": "smtp",
-            "N8N_SMTP_HOST": mailhog_instance,
-            "N8N_SMTP_PORT": "1025",
-            "N8N_SMTP_SENDER": from_address,
-        })
+        env_vars.update(
+            {
+                "N8N_EMAIL_MODE": "smtp",
+                "N8N_SMTP_HOST": mailhog_instance,
+                "N8N_SMTP_PORT": "1025",
+                "N8N_SMTP_SENDER": from_address,
+            }
+        )
 
     elif service_id == "keycloak":
-        env_vars.update({
-            "KC_SMTP_HOST": mailhog_instance,
-            "KC_SMTP_PORT": "1025",
-            "KC_SMTP_FROM": from_address,
-        })
+        env_vars.update(
+            {
+                "KC_SMTP_HOST": mailhog_instance,
+                "KC_SMTP_PORT": "1025",
+                "KC_SMTP_FROM": from_address,
+            }
+        )
 
     return env_vars

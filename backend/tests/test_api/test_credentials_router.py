@@ -6,8 +6,9 @@ Uses direct function import + patch pattern.
 """
 
 import asyncio
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -36,8 +37,8 @@ class TestListCredentials:
 
     def test_list_credentials_returns_credentials_without_passwords(self, mock_vault):
         """GET /api/credentials returns credential info without exposing passwords."""
-        from ignition_toolkit.credentials.models import Credential
         from ignition_toolkit.api.routers.credentials import list_credentials
+        from ignition_toolkit.credentials.models import Credential
 
         cred = Credential(
             name="prod-gateway",
@@ -66,7 +67,7 @@ class TestListCredentials:
 class TestAddCredential:
     def test_add_credential_succeeds(self, mock_vault):
         """POST /api/credentials creates a new credential successfully."""
-        from ignition_toolkit.api.routers.credentials import add_credential, CredentialCreate
+        from ignition_toolkit.api.routers.credentials import CredentialCreate, add_credential
 
         mock_vault.get_credential.side_effect = ValueError("not found")
 
@@ -90,7 +91,8 @@ class TestAddCredential:
     def test_add_credential_rejects_empty_name(self, mock_vault):
         """POST /api/credentials raises 400 when name is blank."""
         from fastapi import HTTPException
-        from ignition_toolkit.api.routers.credentials import add_credential, CredentialCreate
+
+        from ignition_toolkit.api.routers.credentials import CredentialCreate, add_credential
 
         request = CredentialCreate(
             name="   ",
@@ -110,8 +112,9 @@ class TestAddCredential:
     def test_add_credential_rejects_duplicate(self, mock_vault):
         """POST /api/credentials raises 400 when credential already exists."""
         from fastapi import HTTPException
+
+        from ignition_toolkit.api.routers.credentials import CredentialCreate, add_credential
         from ignition_toolkit.credentials.models import Credential
-        from ignition_toolkit.api.routers.credentials import add_credential, CredentialCreate
 
         existing = Credential(name="dup", username="u", password="p")
         mock_vault.get_credential.side_effect = None
@@ -133,6 +136,7 @@ class TestDeleteCredential:
     def test_delete_credential_raises_404_for_unknown_name(self, mock_vault):
         """DELETE /api/credentials/{name} returns 404 for a credential that doesn't exist."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.credentials import delete_credential
 
         mock_vault.delete_credential.return_value = False
@@ -166,7 +170,8 @@ class TestUpdateCredential:
     def test_update_credential_raises_404_when_not_found(self, mock_vault):
         """PUT /api/credentials/{name} returns 404 when credential doesn't exist."""
         from fastapi import HTTPException
-        from ignition_toolkit.api.routers.credentials import update_credential, CredentialCreate
+
+        from ignition_toolkit.api.routers.credentials import CredentialCreate, update_credential
 
         mock_vault.get_credential.side_effect = ValueError("not found")
 
@@ -184,7 +189,8 @@ class TestUpdateCredential:
     def test_update_credential_rejects_empty_name(self, mock_vault):
         """PUT /api/credentials/{name} returns 400 for blank path parameter name."""
         from fastapi import HTTPException
-        from ignition_toolkit.api.routers.credentials import update_credential, CredentialCreate
+
+        from ignition_toolkit.api.routers.credentials import CredentialCreate, update_credential
 
         request = CredentialCreate(name="valid", username="u", password="p")
 

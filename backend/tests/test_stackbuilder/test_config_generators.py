@@ -10,21 +10,20 @@ Tests the config_generators.py module functionality:
 - Password and secret generation
 """
 
-import pytest
 import yaml
 
 from ignition_toolkit.stackbuilder.config_generators import (
-    generate_secure_password,
-    generate_secure_secret,
-    generate_mosquitto_config,
-    generate_mosquitto_password_file,
-    generate_prometheus_config,
+    generate_email_env_vars,
     generate_emqx_config,
     generate_grafana_datasources,
-    generate_traefik_static_config,
-    generate_traefik_dynamic_config,
+    generate_mosquitto_config,
+    generate_mosquitto_password_file,
     generate_oauth_env_vars,
-    generate_email_env_vars,
+    generate_prometheus_config,
+    generate_secure_password,
+    generate_secure_secret,
+    generate_traefik_dynamic_config,
+    generate_traefik_static_config,
 )
 
 
@@ -184,9 +183,7 @@ class TestGrafanaDatasourceGeneration:
 
     def test_prometheus_datasource(self):
         """Test Prometheus datasource generation."""
-        datasources = [
-            {"type": "prometheus", "instance_name": "prometheus", "config": {}}
-        ]
+        datasources = [{"type": "prometheus", "instance_name": "prometheus", "config": {}}]
         config = generate_grafana_datasources(datasources)
         parsed = yaml.safe_load(config)
 
@@ -207,7 +204,7 @@ class TestGrafanaDatasourceGeneration:
                     "username": "dbuser",
                     "password": "dbpass",
                     "port": 5432,
-                }
+                },
             }
         ]
         config = generate_grafana_datasources(datasources)
@@ -229,7 +226,7 @@ class TestGrafanaDatasourceGeneration:
                     "database": "mydb",
                     "username": "root",
                     "password": "rootpass",
-                }
+                },
             }
         ]
         config = generate_grafana_datasources(datasources)
@@ -254,9 +251,7 @@ class TestGrafanaDatasourceGeneration:
 
     def test_datasource_config_is_valid_yaml(self):
         """Test generated config is valid YAML."""
-        datasources = [
-            {"type": "prometheus", "instance_name": "prometheus", "config": {}}
-        ]
+        datasources = [{"type": "prometheus", "instance_name": "prometheus", "config": {}}]
         config = generate_grafana_datasources(datasources)
         # Should not raise
         parsed = yaml.safe_load(config)
@@ -287,8 +282,7 @@ class TestTraefikStaticConfigGeneration:
     def test_letsencrypt_config(self):
         """Test Traefik config with Let's Encrypt."""
         config = generate_traefik_static_config(
-            enable_https=True,
-            letsencrypt_email="admin@example.com"
+            enable_https=True, letsencrypt_email="admin@example.com"
         )
         parsed = yaml.safe_load(config)
 
@@ -321,9 +315,7 @@ class TestTraefikDynamicConfigGeneration:
 
     def test_single_service_http(self):
         """Test single service HTTP configuration."""
-        services = [
-            {"instance_name": "ignition-1", "subdomain": "ignition", "port": 8088}
-        ]
+        services = [{"instance_name": "ignition-1", "subdomain": "ignition", "port": 8088}]
         config = generate_traefik_dynamic_config(services, domain="localhost")
         parsed = yaml.safe_load(config)
 
@@ -335,14 +327,8 @@ class TestTraefikDynamicConfigGeneration:
 
     def test_single_service_https(self):
         """Test single service HTTPS configuration."""
-        services = [
-            {"instance_name": "grafana", "subdomain": "grafana", "port": 3000}
-        ]
-        config = generate_traefik_dynamic_config(
-            services,
-            domain="example.com",
-            enable_https=True
-        )
+        services = [{"instance_name": "grafana", "subdomain": "grafana", "port": 3000}]
+        config = generate_traefik_dynamic_config(services, domain="example.com", enable_https=True)
         parsed = yaml.safe_load(config)
 
         router = parsed["http"]["routers"]["grafana-router"]
@@ -375,7 +361,7 @@ class TestOAuthEnvVarGeneration:
             service_id="grafana",
             provider="keycloak",
             realm_name="iiot",
-            client_secret="test-secret"
+            client_secret="test-secret",
         )
 
         assert "GF_AUTH_GENERIC_OAUTH_ENABLED" in env_vars
@@ -388,10 +374,7 @@ class TestOAuthEnvVarGeneration:
     def test_n8n_oauth_env_vars(self):
         """Test n8n OAuth environment variables."""
         env_vars = generate_oauth_env_vars(
-            service_id="n8n",
-            provider="keycloak",
-            realm_name="iiot",
-            client_secret="n8n-secret"
+            service_id="n8n", provider="keycloak", realm_name="iiot", client_secret="n8n-secret"
         )
 
         assert "N8N_OAUTH_ENABLED" in env_vars
@@ -401,9 +384,7 @@ class TestOAuthEnvVarGeneration:
     def test_oauth_generates_secret_if_not_provided(self):
         """Test OAuth generates secret if not provided."""
         env_vars = generate_oauth_env_vars(
-            service_id="grafana",
-            provider="keycloak",
-            realm_name="iiot"
+            service_id="grafana", provider="keycloak", realm_name="iiot"
         )
 
         # Should have a generated secret
@@ -414,9 +395,7 @@ class TestOAuthEnvVarGeneration:
     def test_oauth_urls_include_realm(self):
         """Test OAuth URLs include realm name."""
         env_vars = generate_oauth_env_vars(
-            service_id="grafana",
-            provider="keycloak",
-            realm_name="custom-realm"
+            service_id="grafana", provider="keycloak", realm_name="custom-realm"
         )
 
         auth_url = env_vars.get("GF_AUTH_GENERIC_OAUTH_AUTH_URL", "")
@@ -425,9 +404,7 @@ class TestOAuthEnvVarGeneration:
     def test_unknown_service_returns_empty(self):
         """Test unknown service returns empty dict."""
         env_vars = generate_oauth_env_vars(
-            service_id="unknown-service",
-            provider="keycloak",
-            realm_name="iiot"
+            service_id="unknown-service", provider="keycloak", realm_name="iiot"
         )
 
         assert env_vars == {}
@@ -439,9 +416,7 @@ class TestEmailEnvVarGeneration:
     def test_grafana_email_env_vars(self):
         """Test Grafana SMTP environment variables."""
         env_vars = generate_email_env_vars(
-            service_id="grafana",
-            mailhog_instance="mailhog",
-            from_address="grafana@example.com"
+            service_id="grafana", mailhog_instance="mailhog", from_address="grafana@example.com"
         )
 
         assert "GF_SMTP_ENABLED" in env_vars
@@ -453,9 +428,7 @@ class TestEmailEnvVarGeneration:
     def test_ignition_email_env_vars(self):
         """Test Ignition SMTP environment variables."""
         env_vars = generate_email_env_vars(
-            service_id="ignition",
-            mailhog_instance="mailhog",
-            from_address="ignition@example.com"
+            service_id="ignition", mailhog_instance="mailhog", from_address="ignition@example.com"
         )
 
         assert "GATEWAY_SMTP_HOST" in env_vars
@@ -465,10 +438,7 @@ class TestEmailEnvVarGeneration:
 
     def test_n8n_email_env_vars(self):
         """Test n8n SMTP environment variables."""
-        env_vars = generate_email_env_vars(
-            service_id="n8n",
-            mailhog_instance="mailhog"
-        )
+        env_vars = generate_email_env_vars(service_id="n8n", mailhog_instance="mailhog")
 
         assert "N8N_EMAIL_MODE" in env_vars
         assert env_vars["N8N_EMAIL_MODE"] == "smtp"
@@ -476,10 +446,7 @@ class TestEmailEnvVarGeneration:
 
     def test_keycloak_email_env_vars(self):
         """Test Keycloak SMTP environment variables."""
-        env_vars = generate_email_env_vars(
-            service_id="keycloak",
-            mailhog_instance="mail-test"
-        )
+        env_vars = generate_email_env_vars(service_id="keycloak", mailhog_instance="mail-test")
 
         assert "KC_SMTP_HOST" in env_vars
         assert env_vars["KC_SMTP_HOST"] == "mail-test"
@@ -487,18 +454,12 @@ class TestEmailEnvVarGeneration:
 
     def test_unknown_service_returns_empty(self):
         """Test unknown service returns empty dict."""
-        env_vars = generate_email_env_vars(
-            service_id="unknown-service",
-            mailhog_instance="mailhog"
-        )
+        env_vars = generate_email_env_vars(service_id="unknown-service", mailhog_instance="mailhog")
 
         assert env_vars == {}
 
     def test_custom_mailhog_instance(self):
         """Test custom MailHog instance name."""
-        env_vars = generate_email_env_vars(
-            service_id="grafana",
-            mailhog_instance="custom-mailhog"
-        )
+        env_vars = generate_email_env_vars(service_id="grafana", mailhog_instance="custom-mailhog")
 
         assert "custom-mailhog" in env_vars["GF_SMTP_HOST"]

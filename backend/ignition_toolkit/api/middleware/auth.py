@@ -24,6 +24,7 @@ api_key_scheme = APIKeyHeader(name=API_KEY_HEADER, auto_error=False)
 def _get_api_key_file() -> Path:
     """Get the path to the API key file using the correct data directory."""
     from ignition_toolkit.config import get_toolkit_data_dir
+
     return get_toolkit_data_dir() / "api.key"
 
 
@@ -47,7 +48,7 @@ def get_or_generate_api_key() -> str:
     # Try to load existing key from file
     if api_key_file.exists():
         try:
-            api_key = api_key_file.read_text(encoding='utf-8').strip()
+            api_key = api_key_file.read_text(encoding="utf-8").strip()
             if api_key:
                 return api_key
         except OSError:
@@ -59,7 +60,7 @@ def get_or_generate_api_key() -> str:
     # Save to file with restricted permissions
     try:
         api_key_file.parent.mkdir(parents=True, exist_ok=True)
-        api_key_file.write_text(api_key, encoding='utf-8')
+        api_key_file.write_text(api_key, encoding="utf-8")
         api_key_file.chmod(0o600)  # Owner read/write only
     except Exception as e:
         # Log warning but continue (key still works from memory)
@@ -177,7 +178,7 @@ def print_api_key_info():
         print(f"Stored in: {api_key_file}")
         print("")
         print("Include this key in all API requests:")
-        print('  X-API-Key: <your-key>')
+        print("  X-API-Key: <your-key>")
         print("")
         print("Example:")
         print('  curl -H "X-API-Key: <your-key>" http://localhost:5000/api/playbooks')

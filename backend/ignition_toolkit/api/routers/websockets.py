@@ -72,6 +72,7 @@ async def websocket_endpoint(websocket: WebSocket):
     # Simple authentication: check for API key in query params
     api_key = websocket.query_params.get("api_key")
     from ignition_toolkit.core.config import get_settings
+
     expected_key = get_settings().websocket_api_key
 
     # SECURITY: Use constant-time comparison to prevent timing attacks
@@ -141,10 +142,13 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
     # Authenticate: check for API key in query params
     api_key = websocket.query_params.get("api_key")
     from ignition_toolkit.core.config import get_settings
+
     expected_key = get_settings().websocket_api_key
 
     if not api_key or not hmac.compare_digest(api_key, expected_key):
-        logger.warning(f"Unauthorized claude-code WebSocket connection attempt from {websocket.client}")
+        logger.warning(
+            f"Unauthorized claude-code WebSocket connection attempt from {websocket.client}"
+        )
         await websocket.close(code=1008, reason="Unauthorized")
         return
 
@@ -193,7 +197,7 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
             if ".backup." in yaml_file.name:
                 continue
             try:
-                with open(yaml_file, encoding='utf-8') as f:
+                with open(yaml_file, encoding="utf-8") as f:
                     playbook_data = yaml.safe_load(f)
                     if playbook_data and playbook_data.get("name") == playbook_name:
                         playbook_path = str(yaml_file.absolute())
@@ -265,7 +269,9 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
         # Set up environment
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"  # Set terminal type
-        env["PS1"] = f"\\[\\033[1;32m\\]{playbook_name}\\[\\033[0m\\]:\\[\\033[1;34m\\]\\w\\[\\033[0m\\]$ "
+        env["PS1"] = (
+            f"\\[\\033[1;32m\\]{playbook_name}\\[\\033[0m\\]:\\[\\033[1;34m\\]\\w\\[\\033[0m\\]$ "
+        )
 
         process = subprocess.Popen(
             cmd_args,
@@ -418,7 +424,6 @@ async def claude_code_terminal(websocket: WebSocket, execution_id: str):
             pass
 
 
-
 @router.websocket("/ws/shell")
 async def shell_terminal(websocket: WebSocket):
     """
@@ -451,6 +456,7 @@ async def shell_terminal(websocket: WebSocket):
     # Authenticate: check for API key in query params
     api_key = websocket.query_params.get("api_key")
     from ignition_toolkit.core.config import get_settings
+
     expected_key = get_settings().websocket_api_key
 
     if not api_key or not hmac.compare_digest(api_key, expected_key):
@@ -591,5 +597,3 @@ async def shell_terminal(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
-
-

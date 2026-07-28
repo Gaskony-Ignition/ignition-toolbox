@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class AuditEventType(Enum):
     """Types of audit events"""
+
     # Authentication events
     AUTH_LOGIN = "auth.login"
     AUTH_LOGOUT = "auth.logout"
@@ -55,6 +56,7 @@ class AuditEventType(Enum):
 @dataclass
 class AuditEvent:
     """Represents an audit log entry"""
+
     event_type: AuditEventType
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     user_id: str | None = None
@@ -194,14 +196,16 @@ class AuditLogger:
         # Add to buffer
         self._buffer.append(event)
         if len(self._buffer) > self._max_buffer_size:
-            self._buffer = self._buffer[-self._max_buffer_size:]
+            self._buffer = self._buffer[-self._max_buffer_size :]
 
         # Log to file if configured
         if self._file_logger:
             self._file_logger.info(event.to_json())
 
         # Log to standard logger (info for success, warning for failure)
-        log_msg = f"[AUDIT] {event_type.value}: user={user_id}, resource={resource_type}/{resource_id}"
+        log_msg = (
+            f"[AUDIT] {event_type.value}: user={user_id}, resource={resource_type}/{resource_id}"
+        )
         if success:
             logger.info(log_msg)
         else:
@@ -261,7 +265,7 @@ class AuditLogger:
         events.sort(key=lambda e: e.timestamp, reverse=True)
 
         # Apply pagination
-        return events[offset:offset + limit]
+        return events[offset : offset + limit]
 
     def get_stats(self) -> dict:
         """Get audit statistics"""

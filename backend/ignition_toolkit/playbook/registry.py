@@ -30,6 +30,7 @@ DEFAULT_INDEX_URL = f"https://api.github.com/repos/{DEFAULT_REPO}/contents/playb
 @dataclass
 class InstalledPlaybook:
     """Metadata for an installed playbook"""
+
     playbook_path: str  # e.g., "gateway/module_upgrade"
     version: str  # e.g., "4.0"
     location: str  # Absolute file path
@@ -51,6 +52,7 @@ class InstalledPlaybook:
 @dataclass
 class AvailablePlaybook:
     """Metadata for a playbook available in the repository"""
+
     playbook_path: str
     version: str
     domain: str
@@ -128,11 +130,13 @@ class PlaybookRegistry:
         If registry file doesn't exist, starts with empty registry.
         """
         if not self.registry_path.exists():
-            logger.info(f"Registry file not found, starting with empty registry: {self.registry_path}")
+            logger.info(
+                f"Registry file not found, starting with empty registry: {self.registry_path}"
+            )
             return
 
         try:
-            with open(self.registry_path, encoding='utf-8') as f:
+            with open(self.registry_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Load installed playbooks
@@ -149,7 +153,9 @@ class PlaybookRegistry:
 
             self.last_fetched = data.get("last_fetched")
 
-            logger.info(f"Loaded registry: {len(self.installed)} installed, {len(self.available)} available")
+            logger.info(
+                f"Loaded registry: {len(self.installed)} installed, {len(self.available)} available"
+            )
 
         except Exception as e:
             logger.error(f"Failed to load registry: {e}")
@@ -165,19 +171,13 @@ class PlaybookRegistry:
 
         # Convert to dictionary
         data = {
-            "installed": {
-                path: pb.to_dict()
-                for path, pb in self.installed.items()
-            },
-            "available": {
-                path: pb.to_dict()
-                for path, pb in self.available.items()
-            },
+            "installed": {path: pb.to_dict() for path, pb in self.installed.items()},
+            "available": {path: pb.to_dict() for path, pb in self.available.items()},
             "last_fetched": self.last_fetched,
         }
 
         # Write to file
-        with open(self.registry_path, "w", encoding='utf-8') as f:
+        with open(self.registry_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
         logger.info(f"Saved registry to {self.registry_path}")
@@ -189,7 +189,7 @@ class PlaybookRegistry:
         location: str,
         source: str,
         checksum: str | None = None,
-        verified: bool = False
+        verified: bool = False,
     ) -> None:
         """
         Register an installed playbook
@@ -209,7 +209,7 @@ class PlaybookRegistry:
             source=source,
             installed_at=datetime.now(timezone.utc).isoformat(),
             checksum=checksum,
-            verified=verified
+            verified=verified,
         )
 
         self.installed[playbook_path] = playbook
@@ -268,9 +268,7 @@ class PlaybookRegistry:
     CACHE_TTL = timedelta(hours=1)
 
     async def fetch_available_playbooks(
-        self,
-        index_url: str = DEFAULT_INDEX_URL,
-        force_refresh: bool = False
+        self, index_url: str = DEFAULT_INDEX_URL, force_refresh: bool = False
     ) -> dict[str, AvailablePlaybook]:
         """
         Fetch available playbooks from GitHub
@@ -306,6 +304,7 @@ class PlaybookRegistry:
             # Handle GitHub API response (base64-encoded content)
             if "content" in api_response and "encoding" in api_response:
                 import base64
+
                 content = base64.b64decode(api_response["content"]).decode("utf-8")
                 data = json.loads(content)
             else:
@@ -315,10 +314,7 @@ class PlaybookRegistry:
             # Parse playbooks from index
             playbooks_data = data.get("playbooks", {})
             self.available = {
-                path: AvailablePlaybook(
-                    playbook_path=path,
-                    **pb_data
-                )
+                path: AvailablePlaybook(playbook_path=path, **pb_data)
                 for path, pb_data in playbooks_data.items()
             }
 
@@ -350,10 +346,7 @@ class PlaybookRegistry:
             return list(self.available.values())
 
         # Filter out installed playbooks
-        return [
-            pb for path, pb in self.available.items()
-            if path not in self.installed
-        ]
+        return [pb for path, pb in self.available.items() if path not in self.installed]
 
     def get_available_playbook(self, playbook_path: str) -> AvailablePlaybook | None:
         """
@@ -387,6 +380,7 @@ class PlaybookRegistry:
             if available_pb.version != installed_pb.version:
                 try:
                     from packaging.version import Version
+
                     if Version(available_pb.version) > Version(installed_pb.version):
                         updates[path] = (installed_pb.version, available_pb.version)
                 except Exception:

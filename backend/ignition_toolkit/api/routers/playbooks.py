@@ -57,45 +57,90 @@ router = APIRouter(prefix="/api/playbooks", tags=["playbooks"])
 
 router.add_api_route("", list_playbooks, methods=["GET"], tags=["playbooks-crud"])
 router.add_api_route("/update", update_playbook, methods=["PUT"], tags=["playbooks-crud"])
-router.add_api_route("/metadata", update_playbook_metadata, methods=["PATCH"], tags=["playbooks-crud"])
+router.add_api_route(
+    "/metadata", update_playbook_metadata, methods=["PATCH"], tags=["playbooks-crud"]
+)
 router.add_api_route("/edit-step", edit_step, methods=["POST"], tags=["playbooks-crud"])
-router.add_api_route("/duplicate", duplicate_playbook_crud, methods=["POST"], tags=["playbooks-crud"])
+router.add_api_route(
+    "/duplicate", duplicate_playbook_crud, methods=["POST"], tags=["playbooks-crud"]
+)
 
 # ============================================================================
 # Library Operations (static routes MUST come before catch-all paths)
 # ============================================================================
 
-router.add_api_route("/browse", browse_available_playbooks, methods=["GET"], tags=["playbooks-library"])
+router.add_api_route(
+    "/browse", browse_available_playbooks, methods=["GET"], tags=["playbooks-library"]
+)
 router.add_api_route("/install", install_playbook, methods=["POST"], tags=["playbooks-library"])
 router.add_api_route("/updates", check_for_updates, methods=["GET"], tags=["playbooks-library"])
-router.add_api_route("/updates/stats", get_update_stats, methods=["GET"], tags=["playbooks-library"])
-router.add_api_route("/updates/{playbook_path:path}", check_playbook_update, methods=["GET"], tags=["playbooks-library"])
-router.add_api_route("/{playbook_path:path}/uninstall", uninstall_playbook, methods=["DELETE"], tags=["playbooks-library"])
-router.add_api_route("/{playbook_path:path}/update", update_playbook_to_latest, methods=["POST"], tags=["playbooks-library"])
+router.add_api_route(
+    "/updates/stats", get_update_stats, methods=["GET"], tags=["playbooks-library"]
+)
+router.add_api_route(
+    "/updates/{playbook_path:path}",
+    check_playbook_update,
+    methods=["GET"],
+    tags=["playbooks-library"],
+)
+router.add_api_route(
+    "/{playbook_path:path}/uninstall",
+    uninstall_playbook,
+    methods=["DELETE"],
+    tags=["playbooks-library"],
+)
+router.add_api_route(
+    "/{playbook_path:path}/update",
+    update_playbook_to_latest,
+    methods=["POST"],
+    tags=["playbooks-library"],
+)
 
 # ============================================================================
 # CRUD - Catch-all GET route (must come after all static GET routes)
 # ============================================================================
 
-router.add_api_route("/{playbook_path:path}", get_playbook, methods=["GET"], tags=["playbooks-crud"])
+router.add_api_route(
+    "/{playbook_path:path}", get_playbook, methods=["GET"], tags=["playbooks-crud"]
+)
 
 # ============================================================================
 # Metadata Operations
 # ============================================================================
 
 # Static metadata route (must come before path-based routes)
-router.add_api_route("/metadata/reset-all", reset_all_metadata, methods=["POST"], tags=["playbooks-metadata"])
+router.add_api_route(
+    "/metadata/reset-all", reset_all_metadata, methods=["POST"], tags=["playbooks-metadata"]
+)
 
-router.add_api_route("/{playbook_path:path}/verify", mark_playbook_verified, methods=["POST"], tags=["playbooks-metadata"])
-router.add_api_route("/{playbook_path:path}/unverify", unmark_playbook_verified, methods=["POST"], tags=["playbooks-metadata"])
-router.add_api_route("/{playbook_path:path}/enable", enable_playbook, methods=["POST"], tags=["playbooks-metadata"])
-router.add_api_route("/{playbook_path:path}/disable", disable_playbook, methods=["POST"], tags=["playbooks-metadata"])
+router.add_api_route(
+    "/{playbook_path:path}/verify",
+    mark_playbook_verified,
+    methods=["POST"],
+    tags=["playbooks-metadata"],
+)
+router.add_api_route(
+    "/{playbook_path:path}/unverify",
+    unmark_playbook_verified,
+    methods=["POST"],
+    tags=["playbooks-metadata"],
+)
+router.add_api_route(
+    "/{playbook_path:path}/enable", enable_playbook, methods=["POST"], tags=["playbooks-metadata"]
+)
+router.add_api_route(
+    "/{playbook_path:path}/disable", disable_playbook, methods=["POST"], tags=["playbooks-metadata"]
+)
 
 # ============================================================================
 # Lifecycle Operations
 # ============================================================================
 
-router.add_api_route("/{playbook_path:path}", delete_playbook, methods=["DELETE"], tags=["playbooks-lifecycle"])
-router.add_api_route("/{playbook_path:path}/export", export_playbook, methods=["GET"], tags=["playbooks-lifecycle"])
+router.add_api_route(
+    "/{playbook_path:path}", delete_playbook, methods=["DELETE"], tags=["playbooks-lifecycle"]
+)
+router.add_api_route(
+    "/{playbook_path:path}/export", export_playbook, methods=["GET"], tags=["playbooks-lifecycle"]
+)
 router.add_api_route("/import", import_playbook, methods=["POST"], tags=["playbooks-lifecycle"])
 router.add_api_route("/create", create_playbook, methods=["POST"], tags=["playbooks-lifecycle"])

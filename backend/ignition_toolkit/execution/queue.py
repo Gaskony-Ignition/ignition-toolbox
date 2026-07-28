@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ExecutionPriority(Enum):
     """Execution priority levels"""
+
     HIGH = 1
     NORMAL = 2
     LOW = 3
@@ -29,6 +30,7 @@ class ExecutionPriority(Enum):
 
 class ExecutionState(Enum):
     """States for queued executions"""
+
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -39,6 +41,7 @@ class ExecutionState(Enum):
 @dataclass
 class QueuedExecution:
     """Represents a queued playbook execution"""
+
     id: str = field(default_factory=lambda: str(uuid4()))
     playbook_path: str = ""
     parameters: dict[str, Any] = field(default_factory=dict)
@@ -176,7 +179,9 @@ class ExecutionQueue:
         )
 
         await self._queue.put(execution)
-        logger.info(f"Queued execution {execution.id} for {playbook_path} (priority={priority.name})")
+        logger.info(
+            f"Queued execution {execution.id} for {playbook_path} (priority={priority.name})"
+        )
 
         return execution
 
@@ -258,10 +263,7 @@ class ExecutionQueue:
 
                 # Try to get next execution (with timeout to allow shutdown)
                 try:
-                    execution = await asyncio.wait_for(
-                        self._queue.get(),
-                        timeout=1.0
-                    )
+                    execution = await asyncio.wait_for(self._queue.get(), timeout=1.0)
                 except asyncio.TimeoutError:
                     continue
 
@@ -286,7 +288,9 @@ class ExecutionQueue:
         try:
             if self.execution_callback:
                 result = await self.execution_callback(execution)
-                execution.execution_id = result.get("execution_id") if isinstance(result, dict) else None
+                execution.execution_id = (
+                    result.get("execution_id") if isinstance(result, dict) else None
+                )
 
             execution.state = ExecutionState.COMPLETED
             logger.info(f"Completed execution {execution.id}")

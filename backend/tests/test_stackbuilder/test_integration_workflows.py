@@ -9,17 +9,17 @@ Tests complete stack generation workflows end-to-end:
 - Full IIoT stack with all components
 """
 
+import io
+import zipfile
+
 import pytest
 import yaml
-import zipfile
-import io
 
 from ignition_toolkit.stackbuilder.compose_generator import (
     ComposeGenerator,
     GlobalSettings,
     IntegrationSettings,
 )
-from ignition_toolkit.stackbuilder.catalog import get_service_catalog
 from ignition_toolkit.stackbuilder.integration_engine import get_integration_engine
 
 
@@ -101,7 +101,9 @@ class TestStackWithKeycloakOAuth:
         return ComposeGenerator()
 
     @pytest.fixture
-    def instances(self, sample_ignition_instance, sample_keycloak_instance, sample_grafana_instance):
+    def instances(
+        self, sample_ignition_instance, sample_keycloak_instance, sample_grafana_instance
+    ):
         return [sample_ignition_instance, sample_keycloak_instance, sample_grafana_instance]
 
     def test_oauth_integration_detected(self, instances):
@@ -122,7 +124,6 @@ class TestStackWithKeycloakOAuth:
         result = generator.generate(instances, integration_settings=integration_settings)
 
         config_files = result.get("config_files", {})
-        keycloak_configs = [k for k in config_files.keys() if "keycloak" in k]
         # Should have keycloak config files
         assert isinstance(config_files, dict)
 
@@ -244,13 +245,13 @@ class TestStackWithMQTTBroker:
 
     def test_mosquitto_config_generated(self, generator, instances):
         """Test Mosquitto configuration is generated."""
-        integration_settings = IntegrationSettings(
-            mqtt={"username": "mqtt", "password": "mqtt123"}
-        )
+        integration_settings = IntegrationSettings(mqtt={"username": "mqtt", "password": "mqtt123"})
         result = generator.generate(instances, integration_settings=integration_settings)
 
         config_files = result["config_files"]
-        mqtt_configs = [k for k in config_files.keys() if "mosquitto" in k.lower() or "mqtt" in k.lower()]
+        mqtt_configs = [
+            k for k in config_files.keys() if "mosquitto" in k.lower() or "mqtt" in k.lower()
+        ]
         assert len(mqtt_configs) > 0
 
     def test_mosquitto_password_file_generated(self, generator, instances):
@@ -320,7 +321,7 @@ class TestFullIIoTStack:
         zip_bytes = generator.generate_zip(instances, settings)
 
         zip_buffer = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(zip_buffer, 'r') as zf:
+        with zipfile.ZipFile(zip_buffer, "r") as zf:
             names = zf.namelist()
 
             # Core files
@@ -421,7 +422,5 @@ class TestVisualizationIntegration:
         result = generator.generate(instances)
 
         config_files = result.get("config_files", {})
-        # Look for Grafana datasource provisioning
-        datasource_files = [k for k in config_files.keys() if "grafana" in k and "datasource" in k.lower()]
-        # May have datasource provisioning
+        # May or may not have Grafana datasource provisioning
         assert isinstance(config_files, dict)

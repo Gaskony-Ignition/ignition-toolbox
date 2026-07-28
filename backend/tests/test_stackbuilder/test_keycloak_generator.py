@@ -9,13 +9,12 @@ Tests the keycloak_generator.py module functionality:
 - README section generation
 """
 
-import pytest
 import json
 
 from ignition_toolkit.stackbuilder.keycloak_generator import (
     generate_client_secret,
-    generate_keycloak_realm,
     generate_keycloak_readme_section,
+    generate_keycloak_realm,
 )
 
 
@@ -261,7 +260,10 @@ class TestRealmClientGeneration:
 
         client = realm["clients"][0]
         assert client["clientId"] == "ignition"
-        assert "perspective" in str(client["redirectUris"]).lower() or "ignition" in str(client["redirectUris"]).lower()
+        assert (
+            "perspective" in str(client["redirectUris"]).lower()
+            or "ignition" in str(client["redirectUris"]).lower()
+        )
 
     def test_multiple_clients(self):
         """Test multiple client generation."""
@@ -307,10 +309,7 @@ class TestRealmClientConfiguration:
 
     def test_client_redirect_uris(self):
         """Test client redirect URIs."""
-        realm = generate_keycloak_realm(
-            services=["grafana"],
-            base_domain="example.com"
-        )
+        realm = generate_keycloak_realm(services=["grafana"], base_domain="example.com")
         client = realm["clients"][0]
 
         assert "redirectUris" in client
@@ -321,9 +320,7 @@ class TestRealmClientConfiguration:
     def test_client_redirect_uris_https(self):
         """Test client redirect URIs with HTTPS."""
         realm = generate_keycloak_realm(
-            services=["grafana"],
-            base_domain="secure.example.com",
-            enable_https=True
+            services=["grafana"], base_domain="secure.example.com", enable_https=True
         )
         client = realm["clients"][0]
 
@@ -357,8 +354,7 @@ class TestRealmSerialization:
     def test_realm_is_json_serializable(self):
         """Test realm can be serialized to JSON."""
         realm = generate_keycloak_realm(
-            services=["grafana", "n8n"],
-            users=[{"username": "admin", "password": "admin"}]
+            services=["grafana", "n8n"], users=[{"username": "admin", "password": "admin"}]
         )
 
         # Should not raise

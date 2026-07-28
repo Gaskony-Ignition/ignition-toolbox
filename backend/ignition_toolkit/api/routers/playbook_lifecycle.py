@@ -36,6 +36,7 @@ router = APIRouter()
 
 class PlaybookExportResponse(BaseModel):
     """Response for playbook export containing YAML content"""
+
     name: str
     path: str
     version: str
@@ -47,6 +48,7 @@ class PlaybookExportResponse(BaseModel):
 
 class PlaybookImportRequest(BaseModel):
     """Request to import a playbook from JSON"""
+
     name: str
     domain: str  # gateway, perspective, or designer
     yaml_content: str
@@ -62,6 +64,7 @@ class PlaybookImportRequest(BaseModel):
 def get_metadata_store():
     """Get shared metadata store from app"""
     from ignition_toolkit.api.app import metadata_store
+
     return metadata_store
 
 
@@ -96,9 +99,7 @@ def validate_playbook_path(path_str: str) -> Path:
     for playbook_dir in get_all_playbook_dirs():
         try:
             return PathValidator.validate_playbook_path(
-                path_str,
-                base_dir=playbook_dir,
-                must_exist=True
+                path_str, base_dir=playbook_dir, must_exist=True
             )
         except HTTPException:
             continue
@@ -123,9 +124,7 @@ def get_relative_playbook_path(path_str: str) -> str:
         try:
             resolved_dir = playbook_dir.resolve()
             validated_path = PathValidator.validate_playbook_path(
-                path_str,
-                base_dir=resolved_dir,
-                must_exist=False
+                path_str, base_dir=resolved_dir, must_exist=False
             )
             relative_path = validated_path.relative_to(resolved_dir)
             return str(relative_path)
@@ -136,7 +135,7 @@ def get_relative_playbook_path(path_str: str) -> str:
         return path_str
     raise HTTPException(
         status_code=400,
-        detail="Invalid playbook path - must be relative path within playbooks directory"
+        detail="Invalid playbook path - must be relative path within playbooks directory",
     )
 
 
@@ -208,11 +207,11 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
             # User provided a name - use it directly
             new_stem = new_name.replace(source_suffix, "")  # Remove extension if included
             # Sanitize: convert to snake_case
-            new_stem = re.sub(r'[^a-zA-Z0-9_]', '_', new_stem.lower())
-            new_stem = re.sub(r'_+', '_', new_stem).strip('_')
+            new_stem = re.sub(r"[^a-zA-Z0-9_]", "_", new_stem.lower())
+            new_stem = re.sub(r"_+", "_", new_stem).strip("_")
         else:
             # No name provided - extract base name (remove existing _copy suffixes)
-            base_stem = re.sub(r'(_copy)+(_\d+)?$', '', source_stem)
+            base_stem = re.sub(r"(_copy)+(_\d+)?$", "", source_stem)
             new_stem = f"{base_stem}_copy"
 
         # Always write duplicates to the writable user directory
@@ -224,7 +223,11 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
         new_path = target_parent / f"{new_stem}{source_suffix}"
         counter = 1
         while new_path.exists():
-            stem_for_counter = new_stem.rstrip('0123456789_') if new_name else re.sub(r'(_copy)+(_\d+)?$', '', source_stem) + "_copy"
+            stem_for_counter = (
+                new_stem.rstrip("0123456789_")
+                if new_name
+                else re.sub(r"(_copy)+(_\d+)?$", "", source_stem) + "_copy"
+            )
             new_path = target_parent / f"{stem_for_counter}_{counter}{source_suffix}"
             counter += 1
 
@@ -253,7 +256,7 @@ async def duplicate_playbook(playbook_path: str, new_name: str | None = None):
                 "description": new_playbook.description,
                 "version": new_playbook.version,
                 "domain": domain,
-            }
+            },
         }
 
     except HTTPException:
@@ -276,14 +279,14 @@ async def export_playbook(playbook_path: str):
         loader = PlaybookLoader()
         playbook = loader.load_from_file(validated_path)
 
-        with open(validated_path, encoding='utf-8') as f:
+        with open(validated_path, encoding="utf-8") as f:
             yaml_content = f.read()
 
         relative_path = _get_relative_to_any_playbook_dir(validated_path)
         metadata_store = get_metadata_store()
         meta = metadata_store.get_metadata(relative_path)
 
-        domain = playbook.metadata.get('domain', 'gateway')
+        domain = playbook.metadata.get("domain", "gateway")
 
         return PlaybookExportResponse(
             name=playbook.name,
@@ -293,14 +296,14 @@ async def export_playbook(playbook_path: str):
             domain=domain,
             yaml_content=yaml_content,
             metadata={
-                'revision': meta.revision,
-                'verified': meta.verified,
-                'verified_at': meta.verified_at,
-                'verified_by': meta.verified_by,
-                'origin': meta.origin,
-                'created_at': meta.created_at,
-                'exported_at': datetime.now().isoformat(),
-            }
+                "revision": meta.revision,
+                "verified": meta.verified,
+                "verified_at": meta.verified_at,
+                "verified_by": meta.verified_by,
+                "origin": meta.origin,
+                "created_at": meta.created_at,
+                "exported_at": datetime.now().isoformat(),
+            },
         )
 
     except HTTPException:
@@ -320,7 +323,7 @@ async def import_playbook(request: PlaybookImportRequest):
     """
     metadata_store = get_metadata_store()
     try:
-        if request.domain not in ['gateway', 'perspective', 'designer']:
+        if request.domain not in ["gateway", "perspective", "designer"]:
             raise HTTPException(status_code=400, detail=f"Invalid domain: {request.domain}")
 
         try:
@@ -333,8 +336,8 @@ async def import_playbook(request: PlaybookImportRequest):
         target_dir = playbooks_dir / request.domain
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        safe_name = request.name.lower().replace(' ', '_').replace('-', '_')
-        safe_name = re.sub(r'[^a-z0-9_]', '', safe_name)
+        safe_name = request.name.lower().replace(" ", "_").replace("-", "_")
+        safe_name = re.sub(r"[^a-z0-9_]", "", safe_name)
 
         target_file = target_dir / f"{safe_name}.yaml"
 
@@ -344,7 +347,7 @@ async def import_playbook(request: PlaybookImportRequest):
                 target_file = target_dir / f"{safe_name}_{counter}.yaml"
                 counter += 1
 
-        with open(target_file, 'w', encoding='utf-8') as f:
+        with open(target_file, "w", encoding="utf-8") as f:
             f.write(request.yaml_content)
 
         logger.info(f"Imported playbook to: {target_file}")
@@ -352,10 +355,9 @@ async def import_playbook(request: PlaybookImportRequest):
         relative_path = str(target_file.relative_to(playbooks_dir))
         metadata_store.mark_as_imported(relative_path)
 
-        if request.metadata and request.metadata.get('verified'):
+        if request.metadata and request.metadata.get("verified"):
             metadata_store.mark_verified(
-                relative_path,
-                verified_by=request.metadata.get('verified_by', 'imported')
+                relative_path, verified_by=request.metadata.get("verified_by", "imported")
             )
             logger.info(f"Restored verified status for imported playbook: {relative_path}")
 
@@ -372,7 +374,7 @@ async def import_playbook(request: PlaybookImportRequest):
                 "version": new_playbook.version,
                 "description": new_playbook.description,
                 "domain": request.domain,
-            }
+            },
         }
 
     except HTTPException:

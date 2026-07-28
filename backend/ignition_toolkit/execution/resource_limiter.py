@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ResourceType(Enum):
     """Types of shared resources"""
+
     BROWSER = "browser"
     GATEWAY = "gateway"
     MEMORY = "memory"
@@ -62,14 +63,10 @@ class ResourceLimiter:
         }
 
         self._semaphores = {
-            resource_type: asyncio.Semaphore(limit)
-            for resource_type, limit in self._limits.items()
+            resource_type: asyncio.Semaphore(limit) for resource_type, limit in self._limits.items()
         }
 
-        self._acquired_counts = {
-            resource_type: 0
-            for resource_type in ResourceType
-        }
+        self._acquired_counts = {resource_type: 0 for resource_type in ResourceType}
 
         self._lock = asyncio.Lock()
 

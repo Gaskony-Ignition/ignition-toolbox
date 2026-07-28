@@ -22,6 +22,7 @@ router = APIRouter()
 def get_metadata_store():
     """Get shared metadata store from app"""
     from ignition_toolkit.api.app import metadata_store
+
     return metadata_store
 
 
@@ -48,7 +49,7 @@ def get_relative_playbook_path(path_str: str) -> str:
             validated_path = PathValidator.validate_playbook_path(
                 path_str,
                 base_dir=playbook_dir.resolve(),
-                must_exist=False  # Metadata operations might reference deleted playbooks
+                must_exist=False,  # Metadata operations might reference deleted playbooks
             )
             relative_path = validated_path.relative_to(playbook_dir.resolve())
             return str(relative_path)
@@ -61,7 +62,7 @@ def get_relative_playbook_path(path_str: str) -> str:
         return path_str
     raise HTTPException(
         status_code=400,
-        detail="Invalid playbook path - must be relative path within playbooks directory"
+        detail="Invalid playbook path - must be relative path within playbooks directory",
     )
 
 

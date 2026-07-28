@@ -9,10 +9,11 @@ Tests the compose_generator.py module functionality:
 - ZIP file generation
 """
 
+import io
+import zipfile
+
 import pytest
 import yaml
-import zipfile
-import io
 
 from ignition_toolkit.stackbuilder.compose_generator import (
     ComposeGenerator,
@@ -215,7 +216,9 @@ class TestComposeGeneratorWithTraefik:
     def generator(self):
         return ComposeGenerator()
 
-    def test_traefik_labels_added(self, generator, sample_ignition_instance, sample_traefik_instance):
+    def test_traefik_labels_added(
+        self, generator, sample_ignition_instance, sample_traefik_instance
+    ):
         """Test Traefik labels are added to web services."""
         result = generator.generate([sample_ignition_instance, sample_traefik_instance])
         parsed = yaml.safe_load(result["docker_compose"])
@@ -226,7 +229,9 @@ class TestComposeGeneratorWithTraefik:
         labels = ignition_service["labels"]
         assert any("traefik.enable" in str(label) for label in labels)
 
-    def test_traefik_config_files_generated(self, generator, sample_ignition_instance, sample_traefik_instance):
+    def test_traefik_config_files_generated(
+        self, generator, sample_ignition_instance, sample_traefik_instance
+    ):
         """Test Traefik configuration files are generated."""
         integration_settings = IntegrationSettings(
             reverse_proxy={"base_domain": "localhost", "enable_https": False}
@@ -278,7 +283,9 @@ class TestComposeGeneratorReadme:
         readme = result["readme"]
         assert "my-test-stack" in readme
 
-    def test_readme_contains_services_list(self, generator, sample_ignition_instance, sample_postgres_instance):
+    def test_readme_contains_services_list(
+        self, generator, sample_ignition_instance, sample_postgres_instance
+    ):
         """Test README lists included services."""
         result = generator.generate([sample_ignition_instance, sample_postgres_instance])
 
@@ -307,7 +314,7 @@ class TestComposeGeneratorZip:
 
         # Should be able to open as ZIP
         zip_buffer = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(zip_buffer, 'r') as zf:
+        with zipfile.ZipFile(zip_buffer, "r") as zf:
             # Should not raise bad zipfile error
             assert zf.testzip() is None
 
@@ -316,7 +323,7 @@ class TestComposeGeneratorZip:
         zip_bytes = generator.generate_zip([sample_ignition_instance])
 
         zip_buffer = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(zip_buffer, 'r') as zf:
+        with zipfile.ZipFile(zip_buffer, "r") as zf:
             names = zf.namelist()
             assert "docker-compose.yml" in names
             assert ".env" in names
@@ -327,7 +334,7 @@ class TestComposeGeneratorZip:
         zip_bytes = generator.generate_zip([sample_ignition_instance])
 
         zip_buffer = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(zip_buffer, 'r') as zf:
+        with zipfile.ZipFile(zip_buffer, "r") as zf:
             compose_content = zf.read("docker-compose.yml").decode()
             # Should not raise
             parsed = yaml.safe_load(compose_content)
@@ -354,9 +361,7 @@ class TestComposeGeneratorWithKeycloak:
         )
 
         config_files = result["config_files"]
-        # Should have Keycloak import config
-        keycloak_configs = [path for path in config_files.keys() if "keycloak" in path]
-        # May or may not have realm config depending on implementation
+        # May or may not have Keycloak realm/import config depending on implementation
         assert isinstance(config_files, dict)
 
     def test_grafana_oauth_env_vars(
@@ -372,11 +377,10 @@ class TestComposeGeneratorWithKeycloak:
         )
 
         parsed = yaml.safe_load(result["docker_compose"])
-        grafana_service = parsed["services"]["grafana"]
-        env = grafana_service.get("environment", {})
 
-        # Should have OAuth env vars if OAuth is detected
-        # This depends on whether OAuth provider integration is detected
+        # The generator must emit a grafana service. Whether it also gets OAuth
+        # env vars depends on whether the OAuth provider integration is detected.
+        assert "grafana" in parsed["services"]
 
 
 class TestComposeGeneratorWithMQTT:
@@ -398,7 +402,11 @@ class TestComposeGeneratorWithMQTT:
 
         config_files = result["config_files"]
         # Should have Mosquitto config
-        mqtt_configs = [path for path in config_files.keys() if "mosquitto" in path.lower() or "mqtt" in path.lower()]
+        mqtt_configs = [
+            path
+            for path in config_files.keys()
+            if "mosquitto" in path.lower() or "mqtt" in path.lower()
+        ]
         assert len(mqtt_configs) > 0
 
 
@@ -413,9 +421,7 @@ class TestComposeGeneratorDatabaseIntegration:
         self, generator, sample_ignition_instance, sample_postgres_instance
     ):
         """Test database registration script is generated for Ignition + database."""
-        integration_settings = IntegrationSettings(
-            database={"auto_register": True}
-        )
+        integration_settings = IntegrationSettings(database={"auto_register": True})
         result = generator.generate(
             [sample_ignition_instance, sample_postgres_instance],
             integration_settings=integration_settings,

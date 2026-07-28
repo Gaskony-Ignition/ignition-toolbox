@@ -26,7 +26,8 @@ def is_frozen() -> bool:
     Returns:
         bool: True if running as frozen executable, False otherwise
     """
-    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
 
 # === Core Project Structure ===
 
@@ -142,7 +143,7 @@ def get_all_playbook_dirs() -> list[Path]:
     """
     return [
         get_user_playbooks_dir(),  # User playbooks have priority
-        get_builtin_playbooks_dir()  # Built-in playbooks as fallback
+        get_builtin_playbooks_dir(),  # Built-in playbooks as fallback
     ]
 
 

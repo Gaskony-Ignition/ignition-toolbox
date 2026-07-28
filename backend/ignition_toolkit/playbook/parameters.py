@@ -127,6 +127,7 @@ class ParameterResolver:
             # Check if the resolved value is a Credential object (even if ref_type is "parameter")
             # This happens when credential-type parameters are preprocessed by the engine
             from ignition_toolkit.credentials import Credential
+
             if isinstance(resolved, Credential) and not ref_attr:
                 return resolved
 

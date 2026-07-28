@@ -52,7 +52,9 @@ def _detect_windows() -> Path | None:
         Path(r"C:\Program Files\Inductive Automation\Designer Launcher"),
         Path(r"C:\Program Files (x86)\Inductive Automation\Designer Launcher"),
         Path(r"C:\Program Files\Inductive Automation\Ignition Designer Launcher"),  # Legacy path
-        Path(r"C:\Program Files (x86)\Inductive Automation\Ignition Designer Launcher"),  # Legacy path
+        Path(
+            r"C:\Program Files (x86)\Inductive Automation\Ignition Designer Launcher"
+        ),  # Legacy path
         Path(os.path.expanduser(r"~\AppData\Local\Inductive Automation\Designer Launcher")),
     ]
 
@@ -80,9 +82,11 @@ def _detect_linux() -> Path | None:
         # Look for designer-launcher script or JAR
         if path.exists():
             # Check for common Designer launcher files
-            if (path / "designer-launcher").exists() or \
-               (path / "designer.jar").exists() or \
-               any(path.glob("designer-launcher*")):
+            if (
+                (path / "designer-launcher").exists()
+                or (path / "designer.jar").exists()
+                or any(path.glob("designer-launcher*"))
+            ):
                 logger.info(f"Found Designer at: {path}")
                 return path
 
@@ -96,7 +100,9 @@ def _detect_wsl() -> Path | None:
         Path("/mnt/c/Program Files/Inductive Automation/Designer Launcher"),
         Path("/mnt/c/Program Files (x86)/Inductive Automation/Designer Launcher"),
         Path("/mnt/c/Program Files/Inductive Automation/Ignition Designer Launcher"),  # Legacy
-        Path("/mnt/c/Program Files (x86)/Inductive Automation/Ignition Designer Launcher"),  # Legacy
+        Path(
+            "/mnt/c/Program Files (x86)/Inductive Automation/Ignition Designer Launcher"
+        ),  # Legacy
     ]
 
     for path in search_paths:
@@ -176,4 +182,5 @@ def _find_executable(name: str) -> str | None:
         Full path to executable, or None if not found
     """
     import shutil
+
     return shutil.which(name)

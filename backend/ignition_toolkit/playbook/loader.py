@@ -56,18 +56,18 @@ class PlaybookLoader:
             )
 
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except yaml.YAMLError as e:
             # Extract line number from YAML error
             line_number = None
             column = None
-            if hasattr(e, 'problem_mark') and e.problem_mark:
+            if hasattr(e, "problem_mark") and e.problem_mark:
                 line_number = e.problem_mark.line + 1  # Convert to 1-indexed
                 column = e.problem_mark.column + 1
 
             raise YAMLParseError(
-                message=str(e.problem) if hasattr(e, 'problem') else str(e),
+                message=str(e.problem) if hasattr(e, "problem") else str(e),
                 file_path=str(file_path),
                 line_number=line_number,
                 column=column,
@@ -102,12 +102,12 @@ class PlaybookLoader:
             # Extract line number from YAML error
             line_number = None
             column = None
-            if hasattr(e, 'problem_mark') and e.problem_mark:
+            if hasattr(e, "problem_mark") and e.problem_mark:
                 line_number = e.problem_mark.line + 1  # Convert to 1-indexed
                 column = e.problem_mark.column + 1
 
             raise YAMLParseError(
-                message=str(e.problem) if hasattr(e, 'problem') else str(e),
+                message=str(e.problem) if hasattr(e, "problem") else str(e),
                 line_number=line_number,
                 column=column,
             )
@@ -130,7 +130,7 @@ class PlaybookLoader:
 
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w", encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 yaml.safe_dump(data, f, default_flow_style=False, sort_keys=False)
         except Exception as e:
             raise PlaybookLoadError(f"Error writing file: {e}")

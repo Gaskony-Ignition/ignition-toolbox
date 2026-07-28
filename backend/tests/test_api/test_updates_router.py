@@ -6,9 +6,9 @@ Uses direct function import + patch pattern.
 """
 
 import asyncio
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
 
 
 class TestCheckUpdates:
@@ -16,12 +16,15 @@ class TestCheckUpdates:
         """GET /api/updates/check returns update_available=False when on latest."""
         from ignition_toolkit.api.routers.updates import check_updates
 
-        with patch(
-            "ignition_toolkit.api.routers.updates.check_for_updates",
-            new=AsyncMock(return_value=None),
-        ), patch(
-            "ignition_toolkit.api.routers.updates.get_current_version",
-            return_value="3.0.1",
+        with (
+            patch(
+                "ignition_toolkit.api.routers.updates.check_for_updates",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "ignition_toolkit.api.routers.updates.get_current_version",
+                return_value="3.0.1",
+            ),
         ):
             result = asyncio.run(check_updates())
 
@@ -59,12 +62,15 @@ class TestCheckUpdates:
         """GET /api/updates/check response always includes update_available and current_version."""
         from ignition_toolkit.api.routers.updates import check_updates
 
-        with patch(
-            "ignition_toolkit.api.routers.updates.check_for_updates",
-            new=AsyncMock(return_value=None),
-        ), patch(
-            "ignition_toolkit.api.routers.updates.get_current_version",
-            return_value="1.0.0",
+        with (
+            patch(
+                "ignition_toolkit.api.routers.updates.check_for_updates",
+                new=AsyncMock(return_value=None),
+            ),
+            patch(
+                "ignition_toolkit.api.routers.updates.get_current_version",
+                return_value="1.0.0",
+            ),
         ):
             result = asyncio.run(check_updates())
 
@@ -139,6 +145,7 @@ class TestRollbackUpdate:
     def test_rollback_raises_404_when_no_backups(self):
         """POST /api/updates/rollback returns 404 when no backups are available."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.updates import rollback_update
 
         with patch(
@@ -157,12 +164,15 @@ class TestRollbackUpdate:
         backup_dir = tmp_path / "backup_20260101"
         backup_dir.mkdir()
 
-        with patch(
-            "ignition_toolkit.api.routers.updates.list_backups",
-            return_value=[backup_dir],
-        ), patch(
-            "ignition_toolkit.api.routers.updates.restore_backup",
-            return_value=True,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.updates.list_backups",
+                return_value=[backup_dir],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.updates.restore_backup",
+                return_value=True,
+            ),
         ):
             result = asyncio.run(rollback_update())
 
@@ -172,17 +182,21 @@ class TestRollbackUpdate:
     def test_rollback_raises_500_when_restore_fails(self, tmp_path):
         """POST /api/updates/rollback returns 500 when restore fails."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.updates import rollback_update
 
         backup_dir = tmp_path / "backup_20260101"
         backup_dir.mkdir()
 
-        with patch(
-            "ignition_toolkit.api.routers.updates.list_backups",
-            return_value=[backup_dir],
-        ), patch(
-            "ignition_toolkit.api.routers.updates.restore_backup",
-            return_value=False,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.updates.list_backups",
+                return_value=[backup_dir],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.updates.restore_backup",
+                return_value=False,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(rollback_update())

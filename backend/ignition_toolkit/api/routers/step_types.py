@@ -26,6 +26,7 @@ __all__ = ["StepParameter", "StepTypeInfo", "StepTypesResponse", "STEP_TYPE_META
 
 class StepTypeInfo(BaseModel):
     """Metadata for a step type"""
+
     type: str
     domain: str
     description: str
@@ -34,6 +35,7 @@ class StepTypeInfo(BaseModel):
 
 class StepTypesResponse(BaseModel):
     """Response containing all step types"""
+
     step_types: list[StepTypeInfo]
     domains: list[str]
 
@@ -65,7 +67,4 @@ async def get_step_types():
     # Get unique domains
     domains = sorted(set(step.domain for step in STEP_TYPE_METADATA))
 
-    return StepTypesResponse(
-        step_types=STEP_TYPE_METADATA,
-        domains=domains
-    )
+    return StepTypesResponse(step_types=STEP_TYPE_METADATA, domains=domains)

@@ -10,11 +10,10 @@ their source module paths, not the router module.
 """
 
 import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -67,13 +66,16 @@ class TestBrowseAvailablePlaybooks:
 
         mock_registry = _make_registry(available=[])
 
-        with patch(
-            "ignition_toolkit.playbook.registry.PlaybookRegistry",
-            return_value=mock_registry,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
-            return_value=mock_registry,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.registry.PlaybookRegistry",
+                return_value=mock_registry,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
+                return_value=mock_registry,
+                create=True,
+            ),
         ):
             result = asyncio.run(browse_available_playbooks())
 
@@ -88,13 +90,16 @@ class TestBrowseAvailablePlaybooks:
         available = [_make_available_playbook("gateway/module_upgrade")]
         mock_registry = _make_registry(available=available)
 
-        with patch(
-            "ignition_toolkit.playbook.registry.PlaybookRegistry",
-            return_value=mock_registry,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
-            return_value=mock_registry,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.registry.PlaybookRegistry",
+                return_value=mock_registry,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
+                return_value=mock_registry,
+                create=True,
+            ),
         ):
             result = asyncio.run(browse_available_playbooks())
 
@@ -110,13 +115,16 @@ class TestBrowseAvailablePlaybooks:
             side_effect=ConnectionError("GitHub unreachable")
         )
 
-        with patch(
-            "ignition_toolkit.playbook.registry.PlaybookRegistry",
-            return_value=mock_registry,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
-            return_value=mock_registry,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.registry.PlaybookRegistry",
+                return_value=mock_registry,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
+                return_value=mock_registry,
+                create=True,
+            ),
         ):
             result = asyncio.run(browse_available_playbooks())
 
@@ -129,13 +137,16 @@ class TestBrowseAvailablePlaybooks:
 
         mock_registry = _make_registry(available=[])
 
-        with patch(
-            "ignition_toolkit.playbook.registry.PlaybookRegistry",
-            return_value=mock_registry,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
-            return_value=mock_registry,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.registry.PlaybookRegistry",
+                return_value=mock_registry,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookRegistry",
+                return_value=mock_registry,
+                create=True,
+            ),
         ):
             result = asyncio.run(browse_available_playbooks())
 
@@ -150,7 +161,10 @@ class TestBrowseAvailablePlaybooks:
 class TestInstallPlaybook:
     def test_install_already_installed_raises_400(self):
         """Installing an already-installed playbook raises 400 (PlaybookInstallError)."""
-        from ignition_toolkit.api.routers.playbook_library import install_playbook, PlaybookInstallRequest
+        from ignition_toolkit.api.routers.playbook_library import (
+            PlaybookInstallRequest,
+            install_playbook,
+        )
         from ignition_toolkit.playbook.installer import PlaybookInstallError
 
         mock_installer = MagicMock()
@@ -164,13 +178,16 @@ class TestInstallPlaybook:
             verify_checksum=False,
         )
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(install_playbook(request))
@@ -179,7 +196,10 @@ class TestInstallPlaybook:
 
     def test_install_not_found_in_repo_raises_400(self):
         """Installing a playbook that is not in the registry raises 400."""
-        from ignition_toolkit.api.routers.playbook_library import install_playbook, PlaybookInstallRequest
+        from ignition_toolkit.api.routers.playbook_library import (
+            PlaybookInstallRequest,
+            install_playbook,
+        )
         from ignition_toolkit.playbook.installer import PlaybookInstallError
 
         mock_installer = MagicMock()
@@ -191,13 +211,16 @@ class TestInstallPlaybook:
             playbook_path="gateway/nonexistent",
         )
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(install_playbook(request))
@@ -206,7 +229,10 @@ class TestInstallPlaybook:
 
     def test_install_success_returns_success(self, tmp_path):
         """A successful installation returns status=success."""
-        from ignition_toolkit.api.routers.playbook_library import install_playbook, PlaybookInstallRequest
+        from ignition_toolkit.api.routers.playbook_library import (
+            PlaybookInstallRequest,
+            install_playbook,
+        )
 
         installed_path = tmp_path / "gateway" / "module_upgrade.yaml"
         installed_path.parent.mkdir(parents=True)
@@ -219,13 +245,16 @@ class TestInstallPlaybook:
             playbook_path="gateway/module_upgrade",
         )
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             result = asyncio.run(install_playbook(request))
 
@@ -234,8 +263,9 @@ class TestInstallPlaybook:
 
     def test_install_request_model_requires_playbook_path(self):
         """PlaybookInstallRequest requires playbook_path."""
-        from ignition_toolkit.api.routers.playbook_library import PlaybookInstallRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.playbook_library import PlaybookInstallRequest
 
         with pytest.raises(ValidationError):
             PlaybookInstallRequest()
@@ -254,13 +284,16 @@ class TestUninstallPlaybook:
         mock_installer = MagicMock()
         mock_installer.uninstall_playbook = AsyncMock(return_value=False)  # not found
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(uninstall_playbook("gateway/nonexistent"))
@@ -277,13 +310,16 @@ class TestUninstallPlaybook:
             side_effect=PlaybookInstallError("Cannot uninstall built-in playbook")
         )
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(uninstall_playbook("gateway/module_upgrade", force=False))
@@ -297,13 +333,16 @@ class TestUninstallPlaybook:
         mock_installer = MagicMock()
         mock_installer.uninstall_playbook = AsyncMock(return_value=True)
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             result = asyncio.run(uninstall_playbook("gateway/module_upgrade"))
 
@@ -335,13 +374,16 @@ class TestCheckForUpdates:
         mock_checker.refresh = AsyncMock()
         mock_checker.check_for_updates.return_value = mock_result
 
-        with patch(
-            "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
-            return_value=mock_checker,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
-            return_value=mock_checker,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
+                return_value=mock_checker,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
+                return_value=mock_checker,
+                create=True,
+            ),
         ):
             result = asyncio.run(check_for_updates())
 
@@ -384,13 +426,16 @@ class TestCheckForUpdates:
         mock_checker.refresh = AsyncMock()
         mock_checker.check_for_updates.return_value = mock_result
 
-        with patch(
-            "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
-            return_value=mock_checker,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
-            return_value=mock_checker,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
+                return_value=mock_checker,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
+                return_value=mock_checker,
+                create=True,
+            ),
         ):
             result = asyncio.run(check_for_updates())
 
@@ -405,13 +450,16 @@ class TestCheckForUpdates:
         mock_checker = MagicMock()
         mock_checker.refresh = AsyncMock(side_effect=RuntimeError("network error"))
 
-        with patch(
-            "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
-            return_value=mock_checker,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
-            return_value=mock_checker,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
+                return_value=mock_checker,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
+                return_value=mock_checker,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(check_for_updates())
@@ -432,13 +480,16 @@ class TestCheckPlaybookUpdate:
         mock_checker = MagicMock()
         mock_checker.get_update.return_value = None
 
-        with patch(
-            "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
-            return_value=mock_checker,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
-            return_value=mock_checker,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
+                return_value=mock_checker,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
+                return_value=mock_checker,
+                create=True,
+            ),
         ):
             result = asyncio.run(check_playbook_update("gateway/module_upgrade"))
 
@@ -467,13 +518,16 @@ class TestCheckPlaybookUpdate:
         mock_checker = MagicMock()
         mock_checker.get_update.return_value = update
 
-        with patch(
-            "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
-            return_value=mock_checker,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
-            return_value=mock_checker,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.update_checker.PlaybookUpdateChecker",
+                return_value=mock_checker,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookUpdateChecker",
+                return_value=mock_checker,
+                create=True,
+            ),
         ):
             result = asyncio.run(check_playbook_update("gateway/module_upgrade"))
 
@@ -497,13 +551,16 @@ class TestUpdatePlaybookToLatest:
             side_effect=PlaybookInstallError("Playbook is not installed")
         )
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(update_playbook_to_latest("gateway/nonexistent"))
@@ -521,13 +578,16 @@ class TestUpdatePlaybookToLatest:
         mock_installer = MagicMock()
         mock_installer.update_playbook = AsyncMock(return_value=updated_path)
 
-        with patch(
-            "ignition_toolkit.playbook.installer.PlaybookInstaller",
-            return_value=mock_installer,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
-            return_value=mock_installer,
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.playbook.installer.PlaybookInstaller",
+                return_value=mock_installer,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_library.PlaybookInstaller",
+                return_value=mock_installer,
+                create=True,
+            ),
         ):
             result = asyncio.run(update_playbook_to_latest("gateway/module_upgrade"))
 

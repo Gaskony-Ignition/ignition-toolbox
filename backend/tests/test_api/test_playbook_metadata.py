@@ -6,11 +6,10 @@ Uses direct function calls with asyncio.run() and mocking.
 """
 
 import asyncio
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,9 +49,12 @@ class TestMarkPlaybookVerified:
 
         mock_store = _make_metadata_store(verified=True)
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(mark_playbook_verified("gateway/test.yaml"))
 
@@ -67,9 +69,12 @@ class TestMarkPlaybookVerified:
         mock_store = MagicMock()
         mock_store.mark_verified.side_effect = RuntimeError("store failure")
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(mark_playbook_verified("gateway/test.yaml"))
@@ -89,9 +94,12 @@ class TestUnmarkPlaybookVerified:
 
         mock_store = _make_metadata_store(verified=False)
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(unmark_playbook_verified("gateway/test.yaml"))
 
@@ -106,9 +114,12 @@ class TestUnmarkPlaybookVerified:
         mock_store = MagicMock()
         mock_store.unmark_verified.side_effect = RuntimeError("store failure")
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(unmark_playbook_verified("gateway/test.yaml"))
@@ -128,9 +139,12 @@ class TestEnablePlaybook:
 
         mock_store = _make_metadata_store(enabled=True)
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(enable_playbook("gateway/test.yaml"))
 
@@ -145,9 +159,12 @@ class TestEnablePlaybook:
         mock_store = MagicMock()
         mock_store.set_enabled.side_effect = RuntimeError("store failure")
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(enable_playbook("gateway/test.yaml"))
@@ -167,9 +184,12 @@ class TestDisablePlaybook:
 
         mock_store = _make_metadata_store(enabled=False)
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(disable_playbook("gateway/test.yaml"))
 
@@ -184,9 +204,12 @@ class TestDisablePlaybook:
         mock_store = MagicMock()
         mock_store.set_enabled.side_effect = RuntimeError("store failure")
 
-        with _make_path_validator(), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
-            return_value=mock_store,
+        with (
+            _make_path_validator(),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(disable_playbook("gateway/test.yaml"))
@@ -258,13 +281,16 @@ class TestGetRelativePlaybookPath:
         from ignition_toolkit.api.routers.playbook_metadata import get_relative_playbook_path
 
         # get_all_playbook_dirs is imported inside the function, so patch at source
-        with patch(
-            "ignition_toolkit.core.paths.get_all_playbook_dirs",
-            return_value=[],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_all_playbook_dirs",
-            return_value=[],
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.core.paths.get_all_playbook_dirs",
+                return_value=[],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_all_playbook_dirs",
+                return_value=[],
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 get_relative_playbook_path("/etc/passwd")
@@ -275,13 +301,16 @@ class TestGetRelativePlaybookPath:
         """A path containing .. is rejected with 400."""
         from ignition_toolkit.api.routers.playbook_metadata import get_relative_playbook_path
 
-        with patch(
-            "ignition_toolkit.core.paths.get_all_playbook_dirs",
-            return_value=[],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_metadata.get_all_playbook_dirs",
-            return_value=[],
-            create=True,
+        with (
+            patch(
+                "ignition_toolkit.core.paths.get_all_playbook_dirs",
+                return_value=[],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_metadata.get_all_playbook_dirs",
+                return_value=[],
+                create=True,
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 get_relative_playbook_path("../../etc/passwd")

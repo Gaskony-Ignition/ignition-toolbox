@@ -88,9 +88,7 @@ class WebSocketManager:
                 if websocket in self._keepalive_tasks:
                     self._keepalive_tasks[websocket].cancel()
                     del self._keepalive_tasks[websocket]
-                logger.info(
-                    f"WebSocket disconnected. Total connections: {len(self._connections)}"
-                )
+                logger.info(f"WebSocket disconnected. Total connections: {len(self._connections)}")
 
     async def _keepalive_loop(self, websocket: WebSocket) -> None:
         """
@@ -110,10 +108,9 @@ class WebSocketManager:
 
                 try:
                     # Send server-initiated keepalive ping
-                    await websocket.send_json({
-                        "type": "keepalive",
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    await websocket.send_json(
+                        {"type": "keepalive", "timestamp": datetime.now().isoformat()}
+                    )
                     logger.debug(f"Sent keepalive to {websocket.client}")
                 except Exception as e:
                     logger.warning(f"Failed to send keepalive to {websocket.client}: {e}")
@@ -134,11 +131,17 @@ class WebSocketManager:
         """
         from ignition_toolkit.api.routers.models import StepResultResponse
 
-        print(f"[WS] Broadcasting execution state: status={state.status.value if hasattr(state.status, 'value') else state.status}, step={state.current_step_index}, steps_count={len(state.step_results)}, connections={len(self._connections)}", flush=True)
+        print(
+            f"[WS] Broadcasting execution state: status={state.status.value if hasattr(state.status, 'value') else state.status}, step={state.current_step_index}, steps_count={len(state.step_results)}, connections={len(self._connections)}",
+            flush=True,
+        )
 
         # Warn if broadcasting critical state with no connections
-        status_value = state.status.value if hasattr(state.status, 'value') else state.status
-        if len(self._connections) == 0 and status_value in [ExecutionStatus.CANCELLED.value, ExecutionStatus.FAILED.value]:
+        status_value = state.status.value if hasattr(state.status, "value") else state.status
+        if len(self._connections) == 0 and status_value in [
+            ExecutionStatus.CANCELLED.value,
+            ExecutionStatus.FAILED.value,
+        ]:
             logger.warning(
                 f"[WARN]  CRITICAL: Broadcasting {status_value} status but NO WebSocket "
                 f"connections active! Frontend will miss real-time update for execution {state.execution_id}"
@@ -149,9 +152,7 @@ class WebSocketManager:
             StepResultResponse(
                 step_id=result.step_id,
                 step_name=result.step_name,
-                status=result.status.value
-                if hasattr(result.status, "value")
-                else result.status,
+                status=result.status.value if hasattr(result.status, "value") else result.status,
                 error=result.error,
                 started_at=result.started_at,
                 completed_at=result.completed_at,
@@ -186,7 +187,7 @@ class WebSocketManager:
                     }
                     for sr in step_results
                 ],
-            }
+            },
         }
 
         await self._broadcast(message)

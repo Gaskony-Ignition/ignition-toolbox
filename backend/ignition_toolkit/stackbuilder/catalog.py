@@ -78,7 +78,7 @@ class ServiceCatalog:
 
         # Direct file mode (testing)
         try:
-            with open(self.catalog_path, encoding='utf-8') as f:
+            with open(self.catalog_path, encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             logger.error(f"Catalog file not found: {self.catalog_path}")

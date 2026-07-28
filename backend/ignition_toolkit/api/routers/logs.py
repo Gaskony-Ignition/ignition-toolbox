@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/logs", tags=["logs"])
 
 class LogEntry(BaseModel):
     """Log entry response model"""
+
     timestamp: str
     level: str
     logger: str
@@ -27,6 +28,7 @@ class LogEntry(BaseModel):
 
 class LogsResponse(BaseModel):
     """Response containing log entries"""
+
     logs: list[LogEntry]
     total: int
     filtered: int
@@ -34,6 +36,7 @@ class LogsResponse(BaseModel):
 
 class LogStatsResponse(BaseModel):
     """Log statistics response"""
+
     total_captured: int
     max_entries: int
     level_counts: dict[str, int]
@@ -44,8 +47,12 @@ class LogStatsResponse(BaseModel):
 @router.get("", response_model=LogsResponse)
 async def get_logs(
     limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of logs to return"),
-    level: str | None = Query(default=None, description="Filter by log level (DEBUG, INFO, WARNING, ERROR)"),
-    logger_filter: str | None = Query(default=None, description="Filter by logger name (substring match)"),
+    level: str | None = Query(
+        default=None, description="Filter by log level (DEBUG, INFO, WARNING, ERROR)"
+    ),
+    logger_filter: str | None = Query(
+        default=None, description="Filter by logger name (substring match)"
+    ),
     execution_id: str | None = Query(default=None, description="Filter by execution ID"),
 ):
     """

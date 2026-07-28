@@ -98,7 +98,7 @@ jobs:
       - name: Install Python dev dependencies
         run: |
           cd backend
-          pip install ruff
+          pip install ruff black
 
       - name: Lint frontend
         run: |
@@ -108,4 +108,9 @@ jobs:
       - name: Lint Python (ruff)
         run: |
           cd backend
-          python -m ruff check ignition_toolkit/
+          python -m ruff check ignition_toolkit/ tests/
+
+      - name: Check Python formatting (black)
+        run: |
+          cd backend
+          python -m black --check ignition_toolkit/ tests/

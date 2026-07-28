@@ -58,7 +58,7 @@ class CredentialVault:
         json_str = json.dumps(data, indent=2)
         encrypted = self.encryption.encrypt(json_str)
 
-        self.credentials_file.write_text(encrypted, encoding='utf-8')
+        self.credentials_file.write_text(encrypted, encoding="utf-8")
         self.credentials_file.chmod(0o600)  # Owner read/write only
 
         logger.debug(f"Credentials saved to {self.credentials_file}")
@@ -68,7 +68,7 @@ class CredentialVault:
         if not self.credentials_file.exists():
             return {}
 
-        encrypted = self.credentials_file.read_text(encoding='utf-8')
+        encrypted = self.credentials_file.read_text(encoding="utf-8")
 
         try:
             json_str = self.encryption.decrypt(encrypted)

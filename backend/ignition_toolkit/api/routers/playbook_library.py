@@ -23,6 +23,7 @@ router = APIRouter()
 
 class PlaybookInstallRequest(BaseModel):
     """Request to install a playbook"""
+
     playbook_path: str  # e.g., "gateway/module_upgrade"
     version: str = "latest"
     verify_checksum: bool = True
@@ -30,6 +31,7 @@ class PlaybookInstallRequest(BaseModel):
 
 class PlaybookSubmitRequest(BaseModel):
     """Request to submit a playbook to the library"""
+
     playbook_path: str  # Local playbook path (e.g., "gateway/my_playbook.yaml")
     author: str = "Community"
     tags: list[str] = []
@@ -39,6 +41,7 @@ class PlaybookSubmitRequest(BaseModel):
 
 class GitHubTokenRequest(BaseModel):
     """Request to save a GitHub token"""
+
     token: str
 
 
@@ -81,30 +84,36 @@ async def browse_available_playbooks(force_refresh: bool = False):
             installed_info = registry.installed.get(pb.playbook_path)
             has_update = pb.playbook_path in updates
 
-            playbooks.append({
-                "playbook_path": pb.playbook_path,
-                "version": pb.version,
-                "domain": pb.domain,
-                "verified": pb.verified,
-                "verified_by": pb.verified_by,
-                "description": pb.description,
-                "author": pb.author,
-                "tags": pb.tags,
-                "group": pb.group,
-                "size_bytes": pb.size_bytes,
-                "dependencies": pb.dependencies,
-                "release_notes": pb.release_notes,
-                "is_installed": is_installed,
-                "installed_version": installed_info.version if installed_info else None,
-                "update_available": has_update,
-            })
+            playbooks.append(
+                {
+                    "playbook_path": pb.playbook_path,
+                    "version": pb.version,
+                    "domain": pb.domain,
+                    "verified": pb.verified,
+                    "verified_by": pb.verified_by,
+                    "description": pb.description,
+                    "author": pb.author,
+                    "tags": pb.tags,
+                    "group": pb.group,
+                    "size_bytes": pb.size_bytes,
+                    "dependencies": pb.dependencies,
+                    "release_notes": pb.release_notes,
+                    "is_installed": is_installed,
+                    "installed_version": installed_info.version if installed_info else None,
+                    "update_available": has_update,
+                }
+            )
 
         return {
             "status": "success",
             "count": len(playbooks),
             "playbooks": playbooks,
             "last_fetched": registry.last_fetched,
-            "message": "Playbook library is not yet available. Check back later or create your own playbooks." if len(playbooks) == 0 else None,
+            "message": (
+                "Playbook library is not yet available. Check back later or create your own playbooks."
+                if len(playbooks) == 0
+                else None
+            ),
         }
 
     except Exception as e:
@@ -127,7 +136,7 @@ async def install_playbook(request: PlaybookInstallRequest):
         installed_path = await installer.install_playbook(
             playbook_path=request.playbook_path,
             version=request.version,
-            verify_checksum=request.verify_checksum
+            verify_checksum=request.verify_checksum,
         )
 
         return {
@@ -158,10 +167,7 @@ async def uninstall_playbook(playbook_path: str, force: bool = False):
 
         installer = PlaybookInstaller()
 
-        success = await installer.uninstall_playbook(
-            playbook_path=playbook_path,
-            force=force
-        )
+        success = await installer.uninstall_playbook(playbook_path=playbook_path, force=force)
 
         if not success:
             raise HTTPException(status_code=404, detail=f"Playbook {playbook_path} not found")
@@ -309,8 +315,7 @@ async def get_update_stats():
             "minor_updates": len(result.minor_updates),
             "verified_updates": len(verified_updates),
             "updates_by_domain": {
-                domain: len(updates)
-                for domain, updates in updates_by_domain.items()
+                domain: len(updates) for domain, updates in updates_by_domain.items()
             },
             "last_fetched": result.last_fetched,
         }
@@ -388,10 +393,13 @@ async def submit_playbook_to_library(request: PlaybookSubmitRequest):
         # Get the playbook info and YAML content
         info = get_playbook_info(request.playbook_path)
         if not info:
-            raise HTTPException(status_code=404, detail=f"Playbook not found: {request.playbook_path}")
+            raise HTTPException(
+                status_code=404, detail=f"Playbook not found: {request.playbook_path}"
+            )
 
         # Read the YAML file
         from ignition_toolkit.playbook.core.validation import validate_and_resolve
+
         resolved_path = validate_and_resolve(request.playbook_path)
         yaml_content = resolved_path.read_text(encoding="utf-8")
 

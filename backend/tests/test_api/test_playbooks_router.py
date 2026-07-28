@@ -6,9 +6,10 @@ Uses direct function import + patch pattern (same as test_health.py / test_execu
 """
 
 import asyncio
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -39,18 +40,23 @@ class TestListPlaybooks:
         # Both dirs are non-existent tmp paths so rglob yields nothing
         nonexistent = Path("/tmp/does_not_exist_playbooks_xyz")
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
-            return_value=mock_metadata_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
-            return_value=[nonexistent],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
-            return_value=nonexistent,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
-            return_value=nonexistent,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
+                return_value=mock_metadata_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
+                return_value=[nonexistent],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
+                return_value=nonexistent,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
+                return_value=nonexistent,
+            ),
         ):
             result = asyncio.run(list_playbooks())
 
@@ -75,18 +81,23 @@ steps:
 """
         (tmp_path / "test_playbook.yaml").write_text(playbook_yaml, encoding="utf-8")
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
-            return_value=mock_metadata_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
-            return_value=[tmp_path],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
-            return_value=tmp_path,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
+                return_value=mock_metadata_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
+                return_value=[tmp_path],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
+                return_value=tmp_path,
+            ),
         ):
             result = asyncio.run(list_playbooks())
 
@@ -99,6 +110,7 @@ class TestGetPlaybook:
     def test_get_playbook_raises_404_for_unknown_name(self):
         """GET /api/playbooks/{path} returns 404 for an unknown playbook path."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.playbook_crud import get_playbook
 
         nonexistent = Path("/tmp/does_not_exist_xyz")
@@ -131,18 +143,23 @@ steps:
         pb_file = tmp_path / "my_playbook.yaml"
         pb_file.write_text(playbook_yaml, encoding="utf-8")
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
-            return_value=mock_metadata_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
-            return_value=[tmp_path],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
-            return_value=tmp_path,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_metadata_store",
+                return_value=mock_metadata_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_all_playbook_dirs",
+                return_value=[tmp_path],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_builtin_playbooks_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_crud.get_user_playbooks_dir",
+                return_value=tmp_path,
+            ),
         ):
             result = asyncio.run(get_playbook("my_playbook.yaml"))
 
@@ -155,9 +172,10 @@ class TestCreatePlaybook:
     def test_create_playbook_with_invalid_domain_raises_400(self, tmp_path):
         """POST /api/playbooks/create returns 400 for an invalid domain."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.playbook_lifecycle import (
-            import_playbook,
             PlaybookImportRequest,
+            import_playbook,
         )
 
         request = PlaybookImportRequest(
@@ -166,12 +184,15 @@ class TestCreatePlaybook:
             yaml_content="name: Test\nversion: '1.0'\ndescription: x\nsteps: []\n",
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=MagicMock(),
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=MagicMock(),
+            ),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(import_playbook(request))
@@ -181,8 +202,8 @@ class TestCreatePlaybook:
     def test_create_playbook_succeeds_with_valid_request(self, tmp_path):
         """POST /api/playbooks/create creates a new playbook file."""
         from ignition_toolkit.api.routers.playbook_lifecycle import (
-            import_playbook,
             PlaybookImportRequest,
+            import_playbook,
         )
 
         playbook_yaml = """\
@@ -208,15 +229,19 @@ steps:
             yaml_content=playbook_yaml,
         )
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
-            return_value=tmp_path,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_all_playbook_dirs",
-            return_value=[tmp_path],
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_user_playbooks_dir",
+                return_value=tmp_path,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_all_playbook_dirs",
+                return_value=[tmp_path],
+            ),
         ):
             result = asyncio.run(import_playbook(request))
 
@@ -228,6 +253,7 @@ class TestDeletePlaybook:
     def test_delete_playbook_raises_404_for_unknown_path(self):
         """DELETE /api/playbooks/{path} returns 404 for a nonexistent playbook."""
         from fastapi import HTTPException
+
         from ignition_toolkit.api.routers.playbook_lifecycle import delete_playbook
 
         nonexistent = Path("/tmp/does_not_exist_xyz")
@@ -252,12 +278,15 @@ class TestDeletePlaybook:
         mock_store.get_metadata.return_value = MagicMock()
         mock_store._metadata = {}
 
-        with patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_all_playbook_dirs",
-            return_value=[tmp_path],
-        ), patch(
-            "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
-            return_value=mock_store,
+        with (
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_all_playbook_dirs",
+                return_value=[tmp_path],
+            ),
+            patch(
+                "ignition_toolkit.api.routers.playbook_lifecycle.get_metadata_store",
+                return_value=mock_store,
+            ),
         ):
             result = asyncio.run(delete_playbook("to_delete.yaml"))
 
@@ -269,6 +298,7 @@ class TestPlaybookMetadataUpdateRequest:
     def test_metadata_request_rejects_dangerous_name(self):
         """PlaybookMetadataUpdateRequest rejects names with dangerous characters."""
         from pydantic import ValidationError
+
         from ignition_toolkit.api.routers.playbook_crud import PlaybookMetadataUpdateRequest
 
         with pytest.raises(ValidationError):

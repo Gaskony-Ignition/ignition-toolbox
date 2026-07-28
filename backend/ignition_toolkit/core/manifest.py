@@ -33,9 +33,7 @@ logger = logging.getLogger(__name__)
 
 # GitHub repository settings (matches remote_data.py and registry.py)
 GITHUB_REPO = "Gaskony-Ignition/ignition-toolbox"
-MANIFEST_GITHUB_URL = (
-    f"https://api.github.com/repos/{GITHUB_REPO}/contents/toolbox-manifest.json"
-)
+MANIFEST_GITHUB_URL = f"https://api.github.com/repos/{GITHUB_REPO}/contents/toolbox-manifest.json"
 
 # Cache settings
 CACHE_TTL = timedelta(hours=1)
@@ -215,6 +213,7 @@ class ManifestManager:
             from packaging.version import Version
 
             from ignition_toolkit import __version__
+
             current = Version(__version__)
         except Exception:
             # If version parsing fails, return all non-dismissed notifications

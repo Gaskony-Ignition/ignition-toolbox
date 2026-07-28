@@ -28,8 +28,10 @@ router = APIRouter(prefix="/execution-queue", tags=["Execution Queue"])
 
 # Request/Response Models
 
+
 class EnqueueRequest(BaseModel):
     """Request to enqueue a playbook execution"""
+
     playbook_path: str = Field(..., description="Path to playbook YAML file")
     parameters: dict[str, Any] | None = Field(default=None, description="Playbook parameters")
     gateway_url: str | None = Field(default=None, description="Gateway URL")
@@ -39,12 +41,14 @@ class EnqueueRequest(BaseModel):
 
 class ParallelExecutionRequest(BaseModel):
     """Request to run playbooks in parallel"""
+
     playbooks: list[dict[str, Any]] = Field(..., description="List of playbook configurations")
     fail_fast: bool = Field(default=False, description="Cancel remaining on first failure")
 
 
 class ResourceLimitUpdate(BaseModel):
     """Request to update resource limits"""
+
     browser_limit: int | None = Field(default=None, ge=1, le=20)
     gateway_limit: int | None = Field(default=None, ge=1, le=50)
     memory_limit: int | None = Field(default=None, ge=1, le=20)
@@ -53,10 +57,12 @@ class ResourceLimitUpdate(BaseModel):
 
 class QueueSettingsUpdate(BaseModel):
     """Request to update queue settings"""
+
     max_concurrent: int = Field(..., ge=1, le=20, description="Maximum concurrent executions")
 
 
 # Endpoints
+
 
 @router.get("/status")
 async def get_queue_status():
@@ -117,10 +123,7 @@ async def cancel_queued_execution(execution_id: str):
     if cancelled:
         return {"success": True, "message": "Execution cancelled"}
     else:
-        raise HTTPException(
-            status_code=404,
-            detail="Execution not found or already running"
-        )
+        raise HTTPException(status_code=404, detail="Execution not found or already running")
 
 
 @router.get("/running")
@@ -136,6 +139,7 @@ async def get_running_executions():
 
 
 # Parallel Execution Endpoints
+
 
 @router.post("/parallel")
 async def run_parallel_executions(request: ParallelExecutionRequest):
@@ -190,13 +194,11 @@ async def cancel_parallel_execution(execution_id: str):
     if cancelled:
         return {"success": True, "message": "Execution cancelled"}
     else:
-        raise HTTPException(
-            status_code=404,
-            detail="Execution not found or already completed"
-        )
+        raise HTTPException(status_code=404, detail="Execution not found or already completed")
 
 
 # Resource Management Endpoints
+
 
 @router.get("/resources")
 async def get_resource_status():
@@ -239,5 +241,3 @@ async def update_resource_limits(request: ResourceLimitUpdate):
         "message": "Resource limits updated",
         "status": limiter.get_status(),
     }
-
-

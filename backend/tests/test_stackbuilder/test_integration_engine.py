@@ -10,7 +10,6 @@ Tests the integration_engine.py module functionality:
 """
 
 import pytest
-from pathlib import Path
 
 from ignition_toolkit.stackbuilder.integration_engine import (
     IntegrationEngine,
@@ -100,7 +99,9 @@ class TestIntegrationDetection:
         assert result["conflicts"] == []
         assert result["warnings"] == []
 
-    def test_detect_database_provider(self, engine, sample_ignition_instance, sample_postgres_instance):
+    def test_detect_database_provider(
+        self, engine, sample_ignition_instance, sample_postgres_instance
+    ):
         """Test detection identifies database provider integration."""
         instances = [sample_ignition_instance, sample_postgres_instance]
         result = engine.detect_integrations(instances)
@@ -195,7 +196,9 @@ class TestDependencyChecking:
     def engine(self, integrations_path):
         return IntegrationEngine(integrations_path=integrations_path)
 
-    def test_no_warnings_with_dependencies_met(self, engine, sample_ignition_instance, sample_postgres_instance):
+    def test_no_warnings_with_dependencies_met(
+        self, engine, sample_ignition_instance, sample_postgres_instance
+    ):
         """Test no warnings when dependencies are met."""
         instances = [sample_ignition_instance, sample_postgres_instance]
         services = [inst["app_id"] for inst in instances]
@@ -208,10 +211,9 @@ class TestDependencyChecking:
         """Test Keycloak recommends database."""
         instances = [sample_keycloak_instance]
         services = ["keycloak"]
-        result = engine.check_dependencies(services, instances)
-        # Should have recommendation for database
-        db_warnings = [w for w in result["warnings"] if "database" in w.get("message", "").lower()]
-        # This depends on the rules in integrations.json
+        # Whether a database recommendation is emitted depends on the rules in
+        # integrations.json — this only asserts the call itself succeeds.
+        engine.check_dependencies(services, instances)
 
 
 class TestRecommendations:
@@ -285,7 +287,9 @@ class TestIntegrationSummary:
     def engine(self, integrations_path):
         return IntegrationEngine(integrations_path=integrations_path)
 
-    def test_summary_with_integrations(self, engine, sample_ignition_instance, sample_traefik_instance, sample_postgres_instance):
+    def test_summary_with_integrations(
+        self, engine, sample_ignition_instance, sample_traefik_instance, sample_postgres_instance
+    ):
         """Test summary includes detected integrations."""
         instances = [sample_ignition_instance, sample_traefik_instance, sample_postgres_instance]
         detection_result = engine.detect_integrations(instances)

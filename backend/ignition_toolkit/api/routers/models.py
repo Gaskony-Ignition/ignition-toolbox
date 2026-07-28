@@ -49,7 +49,9 @@ class PlaybookInfo(BaseModel):
     steps: list[StepInfo] = []
     # Metadata fields
     domain: str | None = None  # Playbook domain (gateway, designer, perspective)
-    group: str | None = None  # Playbook group for UI organization (e.g., "Gateway (Base Playbooks)")
+    group: str | None = (
+        None  # Playbook group for UI organization (e.g., "Gateway (Base Playbooks)")
+    )
     revision: int = 0
     verified: bool = False
     enabled: bool = True
@@ -88,12 +90,16 @@ class ExecutionRequest(BaseModel):
         # Limit value length to prevent DoS
         for key, value in v.items():
             if len(key) > ValidationLimits.PARAMETER_NAME_MAX:
-                raise ValueError(f"Parameter name too long (max {ValidationLimits.PARAMETER_NAME_MAX} chars)")
+                raise ValueError(
+                    f"Parameter name too long (max {ValidationLimits.PARAMETER_NAME_MAX} chars)"
+                )
 
             # Only validate string values for length and dangerous characters
             if isinstance(value, str):
                 if len(value) > ValidationLimits.PARAMETER_VALUE_MAX:
-                    raise ValueError(f'Parameter "{key}" value too long (max {ValidationLimits.PARAMETER_VALUE_MAX} chars)')
+                    raise ValueError(
+                        f'Parameter "{key}" value too long (max {ValidationLimits.PARAMETER_VALUE_MAX} chars)'
+                    )
 
                 # Check for potentially dangerous characters
                 import logging
@@ -102,7 +108,9 @@ class ExecutionRequest(BaseModel):
                 dangerous_chars = [";", "--", "/*", "*/", "<?", "?>"]
                 for char in dangerous_chars:
                     if char in value:
-                        logger.warning(f'Potentially dangerous characters in parameter "{key}": {char}')
+                        logger.warning(
+                            f'Potentially dangerous characters in parameter "{key}": {char}'
+                        )
 
         return v
 
@@ -114,7 +122,9 @@ class ExecutionRequest(BaseModel):
             if not v.startswith(("http://", "https://")):
                 raise ValueError("Gateway URL must start with http:// or https://")
             if len(v) > ValidationLimits.GATEWAY_URL_MAX:
-                raise ValueError(f"Gateway URL too long (max {ValidationLimits.GATEWAY_URL_MAX} chars)")
+                raise ValueError(
+                    f"Gateway URL too long (max {ValidationLimits.GATEWAY_URL_MAX} chars)"
+                )
         return v
 
 

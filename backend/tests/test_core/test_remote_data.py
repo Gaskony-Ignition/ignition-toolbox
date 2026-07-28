@@ -76,9 +76,7 @@ class TestLoadPriority:
             "_meta": {"version": "2.0.0", "schema_version": 1},
             "items": ["x", "y"],
         }
-        (user_dir / "test_data.json").write_text(
-            json.dumps(override_data), encoding="utf-8"
-        )
+        (user_dir / "test_data.json").write_text(json.dumps(override_data), encoding="utf-8")
 
         data = manager.load()
         assert data["_meta"]["version"] == "2.0.0"
@@ -123,9 +121,7 @@ class TestChecksum:
 
     def test_verify_invalid_checksum(self):
         """Should return False for non-matching checksum."""
-        assert RemoteDataManager._verify_checksum(
-            "content", "sha256:0000000000000000"
-        ) is False
+        assert RemoteDataManager._verify_checksum("content", "sha256:0000000000000000") is False
 
     def test_compute_checksum_format(self):
         """Should return checksum in sha256:hexdigest format."""
@@ -140,10 +136,12 @@ class TestUpdate:
     @pytest.mark.asyncio
     async def test_update_downloads_and_saves(self, manager, tmp_user_dir):
         """Should download content and save to user data dir."""
-        content = json.dumps({
-            "_meta": {"version": "2.0.0", "schema_version": 1},
-            "updated": True,
-        })
+        content = json.dumps(
+            {
+                "_meta": {"version": "2.0.0", "schema_version": 1},
+                "updated": True,
+            }
+        )
         sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
         checksum = f"sha256:{sha256}"
 
@@ -192,14 +190,14 @@ class TestUpdate:
         user_dir = tmp_user_dir / "remote_data" / "test_component"
         user_dir.mkdir(parents=True)
         existing = {"_meta": {"version": "1.0.0", "schema_version": 1}}
-        (user_dir / "test_data.json").write_text(
-            json.dumps(existing), encoding="utf-8"
-        )
+        (user_dir / "test_data.json").write_text(json.dumps(existing), encoding="utf-8")
 
         # Try to update with schema_version 2
-        new_content = json.dumps({
-            "_meta": {"version": "2.0.0", "schema_version": 2},
-        })
+        new_content = json.dumps(
+            {
+                "_meta": {"version": "2.0.0", "schema_version": 2},
+            }
+        )
 
         with patch.object(manager, "_download", new_callable=AsyncMock) as mock_dl:
             mock_dl.return_value = new_content
@@ -252,9 +250,7 @@ class TestMetadata:
         user_dir = tmp_user_dir / "remote_data" / "test_component"
         user_dir.mkdir(parents=True)
         data = {"_meta": {"version": "2.0.0", "schema_version": 1}}
-        (user_dir / "test_data.json").write_text(
-            json.dumps(data), encoding="utf-8"
-        )
+        (user_dir / "test_data.json").write_text(json.dumps(data), encoding="utf-8")
 
         meta = manager.get_metadata()
         assert meta["source"] == "downloaded"
@@ -313,9 +309,7 @@ class TestCacheTTL:
         """Should check GitHub when cache TTL has expired."""
         manager._last_checked = datetime.now(timezone.utc) - timedelta(hours=2)
 
-        with patch.object(
-            manager, "_check_github", new_callable=AsyncMock
-        ) as mock_check:
+        with patch.object(manager, "_check_github", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = None
             await manager.check_for_update()
             mock_check.assert_called_once()
@@ -325,9 +319,7 @@ class TestCacheTTL:
         """Should check GitHub when force=True regardless of cache."""
         manager._last_checked = datetime.now(timezone.utc)
 
-        with patch.object(
-            manager, "_check_github", new_callable=AsyncMock
-        ) as mock_check:
+        with patch.object(manager, "_check_github", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = None
             await manager.check_for_update(force=True)
             mock_check.assert_called_once()

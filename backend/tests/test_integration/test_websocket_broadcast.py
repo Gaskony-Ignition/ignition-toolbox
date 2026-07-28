@@ -4,10 +4,9 @@ Integration tests for WebSocket message broadcasting.
 Tests the WebSocket message queue and broadcasting functionality.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, UTC
 
 from ignition_toolkit.api.services.websocket_manager import WebSocketManager
 
@@ -103,10 +102,7 @@ class TestExecutionUpdates:
 
         await ws_manager.connect(mock_ws)
 
-        await ws_manager.broadcast_screenshot(
-            execution_id="test-123",
-            screenshot_b64="base64data"
-        )
+        await ws_manager.broadcast_screenshot(execution_id="test-123", screenshot_b64="base64data")
 
         # Screenshot should have been sent
         assert mock_ws.send_json.called
@@ -199,7 +195,7 @@ class TestManagerInstantiation:
         """Test creating a new WebSocketManager instance."""
         manager = WebSocketManager()
         assert manager is not None
-        assert hasattr(manager, '_connections')
+        assert hasattr(manager, "_connections")
         assert manager.get_connection_count() == 0
 
     def test_custom_keepalive_interval(self):

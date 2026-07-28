@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class PlaybookInstallError(Exception):
     """Raised when playbook installation fails"""
+
     pass
 
 
@@ -56,10 +57,7 @@ class PlaybookInstaller:
         self.builtin_playbooks_dir = get_builtin_playbooks_dir()
 
     async def install_playbook(
-        self,
-        playbook_path: str,
-        version: str = "latest",
-        verify_checksum: bool = True
+        self, playbook_path: str, version: str = "latest", verify_checksum: bool = True
     ) -> Path:
         """
         Install a playbook from the repository
@@ -120,7 +118,9 @@ class PlaybookInstaller:
             playbook_data = yaml.safe_load(yaml_content)
             # Basic validation
             if not all(key in playbook_data for key in ["name", "version", "steps"]):
-                raise PlaybookInstallError("Invalid playbook: missing required fields (name, version, steps)")
+                raise PlaybookInstallError(
+                    "Invalid playbook: missing required fields (name, version, steps)"
+                )
         except yaml.YAMLError as e:
             raise PlaybookInstallError(f"Invalid YAML syntax: {e}")
 
@@ -131,7 +131,7 @@ class PlaybookInstaller:
 
         # Write playbook file
         logger.info(f"Installing to: {install_path}")
-        with open(install_path, "w", encoding='utf-8') as f:
+        with open(install_path, "w", encoding="utf-8") as f:
             f.write(yaml_content)
 
         # Register in registry
@@ -141,7 +141,7 @@ class PlaybookInstaller:
             location=str(install_path),
             source="user-installed",
             checksum=available_playbook.checksum,
-            verified=available_playbook.verified
+            verified=available_playbook.verified,
         )
         self.registry.save()
 
@@ -220,8 +220,7 @@ class PlaybookInstaller:
         # Check if installed
         if not self.registry.is_installed(playbook_path):
             raise PlaybookInstallError(
-                f"Playbook {playbook_path} is not installed. "
-                f"Install it first before updating."
+                f"Playbook {playbook_path} is not installed. " f"Install it first before updating."
             )
 
         # Uninstall current version

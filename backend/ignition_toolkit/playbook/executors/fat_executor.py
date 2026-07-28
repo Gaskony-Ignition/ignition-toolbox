@@ -28,10 +28,7 @@ class FATGenerateReportHandler(StepHandler):
 
         # Validate test results
         if not test_results or not isinstance(test_results, dict):
-            raise StepExecutionError(
-                "fat",
-                "Invalid or missing test_results parameter"
-            )
+            raise StepExecutionError("fat", "Invalid or missing test_results parameter")
 
         results_list = test_results.get("results", [])
         total_tests = test_results.get("total", len(results_list))
@@ -54,7 +51,7 @@ class FATGenerateReportHandler(StepHandler):
             visual_issues=visual_issues,
             visual_analysis=visual_analysis,
             metadata=metadata,
-            screenshots_dir=screenshots_dir
+            screenshots_dir=screenshots_dir,
         )
 
         # Save report to file
@@ -64,7 +61,7 @@ class FATGenerateReportHandler(StepHandler):
 
         report_path = report_dir / f"{report_id}.html"
 
-        with open(report_path, "w", encoding='utf-8') as f:
+        with open(report_path, "w", encoding="utf-8") as f:
             f.write(report_html)
 
         logger.info(
@@ -81,7 +78,7 @@ class FATGenerateReportHandler(StepHandler):
             "total_tests": total_tests,
             "passed_tests": passed_tests,
             "failed_tests": failed_tests,
-            "visual_issues": visual_issues
+            "visual_issues": visual_issues,
         }
 
     def _generate_html_report(
@@ -94,7 +91,7 @@ class FATGenerateReportHandler(StepHandler):
         visual_issues: int,
         visual_analysis: dict,
         metadata: dict,
-        screenshots_dir: str
+        screenshots_dir: str,
     ) -> str:
         """Generate HTML report"""
 
@@ -150,9 +147,19 @@ class FATGenerateReportHandler(StepHandler):
             failed_guidelines = compliance.get("failed", [])
             warnings = compliance.get("warnings", [])
 
-            passed_html = "<li>" + "</li><li>".join(passed_guidelines) + "</li>" if passed_guidelines else "<li>None</li>"
-            failed_html = "<li>" + "</li><li>".join(failed_guidelines) + "</li>" if failed_guidelines else "<li>None</li>"
-            warnings_html = "<li>" + "</li><li>".join(warnings) + "</li>" if warnings else "<li>None</li>"
+            passed_html = (
+                "<li>" + "</li><li>".join(passed_guidelines) + "</li>"
+                if passed_guidelines
+                else "<li>None</li>"
+            )
+            failed_html = (
+                "<li>" + "</li><li>".join(failed_guidelines) + "</li>"
+                if failed_guidelines
+                else "<li>None</li>"
+            )
+            warnings_html = (
+                "<li>" + "</li><li>".join(warnings) + "</li>" if warnings else "<li>None</li>"
+            )
 
             visual_section = f"""
             <div class="section">
@@ -486,20 +493,14 @@ class FATExportReportHandler(StepHandler):
         output_path = params.get("output_path")
 
         if not report_id:
-            raise StepExecutionError(
-                "fat",
-                "No report_id provided for export"
-            )
+            raise StepExecutionError("fat", "No report_id provided for export")
 
         # For prototype, just copy the HTML report to specified location
         report_dir = get_data_dir() / "reports"
         source_path = report_dir / f"{report_id}.html"
 
         if not source_path.exists():
-            raise StepExecutionError(
-                "fat",
-                f"Report not found: {report_id}"
-            )
+            raise StepExecutionError("fat", f"Report not found: {report_id}")
 
         if output_path:
             dest_path = Path(output_path)
@@ -508,6 +509,7 @@ class FATExportReportHandler(StepHandler):
             # For HTML format, just copy
             if format_type == "html":
                 import shutil
+
                 shutil.copy(source_path, dest_path)
 
             # For PDF format (future enhancement)
@@ -515,6 +517,7 @@ class FATExportReportHandler(StepHandler):
                 logger.warning("PDF export not yet implemented - copying HTML instead")
                 dest_path = dest_path.with_suffix(".html")
                 import shutil
+
                 shutil.copy(source_path, dest_path)
 
             logger.info(f"FAT report exported to: {dest_path}")
@@ -523,7 +526,7 @@ class FATExportReportHandler(StepHandler):
                 "status": "exported",
                 "format": format_type,
                 "output_path": str(dest_path),
-                "report_id": report_id
+                "report_id": report_id,
             }
 
         else:
@@ -532,5 +535,5 @@ class FATExportReportHandler(StepHandler):
                 "status": "exported",
                 "format": "html",
                 "output_path": str(source_path),
-                "report_id": report_id
+                "report_id": report_id,
             }

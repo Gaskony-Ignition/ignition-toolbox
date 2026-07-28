@@ -60,9 +60,7 @@ class PathValidator:
         try:
             full_path.relative_to(base_dir.resolve())
         except ValueError:
-            raise HTTPException(
-                status_code=400, detail=f"Path must be within {base_dir}"
-            )
+            raise HTTPException(status_code=400, detail=f"Path must be within {base_dir}")
 
         # Verify extension
         if full_path.suffix not in [".yaml", ".yml"]:
@@ -72,9 +70,7 @@ class PathValidator:
 
         # Verify existence
         if must_exist and not full_path.exists():
-            raise HTTPException(
-                status_code=404, detail=f"Playbook file not found: {path_str}"
-            )
+            raise HTTPException(status_code=404, detail=f"Playbook file not found: {path_str}")
 
         return full_path
 
@@ -102,9 +98,7 @@ class PathValidator:
             )
 
     @staticmethod
-    def validate_and_resolve(
-        path_str: str, must_exist: bool = True
-    ) -> tuple[Path, Path]:
+    def validate_and_resolve(path_str: str, must_exist: bool = True) -> tuple[Path, Path]:
         """
         Validate playbook path and return both base dir and full path
 
@@ -133,9 +127,7 @@ class PathValidator:
             except HTTPException:
                 continue
 
-        raise HTTPException(
-            status_code=404, detail=f"Playbook file not found: {path_str}"
-        )
+        raise HTTPException(status_code=404, detail=f"Playbook file not found: {path_str}")
 
     @staticmethod
     def validate_path_safety(path: Path) -> None:

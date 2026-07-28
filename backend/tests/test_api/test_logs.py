@@ -6,9 +6,7 @@ The log capture service is mocked so no actual logging infrastructure is needed.
 """
 
 import asyncio
-import pytest
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -98,7 +96,7 @@ class TestGetLogs:
             "ignition_toolkit.api.routers.logs.get_log_capture",
             return_value=capture,
         ):
-            result = asyncio.run(get_logs(level="ERROR"))
+            asyncio.run(get_logs(level="ERROR"))
 
         capture.get_logs.assert_called_once()
         call_kwargs = capture.get_logs.call_args.kwargs
@@ -115,7 +113,7 @@ class TestGetLogs:
             "ignition_toolkit.api.routers.logs.get_log_capture",
             return_value=capture,
         ):
-            result = asyncio.run(get_logs(logger_filter="browser"))
+            asyncio.run(get_logs(logger_filter="browser"))
 
         call_kwargs = capture.get_logs.call_args.kwargs
         assert call_kwargs["logger_filter"] == "browser"
@@ -132,7 +130,7 @@ class TestGetLogs:
             "ignition_toolkit.api.routers.logs.get_log_capture",
             return_value=capture,
         ):
-            result = asyncio.run(get_logs(execution_id=exec_id))
+            asyncio.run(get_logs(execution_id=exec_id))
 
         call_kwargs = capture.get_logs.call_args.kwargs
         assert call_kwargs["execution_id"] == exec_id

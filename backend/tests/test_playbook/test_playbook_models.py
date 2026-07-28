@@ -88,7 +88,7 @@ class TestPlaybookStep:
     """PlaybookStep dataclass construction and defaults."""
 
     def test_minimal_construction(self):
-        from ignition_toolkit.playbook.models import PlaybookStep, StepType, OnFailureAction
+        from ignition_toolkit.playbook.models import PlaybookStep, StepType
 
         step = PlaybookStep(
             id="step1",
@@ -100,7 +100,7 @@ class TestPlaybookStep:
         assert step.type == StepType.GATEWAY_LOGIN
 
     def test_default_on_failure(self):
-        from ignition_toolkit.playbook.models import PlaybookStep, StepType, OnFailureAction
+        from ignition_toolkit.playbook.models import OnFailureAction, PlaybookStep, StepType
 
         step = PlaybookStep(id="s", name="N", type=StepType.LOG)
         assert step.on_failure == OnFailureAction.ABORT
@@ -174,7 +174,7 @@ class TestPlaybook:
         assert pb.get_step("nonexistent") is None
 
     def test_get_parameter_found(self):
-        from ignition_toolkit.playbook.models import Playbook, PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, Playbook, PlaybookParameter
 
         param = PlaybookParameter(name="gateway_url", type=ParameterType.STRING)
         pb = Playbook(name="P", version="1.0", parameters=[param])
@@ -191,33 +191,33 @@ class TestPlaybookParameter:
     """PlaybookParameter dataclass validation."""
 
     def test_construction(self):
-        from ignition_toolkit.playbook.models import PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, PlaybookParameter
 
         param = PlaybookParameter(name="url", type=ParameterType.STRING)
         assert param.name == "url"
         assert param.type == ParameterType.STRING
 
     def test_default_required_true(self):
-        from ignition_toolkit.playbook.models import PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, PlaybookParameter
 
         param = PlaybookParameter(name="url", type=ParameterType.STRING)
         assert param.required is True
 
     def test_validate_string_passes(self):
-        from ignition_toolkit.playbook.models import PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, PlaybookParameter
 
         param = PlaybookParameter(name="url", type=ParameterType.STRING)
         assert param.validate("http://localhost") is True
 
     def test_validate_wrong_type_raises(self):
-        from ignition_toolkit.playbook.models import PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, PlaybookParameter
 
         param = PlaybookParameter(name="count", type=ParameterType.INTEGER)
         with pytest.raises(ValueError):
             param.validate("not an int")
 
     def test_validate_required_missing_raises(self):
-        from ignition_toolkit.playbook.models import PlaybookParameter, ParameterType
+        from ignition_toolkit.playbook.models import ParameterType, PlaybookParameter
 
         param = PlaybookParameter(name="url", type=ParameterType.STRING, required=True)
         with pytest.raises(ValueError):
@@ -268,8 +268,12 @@ class TestExecutionState:
         from ignition_toolkit.playbook.models import StepResult, StepStatus
 
         state = self._make_state()
-        r1 = StepResult(step_id="s1", step_name="S1", status=StepStatus.RUNNING, started_at=datetime.now())
-        r2 = StepResult(step_id="s1", step_name="S1", status=StepStatus.COMPLETED, started_at=datetime.now())
+        r1 = StepResult(
+            step_id="s1", step_name="S1", status=StepStatus.RUNNING, started_at=datetime.now()
+        )
+        r2 = StepResult(
+            step_id="s1", step_name="S1", status=StepStatus.COMPLETED, started_at=datetime.now()
+        )
 
         state.add_step_result(r1)
         state.add_step_result(r2)

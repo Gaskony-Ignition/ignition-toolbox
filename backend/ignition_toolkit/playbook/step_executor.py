@@ -143,44 +143,80 @@ class StepExecutor:
             )
             handlers[StepType.GATEWAY_WAIT_MODULE] = GatewayWaitModuleHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get(TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL),
+                default_timeout=self.timeout_overrides.get(
+                    TimeoutKeys.MODULE_INSTALL, TimeoutDefaults.MODULE_INSTALL
+                ),
             )
-            handlers[StepType.GATEWAY_LIST_PROJECTS] = GatewayListProjectsHandler(self.gateway_client)
+            handlers[StepType.GATEWAY_LIST_PROJECTS] = GatewayListProjectsHandler(
+                self.gateway_client
+            )
             handlers[StepType.GATEWAY_GET_PROJECT] = GatewayGetProjectHandler(self.gateway_client)
             handlers[StepType.GATEWAY_RESTART] = GatewayRestartHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART),
+                default_timeout=self.timeout_overrides.get(
+                    TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART
+                ),
             )
             handlers[StepType.GATEWAY_WAIT_READY] = GatewayWaitReadyHandler(
                 self.gateway_client,
-                default_timeout=self.timeout_overrides.get(TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART),
+                default_timeout=self.timeout_overrides.get(
+                    TimeoutKeys.GATEWAY_RESTART, TimeoutDefaults.GATEWAY_RESTART
+                ),
             )
 
         # Browser handlers
         if self.browser_manager:
-            browser_timeout = self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION)
-            verify_timeout = self.timeout_overrides.get(TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_VERIFY)
+            browser_timeout = self.timeout_overrides.get(
+                TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION
+            )
+            verify_timeout = self.timeout_overrides.get(
+                TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_VERIFY
+            )
             handlers[StepType.BROWSER_NAVIGATE] = BrowserNavigateHandler(self.browser_manager)
-            handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(self.browser_manager, default_timeout=browser_timeout)
-            handlers[StepType.BROWSER_FILL] = BrowserFillHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_CLICK] = BrowserClickHandler(
+                self.browser_manager, default_timeout=browser_timeout
+            )
+            handlers[StepType.BROWSER_FILL] = BrowserFillHandler(
+                self.browser_manager, default_timeout=browser_timeout
+            )
             handlers[StepType.BROWSER_KEYBOARD] = BrowserKeyboardHandler(self.browser_manager)
-            handlers[StepType.BROWSER_FILE_UPLOAD] = BrowserFileUploadHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_FILE_UPLOAD] = BrowserFileUploadHandler(
+                self.browser_manager, default_timeout=browser_timeout
+            )
             handlers[StepType.BROWSER_SCREENSHOT] = BrowserScreenshotHandler(self.browser_manager)
-            handlers[StepType.BROWSER_WAIT] = BrowserWaitHandler(self.browser_manager, default_timeout=browser_timeout)
-            handlers[StepType.BROWSER_VERIFY] = BrowserVerifyHandler(self.browser_manager, default_timeout=verify_timeout)
-            handlers[StepType.BROWSER_VERIFY_TEXT] = BrowserVerifyTextHandler(self.browser_manager, default_timeout=verify_timeout)
-            handlers[StepType.BROWSER_VERIFY_ATTRIBUTE] = BrowserVerifyAttributeHandler(self.browser_manager, default_timeout=verify_timeout)
-            handlers[StepType.BROWSER_VERIFY_STATE] = BrowserVerifyStateHandler(self.browser_manager, default_timeout=verify_timeout)
-            handlers[StepType.BROWSER_GET_TEXT] = BrowserGetTextHandler(self.browser_manager, default_timeout=browser_timeout)
+            handlers[StepType.BROWSER_WAIT] = BrowserWaitHandler(
+                self.browser_manager, default_timeout=browser_timeout
+            )
+            handlers[StepType.BROWSER_VERIFY] = BrowserVerifyHandler(
+                self.browser_manager, default_timeout=verify_timeout
+            )
+            handlers[StepType.BROWSER_VERIFY_TEXT] = BrowserVerifyTextHandler(
+                self.browser_manager, default_timeout=verify_timeout
+            )
+            handlers[StepType.BROWSER_VERIFY_ATTRIBUTE] = BrowserVerifyAttributeHandler(
+                self.browser_manager, default_timeout=verify_timeout
+            )
+            handlers[StepType.BROWSER_VERIFY_STATE] = BrowserVerifyStateHandler(
+                self.browser_manager, default_timeout=verify_timeout
+            )
+            handlers[StepType.BROWSER_GET_TEXT] = BrowserGetTextHandler(
+                self.browser_manager, default_timeout=browser_timeout
+            )
 
         # Designer handlers
         if self.designer_manager:
             handlers[StepType.DESIGNER_LAUNCH] = DesignerLaunchHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_LAUNCH_SHORTCUT] = DesignerLaunchShortcutHandler(self.designer_manager)
+            handlers[StepType.DESIGNER_LAUNCH_SHORTCUT] = DesignerLaunchShortcutHandler(
+                self.designer_manager
+            )
             handlers[StepType.DESIGNER_LOGIN] = DesignerLoginHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_OPEN_PROJECT] = DesignerOpenProjectHandler(self.designer_manager)
+            handlers[StepType.DESIGNER_OPEN_PROJECT] = DesignerOpenProjectHandler(
+                self.designer_manager
+            )
             handlers[StepType.DESIGNER_CLOSE] = DesignerCloseHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_SCREENSHOT] = DesignerScreenshotHandler(self.designer_manager)
+            handlers[StepType.DESIGNER_SCREENSHOT] = DesignerScreenshotHandler(
+                self.designer_manager
+            )
             handlers[StepType.DESIGNER_WAIT] = DesignerWaitHandler(self.designer_manager)
 
         # Playbook handler (nested playbooks)
@@ -190,16 +226,30 @@ class StepExecutor:
         handlers[StepType.SLEEP] = UtilitySleepHandler()
         handlers[StepType.LOG] = UtilityLogHandler()
         handlers[StepType.SET_VARIABLE] = UtilitySetVariableHandler()
-        handlers[StepType.PYTHON] = UtilityPythonHandler(self.parameter_resolver, self.timeout_overrides)
+        handlers[StepType.PYTHON] = UtilityPythonHandler(
+            self.parameter_resolver, self.timeout_overrides
+        )
 
         # Perspective FAT handlers (require browser manager)
         if self.browser_manager:
-            handlers[StepType.PERSPECTIVE_DISCOVER_PAGE] = PerspectiveDiscoverPageHandler(self.browser_manager)
-            handlers[StepType.PERSPECTIVE_EXTRACT_METADATA] = PerspectiveExtractMetadataHandler(self.browser_manager)
-            handlers[StepType.PERSPECTIVE_EXECUTE_TEST_MANIFEST] = PerspectiveExecuteTestManifestHandler(self.browser_manager)
-            handlers[StepType.PERSPECTIVE_VERIFY_NAVIGATION] = PerspectiveVerifyNavigationHandler(self.browser_manager)
-            handlers[StepType.PERSPECTIVE_VERIFY_DOCK] = PerspectiveVerifyDockHandler(self.browser_manager)
-            handlers[StepType.PERSPECTIVE_VERIFY_WITH_AI] = PerspectiveVerifyWithAIHandler(self.browser_manager)
+            handlers[StepType.PERSPECTIVE_DISCOVER_PAGE] = PerspectiveDiscoverPageHandler(
+                self.browser_manager
+            )
+            handlers[StepType.PERSPECTIVE_EXTRACT_METADATA] = PerspectiveExtractMetadataHandler(
+                self.browser_manager
+            )
+            handlers[StepType.PERSPECTIVE_EXECUTE_TEST_MANIFEST] = (
+                PerspectiveExecuteTestManifestHandler(self.browser_manager)
+            )
+            handlers[StepType.PERSPECTIVE_VERIFY_NAVIGATION] = PerspectiveVerifyNavigationHandler(
+                self.browser_manager
+            )
+            handlers[StepType.PERSPECTIVE_VERIFY_DOCK] = PerspectiveVerifyDockHandler(
+                self.browser_manager
+            )
+            handlers[StepType.PERSPECTIVE_VERIFY_WITH_AI] = PerspectiveVerifyWithAIHandler(
+                self.browser_manager
+            )
 
         # FAT reporting handlers (always available)
         handlers[StepType.FAT_GENERATE_REPORT] = FATGenerateReportHandler()

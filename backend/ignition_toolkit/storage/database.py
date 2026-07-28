@@ -88,19 +88,17 @@ class Database:
 
             alembic_ini = Path(__file__).resolve().parents[2] / "alembic.ini"
             if not alembic_ini.exists():
-                logger.warning(f"alembic.ini not found at {alembic_ini}, falling back to create_all()")
+                logger.warning(
+                    f"alembic.ini not found at {alembic_ini}, falling back to create_all()"
+                )
                 self._create_tables_fallback()
                 return
 
             alembic_cfg = Config(str(alembic_ini))
             # Override the script_location to be relative to alembic.ini
-            alembic_cfg.set_main_option(
-                "script_location", str(alembic_ini.parent / "alembic")
-            )
+            alembic_cfg.set_main_option("script_location", str(alembic_ini.parent / "alembic"))
             # Set the database URL so Alembic uses our database
-            alembic_cfg.set_main_option(
-                "sqlalchemy.url", f"sqlite:///{self.database_path}"
-            )
+            alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.database_path}")
 
             # Check if this is an existing database without alembic_version
             inspector = inspect(self.engine)

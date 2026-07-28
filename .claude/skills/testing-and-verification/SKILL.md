@@ -21,7 +21,7 @@ Config in `backend/pyproject.toml` (`asyncio_mode = auto` — async tests need n
 decorator). Test dirs mirror packages: `tests/test_api`, `test_playbook`,
 `test_gateway`, `test_browser`, `test_credentials`, `test_storage`, etc.
 
-## Frontend (vitest — 26 files, ~45 s)
+## Frontend (vitest — 28 files, 371 tests, ~130 s)
 
 ```bash
 cd frontend && npx vitest run                 # full suite
@@ -30,14 +30,30 @@ cd frontend && npx vitest run src/pages/Playbooks.test.tsx   # one file
 
 Tests live next to their components (`Foo.tsx` → `Foo.test.tsx`).
 
+`vitest.config.ts` pins `maxWorkers: 4`. Do not remove it: the heavy jsdom + MUI
+page files (Playbooks, UdtBuilder, Executions) starve each other under
+unbounded parallelism — a dynamic `import()` overruns its timeout, the aborted
+render leaves an empty `<body>`, and the rest of that file fails too. The suite
+then goes red on a different couple of tests each run. Capping workers costs
+~45 s of wall time and makes the suite deterministic. Note Vitest 4 dropped
+`poolOptions.{forks,threads}.max*` and ignores those keys silently.
+
 ## Lint / format (CI enforces all of these)
 
 ```bash
-cd frontend && npx eslint src/ --max-warnings 0   # CI fails on any warning
+cd frontend && npx eslint src/ --max-warnings 0            # CI fails on any warning
 cd backend && .venv/bin/ruff check ignition_toolkit tests
-cd backend && .venv/bin/black --check ignition_toolkit   # line length 100
-npm run build:electron                            # tsc type-check of electron/
+cd backend && .venv/bin/black --check ignition_toolkit tests   # line length 100
+npm run build:electron                                     # tsc type-check of electron/
 ```
+
+Both Python commands must cover `tests/` as well as `ignition_toolkit/` — that
+is exactly what the CI lint job runs, so a pass here means a pass there.
+
+`tests/test_stackbuilder/goldens/` is excluded from both tools in
+`pyproject.toml`. Those `.py` files are expected generator **output**, compared
+byte-for-byte; formatting them rewrites the expected value and fails the golden
+tests. Never reformat them — regenerate with `--update-goldens` instead.
 
 ## Playbook library validation
 

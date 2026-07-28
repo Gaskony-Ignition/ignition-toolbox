@@ -23,12 +23,14 @@ router = APIRouter(prefix="/api/data-updates", tags=["data-updates"])
 
 class UpdateRequest(BaseModel):
     """Request body for triggering a component update."""
+
     download_url: str
     checksum: str | None = None
 
 
 class DismissRequest(BaseModel):
     """Request body for dismissing a notification."""
+
     pass
 
 
@@ -55,6 +57,7 @@ async def check_all_updates(force: bool = False) -> dict[str, Any]:
     manifest_components = None
     try:
         from ignition_toolkit.core.manifest import get_manifest_manager
+
         manifest = get_manifest_manager()
         manifest_data = await manifest.fetch()
         if manifest_data:
@@ -141,6 +144,7 @@ async def get_notifications() -> dict[str, Any]:
     """Get active notifications for the current app version."""
     try:
         from ignition_toolkit.core.manifest import get_manifest_manager
+
         manifest = get_manifest_manager()
         notifications = await manifest.get_active_notifications()
         return {"notifications": notifications}
@@ -156,6 +160,7 @@ async def dismiss_notification(notification_id: str) -> dict[str, Any]:
     """Dismiss a notification by ID."""
     try:
         from ignition_toolkit.core.manifest import get_manifest_manager
+
         manifest = get_manifest_manager()
         manifest.dismiss_notification(notification_id)
         return {"success": True, "notification_id": notification_id}

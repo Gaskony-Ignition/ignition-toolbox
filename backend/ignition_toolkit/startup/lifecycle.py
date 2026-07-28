@@ -116,8 +116,7 @@ async def lifespan(app: FastAPI):
             missing = validate_registry_completeness()
             if missing:
                 logger.warning(
-                    f"[WARN]  Step type registry is incomplete. "
-                    f"Missing entries for: {missing}"
+                    f"[WARN]  Step type registry is incomplete. " f"Missing entries for: {missing}"
                 )
             else:
                 logger.info("[OK] Step type registry complete")
@@ -160,6 +159,7 @@ async def lifespan(app: FastAPI):
         # Phase 6: Frontend Build (NON-FATAL, production only)
         # In frozen mode (PyInstaller), Electron serves the frontend - skip validation
         from ignition_toolkit.core.paths import is_frozen
+
         if is_frozen():
             logger.info("Phase 6/9: Frontend Validation (SKIPPED - Electron serves frontend)")
             set_component_healthy("frontend", "Electron serves frontend")
@@ -209,6 +209,7 @@ async def lifespan(app: FastAPI):
             import asyncio
 
             from ignition_toolkit.core.manifest import get_manifest_manager
+
             manifest = get_manifest_manager()
             # Schedule background fetch (non-blocking)
             asyncio.create_task(_background_manifest_check(manifest))
@@ -238,7 +239,9 @@ async def lifespan(app: FastAPI):
         logger.info(f"   Playbooks: {health.playbooks.status.value}")
         logger.info(f"   Browser: {health.browser.status.value}")
         logger.info(f"   Frontend: {health.frontend.status.value}")
-        logger.info(f"   Scheduler: {health.scheduler.status.value if hasattr(health, 'scheduler') else 'N/A'}")
+        logger.info(
+            f"   Scheduler: {health.scheduler.status.value if hasattr(health, 'scheduler') else 'N/A'}"
+        )
 
         if health.warnings:
             logger.warning(f"   Warnings: {len(health.warnings)}")

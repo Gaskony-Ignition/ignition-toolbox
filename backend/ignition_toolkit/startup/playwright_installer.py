@@ -86,8 +86,18 @@ def is_browser_installed() -> bool:
                 ]
             elif sys.platform == "darwin":
                 exe_paths = [
-                    chromium_dir / "chrome-mac" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
-                    chromium_dir / "chrome-mac-arm64" / "Chromium.app" / "Contents" / "MacOS" / "Chromium",
+                    chromium_dir
+                    / "chrome-mac"
+                    / "Chromium.app"
+                    / "Contents"
+                    / "MacOS"
+                    / "Chromium",
+                    chromium_dir
+                    / "chrome-mac-arm64"
+                    / "Chromium.app"
+                    / "Contents"
+                    / "MacOS"
+                    / "Chromium",
                     chromium_dir / "chrome-mac" / "headless_shell",
                     chromium_dir / "chrome-mac-arm64" / "headless_shell",
                 ]
@@ -125,7 +135,7 @@ async def install_browser(progress_callback=None) -> bool:
     try:
         # For frozen executables, we must use the Playwright driver directly
         # because sys.executable points to our app, not Python
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             return await _install_browser_via_driver(progress_callback)
 
         # Development mode - use python -m playwright
@@ -144,7 +154,9 @@ async def install_browser(progress_callback=None) -> bool:
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL)
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL
+            )
         except asyncio.TimeoutError:
             logger.error("Browser installation timed out after 5 minutes")
             process.kill()
@@ -212,7 +224,9 @@ async def _install_browser_via_driver(progress_callback=None) -> bool:
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL)
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=TimeoutDefaults.MODULE_INSTALL
+            )
         except asyncio.TimeoutError:
             logger.error("Driver browser installation timed out after 5 minutes")
             process.kill()

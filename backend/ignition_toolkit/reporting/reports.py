@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExecutionDetail:
     """Detailed execution information"""
+
     id: int
     playbook_path: str
     playbook_name: str
@@ -40,6 +41,7 @@ class ExecutionDetail:
 @dataclass
 class Report:
     """Generated report"""
+
     title: str
     generated_at: datetime
     period_start: datetime | None
@@ -58,20 +60,24 @@ class Report:
             "generated_at": self.generated_at.isoformat(),
             "period_start": self.period_start.isoformat() if self.period_start else None,
             "period_end": self.period_end.isoformat() if self.period_end else None,
-            "overall_stats": {
-                "total_executions": self.overall_stats.total_executions,
-                "passed": self.overall_stats.passed,
-                "failed": self.overall_stats.failed,
-                "running": self.overall_stats.running,
-                "cancelled": self.overall_stats.cancelled,
-                "pass_rate": self.overall_stats.pass_rate,
-                "avg_duration_seconds": self.overall_stats.avg_duration_seconds,
-                "min_duration_seconds": self.overall_stats.min_duration_seconds,
-                "max_duration_seconds": self.overall_stats.max_duration_seconds,
-                "total_steps": self.overall_stats.total_steps,
-                "steps_passed": self.overall_stats.steps_passed,
-                "steps_failed": self.overall_stats.steps_failed,
-            } if self.overall_stats else None,
+            "overall_stats": (
+                {
+                    "total_executions": self.overall_stats.total_executions,
+                    "passed": self.overall_stats.passed,
+                    "failed": self.overall_stats.failed,
+                    "running": self.overall_stats.running,
+                    "cancelled": self.overall_stats.cancelled,
+                    "pass_rate": self.overall_stats.pass_rate,
+                    "avg_duration_seconds": self.overall_stats.avg_duration_seconds,
+                    "min_duration_seconds": self.overall_stats.min_duration_seconds,
+                    "max_duration_seconds": self.overall_stats.max_duration_seconds,
+                    "total_steps": self.overall_stats.total_steps,
+                    "steps_passed": self.overall_stats.steps_passed,
+                    "steps_failed": self.overall_stats.steps_failed,
+                }
+                if self.overall_stats
+                else None
+            ),
             "trends": [
                 {
                     "date": t.date,
@@ -263,7 +269,9 @@ class ReportGenerator:
                 limit=execution_limit,
             )
 
-        logger.info(f"Generated playbook report for {playbook_path}: {report.overall_stats.total_executions} executions")
+        logger.info(
+            f"Generated playbook report for {playbook_path}: {report.overall_stats.total_executions} executions"
+        )
         return report
 
     def generate_detailed_report(
@@ -417,6 +425,7 @@ class ReportGenerator:
             if parameters:
                 try:
                     import json
+
                     params_dict = json.loads(parameters)
                 except (json.JSONDecodeError, TypeError):
                     pass
@@ -447,20 +456,22 @@ class ReportGenerator:
 
             playbook_name = path.split("/")[-1] if path else "Unknown"
 
-            executions.append(ExecutionDetail(
-                id=exec_id,
-                playbook_path=path,
-                playbook_name=playbook_name,
-                status=status,
-                started_at=start_dt,
-                completed_at=end_dt,
-                duration_seconds=duration,
-                total_steps=total_steps,
-                passed_steps=passed_steps,
-                failed_steps=failed_steps,
-                error_message=error_message,
-                parameters=params_dict,
-            ))
+            executions.append(
+                ExecutionDetail(
+                    id=exec_id,
+                    playbook_path=path,
+                    playbook_name=playbook_name,
+                    status=status,
+                    started_at=start_dt,
+                    completed_at=end_dt,
+                    duration_seconds=duration,
+                    total_steps=total_steps,
+                    passed_steps=passed_steps,
+                    failed_steps=failed_steps,
+                    error_message=error_message,
+                    parameters=params_dict,
+                )
+            )
 
         return executions
 

@@ -67,7 +67,9 @@ class SystemHealth:
     )
     browser: ComponentHealth = field(default_factory=lambda: ComponentHealth(HealthStatus.UNKNOWN))
     frontend: ComponentHealth = field(default_factory=lambda: ComponentHealth(HealthStatus.UNKNOWN))
-    scheduler: ComponentHealth = field(default_factory=lambda: ComponentHealth(HealthStatus.UNKNOWN))
+    scheduler: ComponentHealth = field(
+        default_factory=lambda: ComponentHealth(HealthStatus.UNKNOWN)
+    )
 
     # Startup issues
     errors: list[str] = field(default_factory=list)

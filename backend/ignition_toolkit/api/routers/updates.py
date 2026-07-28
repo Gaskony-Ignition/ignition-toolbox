@@ -24,8 +24,10 @@ router = APIRouter(prefix="/api/updates", tags=["updates"])
 # Request/Response Models
 # ==============================================================================
 
+
 class UpdateCheckResponse(BaseModel):
     """Response for update check"""
+
     update_available: bool
     current_version: str
     latest_version: str | None = None
@@ -37,11 +39,13 @@ class UpdateCheckResponse(BaseModel):
 
 class UpdateInstallRequest(BaseModel):
     """Request to install update"""
+
     version: str  # Version to install
 
 
 class UpdateStatusResponse(BaseModel):
     """Response for update status"""
+
     status: str  # 'idle', 'downloading', 'installing', 'migrating', 'complete', 'failed'
     progress: int  # 0-100
     message: str
@@ -51,6 +55,7 @@ class UpdateStatusResponse(BaseModel):
 
 class BackupResponse(BaseModel):
     """Response for backup operations"""
+
     backup_path: str
     created_at: str
     files_count: int
@@ -69,7 +74,9 @@ update_status = {
 }
 
 
-def update_progress(status: str, progress: int, message: str, version: str | None = None, error: str | None = None):
+def update_progress(
+    status: str, progress: int, message: str, version: str | None = None, error: str | None = None
+):
     """Update the global update status"""
     update_status["status"] = status
     update_status["progress"] = progress
@@ -82,6 +89,7 @@ def update_progress(status: str, progress: int, message: str, version: str | Non
 # ==============================================================================
 # API Endpoints
 # ==============================================================================
+
 
 @router.get("/check", response_model=UpdateCheckResponse)
 async def check_updates():
@@ -106,10 +114,7 @@ async def check_updates():
             published_at=update_info["published_at"],
         )
 
-    return UpdateCheckResponse(
-        update_available=False,
-        current_version=get_current_version()
-    )
+    return UpdateCheckResponse(update_available=False, current_version=get_current_version())
 
 
 @router.post("/install")
@@ -131,8 +136,7 @@ async def install_update_endpoint(background_tasks: BackgroundTasks):
     # Check if update already in progress
     if update_status["status"] not in ["idle", "complete", "failed"]:
         raise HTTPException(
-            status_code=409,
-            detail=f"Update already in progress: {update_status['status']}"
+            status_code=409, detail=f"Update already in progress: {update_status['status']}"
         )
 
     # Check if update is available
@@ -143,15 +147,13 @@ async def install_update_endpoint(background_tasks: BackgroundTasks):
 
     # Start update in background
     background_tasks.add_task(
-        perform_update,
-        update_info["download_url"],
-        update_info["latest_version"]
+        perform_update, update_info["download_url"], update_info["latest_version"]
     )
 
     return {
         "status": "update_started",
         "version": update_info["latest_version"],
-        "message": "Update installation started in background"
+        "message": "Update installation started in background",
     }
 
 
@@ -209,18 +211,16 @@ async def rollback_update():
         return {
             "status": "rollback_complete",
             "backup_used": str(latest_backup),
-            "message": "Successfully rolled back to previous version. Please restart the server."
+            "message": "Successfully rolled back to previous version. Please restart the server.",
         }
     else:
-        raise HTTPException(
-            status_code=500,
-            detail="Rollback failed. Check logs for details."
-        )
+        raise HTTPException(status_code=500, detail="Rollback failed. Check logs for details.")
 
 
 # ==============================================================================
 # Background Task
 # ==============================================================================
+
 
 async def perform_update(download_url: str, version: str):
     """
@@ -243,7 +243,9 @@ async def perform_update(download_url: str, version: str):
         def progress_callback(downloaded, total):
             if total > 0:
                 progress = 30 + int((downloaded / total) * 40)  # 30-70%
-                update_progress("downloading", progress, f"Downloading... {downloaded}/{total} bytes", version)
+                update_progress(
+                    "downloading", progress, f"Downloading... {downloaded}/{total} bytes", version
+                )
 
         archive_path = await download_update(download_url, progress_callback)
 
@@ -253,13 +255,17 @@ async def perform_update(download_url: str, version: str):
         success = await install_update(archive_path)
 
         if not success:
-            update_progress("failed", 0, "Update installation failed", version, "pip install failed")
+            update_progress(
+                "failed", 0, "Update installation failed", version, "pip install failed"
+            )
             logger.error("Update installation failed")
             return
 
         # Step 4: Database migrations are additive and handled by SQLAlchemy
         # on next startup — no explicit migration step needed at this time.
-        update_progress("complete", 100, f"Update to v{version} complete! Restart the app to apply.", version)
+        update_progress(
+            "complete", 100, f"Update to v{version} complete! Restart the app to apply.", version
+        )
 
         logger.info(f"Update to v{version} complete — restart required")
 

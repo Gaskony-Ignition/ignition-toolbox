@@ -4,12 +4,12 @@ Integration tests for database operations.
 Tests the full lifecycle of executions and step results using a real SQLite database.
 """
 
-import pytest
 import tempfile
-import os
-from pathlib import Path
-from datetime import datetime, UTC
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
 
 from ignition_toolkit.storage.database import Database
 from ignition_toolkit.storage.models import ExecutionModel, StepResultModel
@@ -64,24 +64,18 @@ class TestExecutionLifecycle:
 
         # Update to running
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             execution.status = "running"
 
         # Update to completed
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             execution.status = "completed"
             execution.completed_at = datetime.now(UTC)
 
         # Verify final state
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             assert execution.status == "completed"
             assert execution.completed_at is not None
 
@@ -113,9 +107,7 @@ class TestExecutionLifecycle:
 
         # Verify step results
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             assert len(execution.step_results) == 3
             assert execution.step_results[0].status == "completed"
             assert execution.step_results[2].status == "running"
@@ -150,9 +142,7 @@ class TestExecutionLifecycle:
 
         # Delete execution
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             session.delete(execution)
 
         # Verify step results were deleted
@@ -220,9 +210,7 @@ class TestExecutionQueries:
 
         # Query by playbook name
         with temp_db.session_scope() as session:
-            playbook_a = session.query(ExecutionModel).filter_by(
-                playbook_name="Playbook A"
-            ).all()
+            playbook_a = session.query(ExecutionModel).filter_by(playbook_name="Playbook A").all()
             assert len(playbook_a) == 2
 
 
@@ -242,13 +230,7 @@ class TestStepResultOperations:
                 "duration_ms": 1234,
                 "memory_mb": 256,
             },
-            "nested": {
-                "level1": {
-                    "level2": {
-                        "value": "deep"
-                    }
-                }
-            }
+            "nested": {"level1": {"level2": {"value": "deep"}}},
         }
 
         # Create execution with complex output
@@ -272,9 +254,7 @@ class TestStepResultOperations:
 
         # Verify complex output was stored and retrieved
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             step = execution.step_results[0]
             assert step.output["tables"][0]["name"] == "users"
             assert step.output["metrics"]["duration_ms"] == 1234
@@ -305,9 +285,7 @@ class TestStepResultOperations:
 
         # Verify error was stored
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             step = execution.step_results[0]
             assert step.status == "failed"
             assert "timeout" in step.error_message.lower()
@@ -346,9 +324,7 @@ class TestStepResultOperations:
 
         # Verify artifacts were stored
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             step = execution.step_results[0]
             assert len(step.artifacts["screenshots"]) == 2
             assert step.artifacts["logs"] == "/logs/exec123/step1.log"
@@ -446,9 +422,7 @@ class TestModelSerialization:
 
         # Serialize and verify
         with temp_db.session_scope() as session:
-            execution = session.query(ExecutionModel).filter_by(
-                execution_id=execution_id
-            ).first()
+            execution = session.query(ExecutionModel).filter_by(execution_id=execution_id).first()
             data = execution.to_dict()
 
             assert data["execution_id"] == execution_id

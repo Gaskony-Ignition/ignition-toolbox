@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExecutionStats:
     """Statistics for a set of executions"""
+
     total_executions: int = 0
     passed: int = 0
     failed: int = 0
@@ -35,6 +36,7 @@ class ExecutionStats:
 @dataclass
 class TrendPoint:
     """Single point in a trend analysis"""
+
     date: str
     total: int = 0
     passed: int = 0
@@ -45,6 +47,7 @@ class TrendPoint:
 @dataclass
 class PlaybookStats:
     """Statistics for a specific playbook"""
+
     playbook_path: str
     playbook_name: str
     total_executions: int = 0
@@ -285,13 +288,15 @@ class ExecutionAnalytics:
             completed = data["passed"] + data["failed"]
             pass_rate = data["passed"] / completed if completed > 0 else 0.0
 
-            trends.append(TrendPoint(
-                date=period,
-                total=data["total"],
-                passed=data["passed"],
-                failed=data["failed"],
-                pass_rate=pass_rate,
-            ))
+            trends.append(
+                TrendPoint(
+                    date=period,
+                    total=data["total"],
+                    passed=data["passed"],
+                    failed=data["failed"],
+                    pass_rate=pass_rate,
+                )
+            )
 
         return trends
 
@@ -393,9 +398,7 @@ class ExecutionAnalytics:
             completed = data["passed"] + data["failed"]
             pass_rate = data["passed"] / completed if completed > 0 else 0.0
             avg_duration = (
-                sum(data["durations"]) / len(data["durations"])
-                if data["durations"]
-                else 0.0
+                sum(data["durations"]) / len(data["durations"]) if data["durations"] else 0.0
             )
 
             # Extract playbook name from path
@@ -408,17 +411,19 @@ class ExecutionAnalytics:
                 except (ValueError, TypeError):
                     pass
 
-            stats_list.append(PlaybookStats(
-                playbook_path=playbook_path,
-                playbook_name=playbook_name,
-                total_executions=data["total"],
-                passed=data["passed"],
-                failed=data["failed"],
-                pass_rate=pass_rate,
-                avg_duration_seconds=avg_duration,
-                last_execution=last_exec,
-                last_status=data["last_status"],
-            ))
+            stats_list.append(
+                PlaybookStats(
+                    playbook_path=playbook_path,
+                    playbook_name=playbook_name,
+                    total_executions=data["total"],
+                    passed=data["passed"],
+                    failed=data["failed"],
+                    pass_rate=pass_rate,
+                    avg_duration_seconds=avg_duration,
+                    last_execution=last_exec,
+                    last_status=data["last_status"],
+                )
+            )
 
         # Sort by execution count and limit
         stats_list.sort(key=lambda x: x.total_executions, reverse=True)
@@ -462,10 +467,7 @@ class ExecutionAnalytics:
 
         try:
             conn = self.db._get_connection()
-            cursor = conn.execute(
-                query,
-                [start_time.isoformat(), end_time.isoformat(), limit]
-            )
+            cursor = conn.execute(query, [start_time.isoformat(), end_time.isoformat(), limit])
             rows = cursor.fetchall()
         except Exception as e:
             logger.error(f"Failed to query failure analysis: {e}")
@@ -473,13 +475,15 @@ class ExecutionAnalytics:
 
         failures = []
         for row in rows:
-            failures.append({
-                "step_id": row[0],
-                "step_type": row[1],
-                "error_message": row[2],
-                "playbook_path": row[3],
-                "count": row[4],
-            })
+            failures.append(
+                {
+                    "step_id": row[0],
+                    "step_type": row[1],
+                    "error_message": row[2],
+                    "playbook_path": row[3],
+                    "count": row[4],
+                }
+            )
 
         return failures
 

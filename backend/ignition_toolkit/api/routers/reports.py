@@ -25,11 +25,17 @@ router = APIRouter(prefix="/reports", tags=["Reporting"])
 
 # Request/Response Models
 
+
 class GenerateReportRequest(BaseModel):
     """Request to generate a report"""
-    report_type: str = Field(default="summary", description="Report type: summary, playbook, detailed")
+
+    report_type: str = Field(
+        default="summary", description="Report type: summary, playbook, detailed"
+    )
     days: int = Field(default=30, ge=1, le=365, description="Number of days to include")
-    playbook_path: str | None = Field(default=None, description="Playbook path (for playbook report)")
+    playbook_path: str | None = Field(
+        default=None, description="Playbook path (for playbook report)"
+    )
     include_trends: bool = Field(default=True)
     include_playbook_stats: bool = Field(default=True)
     include_failure_analysis: bool = Field(default=True)
@@ -40,6 +46,7 @@ class GenerateReportRequest(BaseModel):
 
 
 # Statistics Endpoints
+
 
 @router.get("/stats")
 async def get_overall_stats(
@@ -54,6 +61,7 @@ async def get_overall_stats(
     analytics = get_execution_analytics()
 
     from datetime import UTC, timedelta
+
     end_time = datetime.now(UTC)
     start_time = end_time - timedelta(days=days)
 
@@ -135,6 +143,7 @@ async def get_playbook_stats(
     analytics = get_execution_analytics()
 
     from datetime import UTC, timedelta
+
     end_time = datetime.now(UTC)
     start_time = end_time - timedelta(days=days)
 
@@ -187,6 +196,7 @@ async def get_failure_analysis(
 
 # Report Generation Endpoints
 
+
 @router.post("/generate")
 async def generate_report(request: GenerateReportRequest):
     """
@@ -208,8 +218,7 @@ async def generate_report(request: GenerateReportRequest):
         elif request.report_type == "playbook":
             if not request.playbook_path:
                 raise HTTPException(
-                    status_code=400,
-                    detail="playbook_path is required for playbook report"
+                    status_code=400, detail="playbook_path is required for playbook report"
                 )
             report = generator.generate_playbook_report(
                 playbook_path=request.playbook_path,
@@ -226,7 +235,7 @@ async def generate_report(request: GenerateReportRequest):
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid report_type: {request.report_type}. Use: summary, playbook, detailed"
+                detail=f"Invalid report_type: {request.report_type}. Use: summary, playbook, detailed",
             )
 
         return report.to_dict()
@@ -260,6 +269,7 @@ async def get_summary_report(
 
 
 # Export Endpoints
+
 
 @router.post("/export/json")
 async def export_report_json(request: GenerateReportRequest):
@@ -306,9 +316,7 @@ async def export_report_json(request: GenerateReportRequest):
         return Response(
             content=json_content,
             media_type="application/json",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
     except Exception as e:
@@ -366,9 +374,7 @@ async def export_report_csv(request: GenerateReportRequest):
         return Response(
             content=csv_content,
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
     except Exception as e:
@@ -406,9 +412,7 @@ async def export_executions_csv(
         return Response(
             content=csv_content,
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
     except Exception as e:

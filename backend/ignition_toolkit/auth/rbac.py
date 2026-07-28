@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Permission(Enum):
     """Available permissions"""
+
     # Playbook permissions
     PLAYBOOK_READ = "playbook:read"
     PLAYBOOK_WRITE = "playbook:write"
@@ -53,6 +54,7 @@ class Permission(Enum):
 @dataclass
 class Role:
     """Defines a role with associated permissions"""
+
     name: str
     description: str
     permissions: set[Permission] = field(default_factory=set)

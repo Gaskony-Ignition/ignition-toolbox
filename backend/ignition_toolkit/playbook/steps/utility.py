@@ -52,14 +52,14 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
         4
     """
     # SECURITY: Check for dangerous imports before execution
-    dangerous_modules = ['os', 'subprocess', 'sys', 'shutil', 'socket']
-    dangerous_builtins = ['__import__', 'eval', 'exec', 'compile', 'open']
+    dangerous_modules = ["os", "subprocess", "sys", "shutil", "socket"]
+    dangerous_builtins = ["__import__", "eval", "exec", "compile", "open"]
 
     code_lower = code.lower()
 
     # Check for dangerous imports
     for module in dangerous_modules:
-        if f'import {module}' in code_lower or f'from {module}' in code_lower:
+        if f"import {module}" in code_lower or f"from {module}" in code_lower:
             raise ValueError(f"Dangerous import not allowed: {module}")
 
     # Check for dangerous builtins
@@ -69,19 +69,42 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
 
     # Whitelist of safe builtins
     SAFE_BUILTINS = {  # noqa: N806
-        'abs', 'all', 'any', 'bool', 'dict', 'enumerate', 'filter',
-        'float', 'int', 'len', 'list', 'map', 'max', 'min', 'print',
-        'range', 'reversed', 'round', 'sorted', 'str', 'sum', 'tuple',
-        'zip', 'isinstance', 'type', 'ValueError', 'TypeError', 'KeyError',
+        "abs",
+        "all",
+        "any",
+        "bool",
+        "dict",
+        "enumerate",
+        "filter",
+        "float",
+        "int",
+        "len",
+        "list",
+        "map",
+        "max",
+        "min",
+        "print",
+        "range",
+        "reversed",
+        "round",
+        "sorted",
+        "str",
+        "sum",
+        "tuple",
+        "zip",
+        "isinstance",
+        "type",
+        "ValueError",
+        "TypeError",
+        "KeyError",
     }
 
     try:
         # Create restricted builtins
         import builtins
+
         safe_builtins = {
-            name: getattr(builtins, name)
-            for name in SAFE_BUILTINS
-            if hasattr(builtins, name)
+            name: getattr(builtins, name) for name in SAFE_BUILTINS if hasattr(builtins, name)
         }
 
         # SECURITY: Restricted execution environment
@@ -102,7 +125,7 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
             raise TimeoutError(f"Script execution timed out ({timeout}s limit)")
 
         # Only set signal handler on Unix systems
-        if hasattr(signal, 'SIGALRM'):
+        if hasattr(signal, "SIGALRM"):
             signal.signal(signal.SIGALRM, timeout_handler)
             signal.alarm(timeout)
 
@@ -114,12 +137,12 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
 
             # Update context with results (exclude __builtins__)
             for key, value in exec_globals.items():
-                if key not in ['__builtins__', 'json', 're', 'datetime']:
+                if key not in ["__builtins__", "json", "re", "datetime"]:
                     context[key] = value
 
         finally:
             # Cancel timeout
-            if hasattr(signal, 'SIGALRM'):
+            if hasattr(signal, "SIGALRM"):
                 signal.alarm(0)
 
     except TimeoutError:
@@ -128,4 +151,4 @@ def execute_python_safely(code: str, context: dict[str, Any], timeout: int = 5) 
         raise StepExecutionError("utility.python", f"Script execution failed: {str(e)}")
 
 
-__all__ = ['execute_python_safely']
+__all__ = ["execute_python_safely"]

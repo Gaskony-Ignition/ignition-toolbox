@@ -19,9 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Windows-specific subprocess flag to hide console window
 # On non-Windows platforms, use 0 (no flags)
-_CREATION_FLAGS = (
-    subprocess.CREATE_NO_WINDOW if platform.system() == "Windows" else 0
-)
+_CREATION_FLAGS = subprocess.CREATE_NO_WINDOW if platform.system() == "Windows" else 0
 
 
 def _is_wsl() -> bool:
@@ -82,10 +80,7 @@ def _find_docker_executable() -> str | None:
             / "resources"
             / "bin"
             / "docker.exe",
-            Path(os.environ.get("LOCALAPPDATA", ""))
-            / "Docker"
-            / "wsl"
-            / "docker.exe",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Docker" / "wsl" / "docker.exe",
             Path(os.environ.get("ProgramW6432", "C:\\Program Files"))
             / "Docker"
             / "Docker"
@@ -199,19 +194,19 @@ class StackRunner:
         try:
             # Write compose file
             compose_path = stack_dir / "docker-compose.yml"
-            compose_path.write_text(compose_content, encoding='utf-8')
+            compose_path.write_text(compose_content, encoding="utf-8")
 
             # Write env file
             if env_content:
                 env_path = stack_dir / ".env"
-                env_path.write_text(env_content, encoding='utf-8')
+                env_path.write_text(env_content, encoding="utf-8")
 
             # Write additional config files
             if config_files:
                 for file_path, content in config_files.items():
                     full_path = stack_dir / file_path
                     full_path.parent.mkdir(parents=True, exist_ok=True)
-                    full_path.write_text(content, encoding='utf-8')
+                    full_path.write_text(content, encoding="utf-8")
 
             # Run docker compose up
             logger.info(f"Deploying stack '{stack_name}' from {stack_dir}")
@@ -222,8 +217,8 @@ class StackRunner:
                 cwd=stack_dir,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
+                encoding="utf-8",
+                errors="replace",
                 timeout=300,  # 5 minute timeout for pulling images
                 creationflags=_CREATION_FLAGS,
             )
@@ -291,8 +286,8 @@ class StackRunner:
                 cwd=stack_dir,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
+                encoding="utf-8",
+                errors="replace",
                 timeout=120,
                 creationflags=_CREATION_FLAGS,
             )
@@ -355,8 +350,8 @@ class StackRunner:
                 cwd=stack_dir,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',
-                errors='replace',
+                encoding="utf-8",
+                errors="replace",
                 timeout=30,
                 creationflags=_CREATION_FLAGS,
             )

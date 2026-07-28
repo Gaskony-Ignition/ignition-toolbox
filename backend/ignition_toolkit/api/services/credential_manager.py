@@ -51,9 +51,7 @@ class CredentialManager:
         """
         credential = self.vault.get_credential(credential_name)
         if not credential:
-            raise HTTPException(
-                status_code=404, detail=f"Credential '{credential_name}' not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Credential '{credential_name}' not found")
         return credential
 
     def apply_autofill(
@@ -97,12 +95,8 @@ class CredentialManager:
         parameters = self._autofill_credential_type_parameters(
             playbook, credential_name, parameters
         )
-        parameters = self._autofill_gateway_url_parameter(
-            playbook, credential, parameters
-        )
-        parameters = self._autofill_username_password_parameters(
-            playbook, credential, parameters
-        )
+        parameters = self._autofill_gateway_url_parameter(playbook, credential, parameters)
+        parameters = self._autofill_username_password_parameters(playbook, credential, parameters)
 
         logger.info(
             f"Applied credential autofill: gateway_url={gateway_url}, "

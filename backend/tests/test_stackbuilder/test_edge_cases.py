@@ -10,19 +10,20 @@ Tests edge cases and validation:
 - Pydantic model validation
 """
 
-import pytest
 import re
+
+import pytest
 from pydantic import ValidationError
 
 from ignition_toolkit.api.routers.stackbuilder import (
-    InstanceConfig,
+    RESERVED_NAMES,
+    VALID_NAME_PATTERN,
     GlobalSettingsRequest,
+    InstanceConfig,
     SavedStackCreate,
     StackConfig,
-    VALID_NAME_PATTERN,
-    RESERVED_NAMES,
 )
-from ignition_toolkit.stackbuilder.compose_generator import ComposeGenerator, GlobalSettings
+from ignition_toolkit.stackbuilder.compose_generator import ComposeGenerator
 
 
 class TestValidNamePattern:
@@ -238,6 +239,7 @@ class TestStackConfigValidation:
         from ignition_toolkit.api.routers.stackbuilder import (
             IntegrationSettingsRequest,
         )
+
         config = StackConfig(
             instances=[
                 InstanceConfig(app_id="ignition", instance_name="ignition-1"),
@@ -262,6 +264,7 @@ class TestComposeGeneratorEdgeCases:
         assert "docker_compose" in result
         # Should still produce valid YAML
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         assert "services" in parsed
         assert parsed["services"] == {}
@@ -276,6 +279,7 @@ class TestComposeGeneratorEdgeCases:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         # MSSQL should not appear in services
         assert "mssql-1" not in parsed["services"]
@@ -290,6 +294,7 @@ class TestComposeGeneratorEdgeCases:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         assert "test-1" not in parsed["services"]
 
@@ -306,6 +311,7 @@ class TestComposeGeneratorEdgeCases:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         postgres = parsed["services"]["postgres-1"]
         assert postgres["environment"]["POSTGRES_PASSWORD"] == "p@ss$word!#%"
@@ -322,6 +328,7 @@ class TestComposeGeneratorEdgeCases:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         assert long_name in parsed["services"]
 
@@ -350,6 +357,7 @@ class TestDuplicateNameHandling:
         result = generator.generate(instances)
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         # Only one "database" service should exist
         assert "database" in parsed["services"]
@@ -375,6 +383,7 @@ class TestPortConflictScenarios:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         ignition = parsed["services"]["ignition-1"]
         ports = ignition["ports"]
@@ -400,6 +409,7 @@ class TestVersionHandling:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         ignition = parsed["services"]["ignition-1"]
         assert "8.3.2" in ignition["image"]
@@ -414,6 +424,7 @@ class TestVersionHandling:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         ignition = parsed["services"]["ignition-1"]
         assert "latest" in ignition["image"]
@@ -439,6 +450,7 @@ class TestModuleConfiguration:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         ignition = parsed["services"]["ignition-1"]
         env = ignition["environment"]
@@ -459,6 +471,7 @@ class TestModuleConfiguration:
         result = generator.generate([instance])
 
         import yaml
+
         parsed = yaml.safe_load(result["docker_compose"])
         ignition = parsed["services"]["ignition-1"]
         env = ignition["environment"]

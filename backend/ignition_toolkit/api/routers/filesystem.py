@@ -64,6 +64,7 @@ def _get_allowed_base_paths() -> list[Path]:
 
     # Get additional paths from settings (loaded from .env)
     from ignition_toolkit.core.config import get_settings
+
     settings = get_settings()
     extra_paths = settings.filesystem_allowed_paths.strip()
 
@@ -77,7 +78,9 @@ def _get_allowed_base_paths() -> list[Path]:
                         allowed_paths.append(path)
                         logger.info(f"Added allowed filesystem path: {path}")
                     else:
-                        logger.warning(f"Skipping non-existent path from FILESYSTEM_ALLOWED_PATHS: {path_str}")
+                        logger.warning(
+                            f"Skipping non-existent path from FILESYSTEM_ALLOWED_PATHS: {path_str}"
+                        )
                 except Exception as e:
                     logger.warning(f"Invalid path in FILESYSTEM_ALLOWED_PATHS: {path_str} - {e}")
 
@@ -87,7 +90,9 @@ def _get_allowed_base_paths() -> list[Path]:
 # SECURITY: Get allowed base paths (restricted by default)
 ALLOWED_BASE_PATHS = _get_allowed_base_paths()
 
-logger.info(f"Filesystem API restricted to {len(ALLOWED_BASE_PATHS)} base paths: {[str(p) for p in ALLOWED_BASE_PATHS]}")
+logger.info(
+    f"Filesystem API restricted to {len(ALLOWED_BASE_PATHS)} base paths: {[str(p) for p in ALLOWED_BASE_PATHS]}"
+)
 
 
 def is_path_allowed(path: Path) -> bool:
@@ -109,9 +114,7 @@ def is_path_allowed(path: Path) -> bool:
         # Check against each allowed base path
         for base_path in ALLOWED_BASE_PATHS:
             resolved_base = base_path.resolve()
-            if resolved_path == resolved_base or resolved_path.is_relative_to(
-                resolved_base
-            ):
+            if resolved_path == resolved_base or resolved_path.is_relative_to(resolved_base):
                 # Additional validation using PathValidator
                 try:
                     PathValidator.validate_path_safety(resolved_path)

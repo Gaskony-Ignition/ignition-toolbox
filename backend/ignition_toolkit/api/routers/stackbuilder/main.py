@@ -270,9 +270,7 @@ async def download_stack(stack_config: StackConfig):
         return StreamingResponse(
             iter([zip_content]),
             media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{stack_name}.zip"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{stack_name}.zip"'},
         )
 
     except StackBuilderError as e:
@@ -294,9 +292,9 @@ async def list_saved_stacks():
     try:
         db = get_database()
         with db.session_scope() as session:
-            stacks = session.query(SavedStackModel).order_by(
-                SavedStackModel.updated_at.desc()
-            ).all()
+            stacks = (
+                session.query(SavedStackModel).order_by(SavedStackModel.updated_at.desc()).all()
+            )
             return [stack.to_dict() for stack in stacks]
     except Exception as e:
         logger.error(f"Error listing saved stacks: {e}")
@@ -310,9 +308,11 @@ async def save_stack(request: SavedStackCreate):
         db = get_database()
         with db.session_scope() as session:
             # Check if name already exists
-            existing = session.query(SavedStackModel).filter(
-                SavedStackModel.stack_name == request.stack_name
-            ).first()
+            existing = (
+                session.query(SavedStackModel)
+                .filter(SavedStackModel.stack_name == request.stack_name)
+                .first()
+            )
             if existing:
                 raise HTTPException(
                     status_code=400,
@@ -341,13 +341,9 @@ async def get_saved_stack(stack_id: int):
     try:
         db = get_database()
         with db.session_scope() as session:
-            stack = session.query(SavedStackModel).filter(
-                SavedStackModel.id == stack_id
-            ).first()
+            stack = session.query(SavedStackModel).filter(SavedStackModel.id == stack_id).first()
             if not stack:
-                raise HTTPException(
-                    status_code=404, detail=f"Stack with ID {stack_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Stack with ID {stack_id} not found")
             return stack.to_dict()
     except HTTPException:
         raise
@@ -362,13 +358,9 @@ async def update_saved_stack(stack_id: int, request: SavedStackCreate):
     try:
         db = get_database()
         with db.session_scope() as session:
-            stack = session.query(SavedStackModel).filter(
-                SavedStackModel.id == stack_id
-            ).first()
+            stack = session.query(SavedStackModel).filter(SavedStackModel.id == stack_id).first()
             if not stack:
-                raise HTTPException(
-                    status_code=404, detail=f"Stack with ID {stack_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Stack with ID {stack_id} not found")
 
             stack.stack_name = request.stack_name
             stack.description = request.description
@@ -389,13 +381,9 @@ async def delete_saved_stack(stack_id: int):
     try:
         db = get_database()
         with db.session_scope() as session:
-            stack = session.query(SavedStackModel).filter(
-                SavedStackModel.id == stack_id
-            ).first()
+            stack = session.query(SavedStackModel).filter(SavedStackModel.id == stack_id).first()
             if not stack:
-                raise HTTPException(
-                    status_code=404, detail=f"Stack with ID {stack_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Stack with ID {stack_id} not found")
 
             session.delete(stack)
             return {"message": "Stack deleted successfully", "id": stack_id}
@@ -417,9 +405,7 @@ async def download_docker_installer_linux():
     return StreamingResponse(
         iter([DOCKER_INSTALL_LINUX.encode()]),
         media_type="text/plain",
-        headers={
-            "Content-Disposition": 'attachment; filename="install-docker-linux.sh"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="install-docker-linux.sh"'},
     )
 
 
@@ -429,9 +415,7 @@ async def download_docker_installer_windows():
     return StreamingResponse(
         iter([DOCKER_INSTALL_WINDOWS.encode()]),
         media_type="text/plain",
-        headers={
-            "Content-Disposition": 'attachment; filename="install-docker-windows.ps1"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="install-docker-windows.ps1"'},
     )
 
 
@@ -462,7 +446,9 @@ async def generate_offline_bundle(stack_config: StackConfig):
         for inst in instances:
             app = catalog_dict.get(inst["app_id"])
             if app and app.get("enabled", False):
-                version = inst.get("config", {}).get("version", app.get("default_version", "latest"))
+                version = inst.get("config", {}).get(
+                    "version", app.get("default_version", "latest")
+                )
                 images.append(f"{app['image']}:{version}")
 
         # Generate pull script
@@ -472,14 +458,14 @@ async def generate_offline_bundle(stack_config: StackConfig):
 
         # Create ZIP file
         stack_name = global_settings.stack_name if global_settings else "iiot-stack"
-        zip_buffer = _create_offline_zip(result, pull_script, load_script, offline_readme, stack_name)
+        zip_buffer = _create_offline_zip(
+            result, pull_script, load_script, offline_readme, stack_name
+        )
 
         return StreamingResponse(
             iter([zip_buffer.getvalue()]),
             media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{stack_name}-offline.zip"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{stack_name}-offline.zip"'},
         )
 
     except StackBuilderError as e:
@@ -492,7 +478,7 @@ async def generate_offline_bundle(stack_config: StackConfig):
 
 def _generate_pull_script(images: list[str]) -> str:
     """Generate the image pull script"""
-    return f'''#!/bin/bash
+    return f"""#!/bin/bash
 # Pull all Docker images for offline deployment
 # Run this on a machine with internet access
 
@@ -517,12 +503,12 @@ docker save ${{IMAGES[@]}} | gzip > docker-images.tar.gz
 echo ""
 echo "Done! Transfer docker-images.tar.gz to your offline system."
 echo "File size: $(du -h docker-images.tar.gz | cut -f1)"
-'''
+"""
 
 
 def _generate_load_script() -> str:
     """Generate the image load script"""
-    return '''#!/bin/bash
+    return """#!/bin/bash
 # Load Docker images from archive
 # Run this on your offline/airgapped system
 
@@ -540,14 +526,14 @@ gunzip -c docker-images.tar.gz | docker load
 echo ""
 echo "Images loaded successfully!"
 echo "You can now run: docker compose up -d"
-'''
+"""
 
 
 def _generate_offline_readme(global_settings, images: list[str]) -> str:
     """Generate the offline bundle README"""
     stack_name = global_settings.stack_name if global_settings else "iiot-stack"
 
-    return f'''# {stack_name} - Offline Deployment
+    return f"""# {stack_name} - Offline Deployment
 
 ## Overview
 
@@ -615,10 +601,12 @@ This bundle contains everything needed for airgapped/offline deployment.
 **Permission denied**
 - Ensure scripts are executable: chmod +x *.sh
 - Run as user in docker group or with sudo
-'''
+"""
 
 
-def _create_offline_zip(result: dict, pull_script: str, load_script: str, readme: str, stack_name: str) -> io.BytesIO:
+def _create_offline_zip(
+    result: dict, pull_script: str, load_script: str, readme: str, stack_name: str
+) -> io.BytesIO:
     """Create the offline bundle ZIP file"""
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
@@ -765,11 +753,13 @@ async def list_deployments():
         deployments = []
         for stack_name in stacks:
             status = runner.get_stack_status(stack_name)
-            deployments.append({
-                "name": stack_name,
-                "status": status.status,
-                "services": status.services,
-            })
+            deployments.append(
+                {
+                    "name": stack_name,
+                    "status": status.status,
+                    "services": status.services,
+                }
+            )
 
         return {"deployments": deployments}
 

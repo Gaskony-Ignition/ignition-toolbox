@@ -4,8 +4,6 @@ Tests for ignition_toolkit/core/validation_limits.py
 Covers: ValidationLimits class fields are present and have positive integer values.
 """
 
-import pytest
-
 
 class TestValidationLimits:
     """Tests for the ValidationLimits class."""

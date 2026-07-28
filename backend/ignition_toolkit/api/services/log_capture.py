@@ -15,6 +15,7 @@ from datetime import datetime
 @dataclass
 class LogEntry:
     """A single log entry"""
+
     timestamp: str
     level: str
     logger: str
@@ -35,9 +36,7 @@ class LogCaptureHandler(logging.Handler):
         self._lock = threading.Lock()
 
         # Set format
-        self.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
+        self.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
 
     def emit(self, record: logging.LogRecord) -> None:
         """Capture a log record"""
@@ -47,9 +46,14 @@ class LogCaptureHandler(logging.Handler):
             msg = self.format(record)
 
             # Try to extract execution ID from message
-            if 'execution' in msg.lower():
+            if "execution" in msg.lower():
                 import re
-                match = re.search(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', msg, re.IGNORECASE)
+
+                match = re.search(
+                    r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
+                    msg,
+                    re.IGNORECASE,
+                )
                 if match:
                     execution_id = match.group(0)
 
@@ -153,7 +157,7 @@ def setup_log_capture(max_entries: int = 2000) -> LogCaptureHandler:
         root_logger.addHandler(_log_capture_handler)
 
         # Also add to ignition_toolkit logger specifically
-        toolkit_logger = logging.getLogger('ignition_toolkit')
+        toolkit_logger = logging.getLogger("ignition_toolkit")
         toolkit_logger.addHandler(_log_capture_handler)
 
     return _log_capture_handler

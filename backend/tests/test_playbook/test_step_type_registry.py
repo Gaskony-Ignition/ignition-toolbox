@@ -5,8 +5,6 @@ Ensures the STEP_REGISTRY in step_type_registry.py stays in sync with
 the StepType enum in models.py.
 """
 
-import pytest
-
 KNOWN_DOMAINS = {"browser", "gateway", "designer", "perspective", "utility", "playbook", "fat"}
 EXPECTED_COUNT = 44
 
@@ -24,14 +22,14 @@ class TestRegistryCompleteness:
         from ignition_toolkit.playbook.step_type_registry import get_all_definitions
 
         definitions = get_all_definitions()
-        assert len(definitions) == EXPECTED_COUNT, (
-            f"Expected {EXPECTED_COUNT} definitions, got {len(definitions)}"
-        )
+        assert (
+            len(definitions) == EXPECTED_COUNT
+        ), f"Expected {EXPECTED_COUNT} definitions, got {len(definitions)}"
 
     def test_all_step_type_enum_values_covered(self):
         """Every StepType enum member has an entry in the registry."""
-        from ignition_toolkit.playbook.step_type_registry import get_all_definitions
         from ignition_toolkit.playbook.models import StepType
+        from ignition_toolkit.playbook.step_type_registry import get_all_definitions
 
         definitions = get_all_definitions()
         registered_types = {defn.step_type for defn in definitions}
@@ -45,13 +43,16 @@ class TestRegistryCompleteness:
 
         for step_type in StepType:
             expected_domain = step_type.value.split(".")[0]
-            assert step_type.domain == expected_domain, (
-                f"{step_type.value}.domain: expected '{expected_domain}', got '{step_type.domain}'"
-            )
+            assert (
+                step_type.domain == expected_domain
+            ), f"{step_type.value}.domain: expected '{expected_domain}', got '{step_type.domain}'"
 
     def test_get_all_definitions_returns_non_empty_list(self):
         """get_all_definitions returns a non-empty list of StepTypeDefinition objects."""
-        from ignition_toolkit.playbook.step_type_registry import get_all_definitions, StepTypeDefinition
+        from ignition_toolkit.playbook.step_type_registry import (
+            StepTypeDefinition,
+            get_all_definitions,
+        )
 
         definitions = get_all_definitions()
         assert isinstance(definitions, list)
@@ -64,9 +65,9 @@ class TestRegistryCompleteness:
 
         definitions = get_all_definitions()
         for defn in definitions:
-            assert defn.domain in KNOWN_DOMAINS, (
-                f"Definition '{defn.type_value}' has unknown domain: '{defn.domain}'"
-            )
+            assert (
+                defn.domain in KNOWN_DOMAINS
+            ), f"Definition '{defn.type_value}' has unknown domain: '{defn.domain}'"
 
     def test_definitions_have_non_empty_descriptions(self):
         """All definitions have a non-empty description string."""
@@ -74,6 +75,4 @@ class TestRegistryCompleteness:
 
         definitions = get_all_definitions()
         for defn in definitions:
-            assert defn.description, (
-                f"Definition '{defn.type_value}' has empty description"
-            )
+            assert defn.description, f"Definition '{defn.type_value}' has empty description"

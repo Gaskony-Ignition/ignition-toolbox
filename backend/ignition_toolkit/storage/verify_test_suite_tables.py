@@ -107,7 +107,9 @@ def verify_test_suite_tables():
             missing_indexes = required_suite_indexes - test_suite_indexes
             logger.warning(f"⚠️  test_suites missing indexes: {missing_indexes}")
         else:
-            logger.info(f"✅ test_suites has all required indexes ({len(test_suite_indexes)} indexes)")
+            logger.info(
+                f"✅ test_suites has all required indexes ({len(test_suite_indexes)} indexes)"
+            )
 
         test_suite_exec_indexes = {
             idx["name"] for idx in inspector.get_indexes("test_suite_executions")

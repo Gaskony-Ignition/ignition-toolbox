@@ -12,18 +12,18 @@ a pre-built CurrentUser injected as the ``user`` keyword argument.
 """
 
 import asyncio
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
 
 from ignition_toolkit.auth.middleware import CurrentUser
 from ignition_toolkit.auth.rbac import Permission
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _admin_user() -> CurrentUser:
     """A fully-authenticated admin CurrentUser."""
@@ -53,8 +53,9 @@ def _regular_user(user_id: str = "user-456") -> CurrentUser:
     )
 
 
-def _make_api_key_mock(key_id: str = "key-001", name: str = "Test Key", role: str = "user",
-                       user_id: str = "user-123") -> MagicMock:
+def _make_api_key_mock(
+    key_id: str = "key-001", name: str = "Test Key", role: str = "user", user_id: str = "user-123"
+) -> MagicMock:
     """Build a mock APIKey object."""
     api_key = MagicMock()
     api_key.id = key_id
@@ -78,6 +79,7 @@ def _make_api_key_mock(key_id: str = "key-001", name: str = "Test Key", role: st
 # list_api_keys
 # ---------------------------------------------------------------------------
 
+
 class TestListAPIKeys:
     def test_list_api_keys_admin_sees_all(self):
         """Admin user gets all keys returned."""
@@ -89,7 +91,9 @@ class TestListAPIKeys:
         mock_manager = MagicMock()
         mock_manager.list_keys.return_value = [key1, key2]
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             result = asyncio.run(list_api_keys(user=_admin_user()))
 
         assert "keys" in result
@@ -107,7 +111,9 @@ class TestListAPIKeys:
         mock_manager = MagicMock()
         mock_manager.list_keys.return_value = [own_key]
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             result = asyncio.run(list_api_keys(user=user))
 
         assert result["count"] == 1
@@ -120,7 +126,9 @@ class TestListAPIKeys:
         mock_manager = MagicMock()
         mock_manager.list_keys.return_value = []
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             result = asyncio.run(list_api_keys(user=_admin_user()))
 
         assert result["keys"] == []
@@ -131,10 +139,11 @@ class TestListAPIKeys:
 # create_api_key
 # ---------------------------------------------------------------------------
 
+
 class TestCreateAPIKey:
     def test_create_api_key_returns_key_and_metadata(self):
         """POST /auth/keys returns raw key + api_key dict on success."""
-        from ignition_toolkit.api.routers.auth import create_api_key, CreateAPIKeyRequest
+        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest, create_api_key
 
         mock_api_key = _make_api_key_mock("new-key-id", "CI Key", role="user")
         mock_manager = MagicMock()
@@ -145,8 +154,12 @@ class TestCreateAPIKey:
 
         request = CreateAPIKeyRequest(name="CI Key", role="user")
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager), \
-             patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+            ),
+            patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit),
+        ):
             result = asyncio.run(create_api_key(request=request, user=_admin_user()))
 
         assert result["success"] is True
@@ -156,7 +169,7 @@ class TestCreateAPIKey:
 
     def test_create_api_key_with_expiry(self):
         """POST /auth/keys accepts expires_in_days and passes it to manager."""
-        from ignition_toolkit.api.routers.auth import create_api_key, CreateAPIKeyRequest
+        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest, create_api_key
 
         mock_api_key = _make_api_key_mock("exp-key", "Expiring Key")
         mock_manager = MagicMock()
@@ -166,25 +179,31 @@ class TestCreateAPIKey:
 
         request = CreateAPIKeyRequest(name="Expiring Key", role="readonly", expires_in_days=30)
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager), \
-             patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
-            result = asyncio.run(create_api_key(request=request, user=_admin_user()))
+        with (
+            patch(
+                "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+            ),
+            patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit),
+        ):
+            asyncio.run(create_api_key(request=request, user=_admin_user()))
 
         call_kwargs = mock_manager.create_key.call_args.kwargs
         assert call_kwargs["expires_in_days"] == 30
 
     def test_create_api_key_name_required(self):
         """CreateAPIKeyRequest raises ValidationError when name is empty."""
-        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest
 
         with pytest.raises(ValidationError):
             CreateAPIKeyRequest(name="", role="user")
 
     def test_create_api_key_expires_in_days_range(self):
         """expires_in_days must be 1-365; values outside raise ValidationError."""
-        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.auth import CreateAPIKeyRequest
 
         # Too small
         with pytest.raises(ValidationError):
@@ -205,6 +224,7 @@ class TestCreateAPIKey:
 # get_api_key
 # ---------------------------------------------------------------------------
 
+
 class TestGetAPIKey:
     def test_get_api_key_returns_key_dict(self):
         """GET /auth/keys/{id} returns key data when found."""
@@ -216,7 +236,9 @@ class TestGetAPIKey:
 
         user = _admin_user()
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             result = asyncio.run(get_api_key(key_id="k-found", user=user))
 
         assert result["id"] == "k-found"
@@ -229,7 +251,9 @@ class TestGetAPIKey:
         mock_manager = MagicMock()
         mock_manager.get_key.return_value = None
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(get_api_key(key_id="nonexistent", user=_admin_user()))
 
@@ -246,7 +270,9 @@ class TestGetAPIKey:
         # Regular user whose user_id does NOT match the key's user_id
         regular = _regular_user(user_id="user-456")
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(get_api_key(key_id="k-other", user=regular))
 
@@ -256,6 +282,7 @@ class TestGetAPIKey:
 # ---------------------------------------------------------------------------
 # delete_api_key
 # ---------------------------------------------------------------------------
+
 
 class TestDeleteAPIKey:
     def test_delete_api_key_succeeds(self):
@@ -269,8 +296,12 @@ class TestDeleteAPIKey:
 
         mock_audit = MagicMock()
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager), \
-             patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+            ),
+            patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit),
+        ):
             result = asyncio.run(delete_api_key(key_id="k-del", user=_admin_user()))
 
         assert result["success"] is True
@@ -283,7 +314,9 @@ class TestDeleteAPIKey:
         mock_manager = MagicMock()
         mock_manager.get_key.return_value = None
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(delete_api_key(key_id="ghost-key", user=_admin_user()))
 
@@ -299,7 +332,9 @@ class TestDeleteAPIKey:
 
         regular = _regular_user(user_id="user-456")
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(delete_api_key(key_id="k-other2", user=regular))
 
@@ -310,10 +345,11 @@ class TestDeleteAPIKey:
 # update_api_key
 # ---------------------------------------------------------------------------
 
+
 class TestUpdateAPIKey:
     def test_update_api_key_returns_updated_key(self):
         """PUT /auth/keys/{id} returns updated key data."""
-        from ignition_toolkit.api.routers.auth import update_api_key, UpdateAPIKeyRequest
+        from ignition_toolkit.api.routers.auth import UpdateAPIKeyRequest, update_api_key
 
         existing = _make_api_key_mock("k-upd", "Old Name", user_id="user-123")
         updated = _make_api_key_mock("k-upd", "New Name", user_id="user-123")
@@ -324,22 +360,28 @@ class TestUpdateAPIKey:
 
         request = UpdateAPIKeyRequest(name="New Name")
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
-            result = asyncio.run(update_api_key(key_id="k-upd", request=request, user=_admin_user()))
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
+            result = asyncio.run(
+                update_api_key(key_id="k-upd", request=request, user=_admin_user())
+            )
 
         assert result["success"] is True
         assert result["api_key"]["name"] == "New Name"
 
     def test_update_api_key_404_when_not_found(self):
         """PUT /auth/keys/{id} raises 404 for unknown key."""
-        from ignition_toolkit.api.routers.auth import update_api_key, UpdateAPIKeyRequest
+        from ignition_toolkit.api.routers.auth import UpdateAPIKeyRequest, update_api_key
 
         mock_manager = MagicMock()
         mock_manager.get_key.return_value = None
 
         request = UpdateAPIKeyRequest(name="Anything")
 
-        with patch("ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager):
+        with patch(
+            "ignition_toolkit.api.routers.auth.get_api_key_manager", return_value=mock_manager
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(update_api_key(key_id="missing", request=request, user=_admin_user()))
 
@@ -349,6 +391,7 @@ class TestUpdateAPIKey:
 # ---------------------------------------------------------------------------
 # list_roles
 # ---------------------------------------------------------------------------
+
 
 class TestListRoles:
     def test_list_roles_returns_roles(self):
@@ -386,6 +429,7 @@ class TestListRoles:
 # get_role
 # ---------------------------------------------------------------------------
 
+
 class TestGetRole:
     def test_get_role_returns_role_data(self):
         """GET /auth/roles/{name} returns role details."""
@@ -419,6 +463,7 @@ class TestGetRole:
 # ---------------------------------------------------------------------------
 # delete_role
 # ---------------------------------------------------------------------------
+
 
 class TestDeleteRole:
     def test_delete_role_succeeds(self):
@@ -464,10 +509,11 @@ class TestDeleteRole:
 # create_role
 # ---------------------------------------------------------------------------
 
+
 class TestCreateRole:
     def test_create_role_succeeds(self):
         """POST /auth/roles creates a custom role and returns it."""
-        from ignition_toolkit.api.routers.auth import create_role, CreateRoleRequest
+        from ignition_toolkit.api.routers.auth import CreateRoleRequest, create_role
 
         mock_role = MagicMock()
         mock_role.to_dict.return_value = {
@@ -493,7 +539,7 @@ class TestCreateRole:
 
     def test_create_role_400_for_invalid_permission(self):
         """POST /auth/roles raises 400 for an unrecognised permission string."""
-        from ignition_toolkit.api.routers.auth import create_role, CreateRoleRequest
+        from ignition_toolkit.api.routers.auth import CreateRoleRequest, create_role
 
         mock_rbac = MagicMock()
 
@@ -511,7 +557,7 @@ class TestCreateRole:
 
     def test_create_role_400_for_duplicate_role(self):
         """POST /auth/roles raises 400 when role name already exists."""
-        from ignition_toolkit.api.routers.auth import create_role, CreateRoleRequest
+        from ignition_toolkit.api.routers.auth import CreateRoleRequest, create_role
 
         mock_rbac = MagicMock()
         mock_rbac.create_role.side_effect = ValueError("Role already exists")
@@ -533,6 +579,7 @@ class TestCreateRole:
 # get_audit_logs
 # ---------------------------------------------------------------------------
 
+
 class TestGetAuditLogs:
     def test_get_audit_logs_returns_events(self):
         """GET /auth/audit returns events list."""
@@ -545,10 +592,16 @@ class TestGetAuditLogs:
         mock_audit.get_events.return_value = [mock_event]
 
         with patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
-            result = asyncio.run(get_audit_logs(
-                limit=100, offset=0, event_type=None, user_id=None, success=None,
-                user=_admin_user(),
-            ))
+            result = asyncio.run(
+                get_audit_logs(
+                    limit=100,
+                    offset=0,
+                    event_type=None,
+                    user_id=None,
+                    success=None,
+                    user=_admin_user(),
+                )
+            )
 
         assert "events" in result
         assert result["count"] == 1
@@ -561,10 +614,16 @@ class TestGetAuditLogs:
 
         with patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
             with pytest.raises(HTTPException) as exc_info:
-                asyncio.run(get_audit_logs(
-                    limit=100, offset=0, event_type="not.a.real.event",
-                    user_id=None, success=None, user=_admin_user(),
-                ))
+                asyncio.run(
+                    get_audit_logs(
+                        limit=100,
+                        offset=0,
+                        event_type="not.a.real.event",
+                        user_id=None,
+                        success=None,
+                        user=_admin_user(),
+                    )
+                )
 
         assert exc_info.value.status_code == 400
 
@@ -576,10 +635,16 @@ class TestGetAuditLogs:
         mock_audit.get_events.return_value = []
 
         with patch("ignition_toolkit.api.routers.auth.get_audit_logger", return_value=mock_audit):
-            result = asyncio.run(get_audit_logs(
-                limit=100, offset=0, event_type=None, user_id=None, success=None,
-                user=_admin_user(),
-            ))
+            result = asyncio.run(
+                get_audit_logs(
+                    limit=100,
+                    offset=0,
+                    event_type=None,
+                    user_id=None,
+                    success=None,
+                    user=_admin_user(),
+                )
+            )
 
         assert result["events"] == []
         assert result["count"] == 0
@@ -588,6 +653,7 @@ class TestGetAuditLogs:
 # ---------------------------------------------------------------------------
 # list_permissions
 # ---------------------------------------------------------------------------
+
 
 class TestListPermissions:
     def test_list_permissions_returns_all_permissions(self):
@@ -607,6 +673,7 @@ class TestListPermissions:
 # ---------------------------------------------------------------------------
 # get_current_user_info
 # ---------------------------------------------------------------------------
+
 
 class TestGetCurrentUserInfo:
     def test_get_current_user_info_returns_user_data(self):

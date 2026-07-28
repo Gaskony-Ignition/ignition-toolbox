@@ -35,6 +35,7 @@ async def get_config():
     """
     # Version comes from the package itself; env var allows override for dev/CI
     from ignition_toolkit import __version__
+
     version = os.getenv("APP_VERSION", __version__)
 
     # Check if AI is enabled

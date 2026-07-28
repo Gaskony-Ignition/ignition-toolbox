@@ -142,9 +142,7 @@ class TestCachePersistence:
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
         tmp_user_dir.mkdir(parents=True, exist_ok=True)
-        (tmp_user_dir / "manifest_cache.json").write_text(
-            json.dumps(cache), encoding="utf-8"
-        )
+        (tmp_user_dir / "manifest_cache.json").write_text(json.dumps(cache), encoding="utf-8")
 
         with patch(
             "ignition_toolkit.core.manifest.get_user_data_dir",

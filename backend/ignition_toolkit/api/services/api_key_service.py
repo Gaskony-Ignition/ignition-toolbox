@@ -190,11 +190,7 @@ class APIKeyService:
             Tuple of (key_name, decrypted_api_key) or None
         """
         with self.db.session_scope() as session:
-            key = (
-                session.query(APIKeyModel)
-                .filter(APIKeyModel.gateway_url == gateway_url)
-                .first()
-            )
+            key = session.query(APIKeyModel).filter(APIKeyModel.gateway_url == gateway_url).first()
             if not key:
                 return None
             return (key.name, self.encryption.decrypt(key.api_key_encrypted))

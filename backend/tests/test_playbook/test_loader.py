@@ -5,21 +5,16 @@ Tests YAML parsing, validation, and error handling.
 """
 
 import pytest
-from pathlib import Path
-import tempfile
-import os
 
-from ignition_toolkit.playbook.loader import PlaybookLoader
 from ignition_toolkit.playbook.exceptions import (
     PlaybookLoadError,
     PlaybookValidationError,
     YAMLParseError,
 )
+from ignition_toolkit.playbook.loader import PlaybookLoader
 from ignition_toolkit.playbook.models import (
-    Playbook,
-    PlaybookStep,
-    StepType,
     ParameterType,
+    StepType,
 )
 
 
@@ -309,6 +304,7 @@ steps:
         playbook = PlaybookLoader.load_from_string(yaml_content)
 
         from ignition_toolkit.playbook.models import OnFailureAction
+
         assert playbook.steps[0].on_failure == OnFailureAction.CONTINUE
 
     def test_step_with_timeout_and_retry(self):
@@ -345,6 +341,7 @@ steps:
         playbook = PlaybookLoader.load_from_string(yaml_content)
 
         from ignition_toolkit.playbook.models import OnFailureAction
+
         assert playbook.steps[0].timeout == 300  # Default timeout
         assert playbook.steps[0].retry_count == 0  # Default no retries
         assert playbook.steps[0].on_failure == OnFailureAction.ABORT

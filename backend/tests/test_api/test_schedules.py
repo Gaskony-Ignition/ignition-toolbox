@@ -6,16 +6,16 @@ Uses direct function calls with mocking (same pattern as test_health.py).
 """
 
 import asyncio
-import pytest
 from contextlib import contextmanager
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_schedule(schedule_id: int = 1, name: str = "Test Schedule") -> MagicMock:
     """Return a mock ScheduledPlaybookModel with sensible defaults."""
@@ -65,6 +65,7 @@ def _make_db_with_result(scalar_result=None):
 # list_schedules
 # ---------------------------------------------------------------------------
 
+
 class TestListSchedules:
     def test_list_schedules_returns_schedules_key(self):
         """GET /api/schedules returns a dict with 'schedules' key."""
@@ -108,6 +109,7 @@ class TestListSchedules:
 # get_schedule
 # ---------------------------------------------------------------------------
 
+
 class TestGetSchedule:
     def test_get_schedule_returns_schedule_dict(self):
         """GET /api/schedules/{id} returns schedule data when found."""
@@ -140,10 +142,15 @@ class TestGetSchedule:
 # create_schedule
 # ---------------------------------------------------------------------------
 
+
 class TestCreateSchedule:
     def test_create_schedule_returns_success_message(self):
         """POST /api/schedules creates a schedule and returns success message."""
-        from ignition_toolkit.api.routers.schedules import create_schedule, CreateScheduleRequest, ScheduleConfig
+        from ignition_toolkit.api.routers.schedules import (
+            CreateScheduleRequest,
+            ScheduleConfig,
+            create_schedule,
+        )
 
         mock_schedule = _make_mock_schedule(10, "New Schedule")
         mock_session = MagicMock()
@@ -177,9 +184,16 @@ class TestCreateSchedule:
             enabled=True,
         )
 
-        with patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db), \
-             patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler), \
-             patch("ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel", return_value=mock_schedule):
+        with (
+            patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db),
+            patch(
+                "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+            ),
+            patch(
+                "ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel",
+                return_value=mock_schedule,
+            ),
+        ):
             result = asyncio.run(create_schedule(request))
 
         assert result["message"] == "Schedule created successfully"
@@ -187,7 +201,11 @@ class TestCreateSchedule:
 
     def test_create_schedule_calls_scheduler_when_enabled(self):
         """POST /api/schedules calls scheduler.add_schedule when enabled=True."""
-        from ignition_toolkit.api.routers.schedules import create_schedule, CreateScheduleRequest, ScheduleConfig
+        from ignition_toolkit.api.routers.schedules import (
+            CreateScheduleRequest,
+            ScheduleConfig,
+            create_schedule,
+        )
 
         mock_schedule = _make_mock_schedule(11, "Enabled Schedule")
         mock_schedule.id = 11
@@ -212,16 +230,27 @@ class TestCreateSchedule:
             enabled=True,
         )
 
-        with patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db), \
-             patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler), \
-             patch("ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel", return_value=mock_schedule):
+        with (
+            patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db),
+            patch(
+                "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+            ),
+            patch(
+                "ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel",
+                return_value=mock_schedule,
+            ),
+        ):
             asyncio.run(create_schedule(request))
 
         mock_scheduler.add_schedule.assert_awaited_once()
 
     def test_create_schedule_skips_scheduler_when_disabled(self):
         """POST /api/schedules does not add to scheduler when enabled=False."""
-        from ignition_toolkit.api.routers.schedules import create_schedule, CreateScheduleRequest, ScheduleConfig
+        from ignition_toolkit.api.routers.schedules import (
+            CreateScheduleRequest,
+            ScheduleConfig,
+            create_schedule,
+        )
 
         mock_schedule = _make_mock_schedule(12, "Disabled Schedule")
         mock_schedule.id = 12
@@ -246,9 +275,16 @@ class TestCreateSchedule:
             enabled=False,
         )
 
-        with patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db), \
-             patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler), \
-             patch("ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel", return_value=mock_schedule):
+        with (
+            patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db),
+            patch(
+                "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+            ),
+            patch(
+                "ignition_toolkit.api.routers.schedules.ScheduledPlaybookModel",
+                return_value=mock_schedule,
+            ),
+        ):
             asyncio.run(create_schedule(request))
 
         mock_scheduler.add_schedule.assert_not_awaited()
@@ -257,6 +293,7 @@ class TestCreateSchedule:
 # ---------------------------------------------------------------------------
 # delete_schedule
 # ---------------------------------------------------------------------------
+
 
 class TestDeleteSchedule:
     def test_delete_schedule_returns_success_message(self):
@@ -269,8 +306,12 @@ class TestDeleteSchedule:
         mock_scheduler = MagicMock()
         mock_scheduler.remove_schedule = AsyncMock(return_value=None)
 
-        with patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db), \
-             patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler):
+        with (
+            patch("ignition_toolkit.api.routers.schedules.get_database", return_value=db),
+            patch(
+                "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+            ),
+        ):
             result = asyncio.run(delete_schedule(5))
 
         assert result["message"] == "Schedule deleted successfully"
@@ -293,6 +334,7 @@ class TestDeleteSchedule:
 # toggle_schedule
 # ---------------------------------------------------------------------------
 
+
 class TestToggleSchedule:
     def test_toggle_schedule_404_for_unknown_id(self):
         """POST /api/schedules/{id}/toggle raises 404 when schedule doesn't exist."""
@@ -310,6 +352,7 @@ class TestToggleSchedule:
 # ---------------------------------------------------------------------------
 # Request model validation
 # ---------------------------------------------------------------------------
+
 
 class TestCreateScheduleRequestModel:
     def test_required_fields_present(self):
@@ -357,17 +400,22 @@ class TestCreateScheduleRequestModel:
 # get_next_runs
 # ---------------------------------------------------------------------------
 
+
 class TestGetNextRuns:
     def test_get_next_runs_returns_list(self):
         """GET /api/schedules/status/next-runs returns next_runs list."""
         from ignition_toolkit.api.routers.schedules import get_next_runs
 
         mock_scheduler = MagicMock()
-        mock_scheduler.get_next_runs = AsyncMock(return_value=[
-            {"schedule_id": 1, "next_run": "2026-02-22T10:00:00Z"},
-        ])
+        mock_scheduler.get_next_runs = AsyncMock(
+            return_value=[
+                {"schedule_id": 1, "next_run": "2026-02-22T10:00:00Z"},
+            ]
+        )
 
-        with patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler):
+        with patch(
+            "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+        ):
             result = asyncio.run(get_next_runs())
 
         assert "next_runs" in result
@@ -380,7 +428,9 @@ class TestGetNextRuns:
         mock_scheduler = MagicMock()
         mock_scheduler.get_next_runs = AsyncMock(return_value=[])
 
-        with patch("ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler):
+        with patch(
+            "ignition_toolkit.api.routers.schedules.get_scheduler", return_value=mock_scheduler
+        ):
             result = asyncio.run(get_next_runs())
 
         assert result["next_runs"] == []

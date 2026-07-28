@@ -25,6 +25,7 @@ def get_current_version() -> str:
         str: Version string (e.g., "4.0.9")
     """
     from ignition_toolkit import __version__
+
     return __version__
 
 

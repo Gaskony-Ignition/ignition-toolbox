@@ -134,7 +134,8 @@ class ExecutionResponseBuilder:
         # Calculate current_step_index from step_results
         # Count completed/failed/skipped steps to determine progress
         completed_count = sum(
-            1 for step in db_execution.step_results
+            1
+            for step in db_execution.step_results
             if step.status in ("completed", "failed", "skipped")
         )
         current_step_index = completed_count - 1 if completed_count > 0 else 0
@@ -153,16 +154,18 @@ class ExecutionResponseBuilder:
                 if screenshots and not screenshot_path:
                     screenshot_path = screenshots[0] if isinstance(screenshots, list) else None
 
-            step_results.append({
-                "step_id": step.step_id,
-                "step_name": step.step_name,
-                "status": step.status,
-                "output": step.output,
-                "error": step.error_message,  # Note: column is error_message, not error
-                "started_at": step.started_at,
-                "completed_at": step.completed_at,
-                "screenshot_path": screenshot_path,
-            })
+            step_results.append(
+                {
+                    "step_id": step.step_id,
+                    "step_name": step.step_name,
+                    "status": step.status,
+                    "output": step.output,
+                    "error": step.error_message,  # Note: column is error_message, not error
+                    "started_at": step.started_at,
+                    "completed_at": step.completed_at,
+                    "screenshot_path": screenshot_path,
+                }
+            )
 
         return ExecutionStatusResponse(
             execution_id=db_execution.execution_id,

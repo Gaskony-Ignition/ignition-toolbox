@@ -298,15 +298,16 @@ async def scrape_all(
         # Filter to the publicly-listed scopes (matches the website's count).
         if scope_allow is not None:
             filtered = [
-                r for r in raw_items
-                if str(r.get("scope_title", "")).strip() in scope_allow
+                r for r in raw_items if str(r.get("scope_title", "")).strip() in scope_allow
             ]
         else:
             filtered = list(raw_items)
 
         logger.info(
             "Exchange returned %d resources (%d after scope filter %s)",
-            len(raw_items), len(filtered), sorted(scope_allow) if scope_allow else "none",
+            len(raw_items),
+            len(filtered),
+            sorted(scope_allow) if scope_allow else "none",
         )
 
         if max_resources and max_resources > 0:
@@ -320,9 +321,7 @@ async def scrape_all(
                 logger.info("Stop requested, halting at %d/%d", i, total)
                 break
             try:
-                results.append(
-                    transform_resource(raw, category_map, resource_url_template)
-                )
+                results.append(transform_resource(raw, category_map, resource_url_template))
             except Exception as exc:  # noqa: BLE001 - never lose the whole run over one row
                 logger.warning("Failed to transform resource %s: %s", raw.get("id"), exc)
 

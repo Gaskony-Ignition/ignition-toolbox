@@ -104,8 +104,10 @@ class TestBatchOperations:
         RemoteDataRegistry.register(mgr2)
 
         # Mock check_for_update on both managers
-        with patch.object(mgr1, "check_for_update", new_callable=AsyncMock) as m1, \
-             patch.object(mgr2, "check_for_update", new_callable=AsyncMock) as m2:
+        with (
+            patch.object(mgr1, "check_for_update", new_callable=AsyncMock) as m1,
+            patch.object(mgr2, "check_for_update", new_callable=AsyncMock) as m2,
+        ):
             m1.return_value = {"version": "2.0.0"}
             m2.return_value = None
 
@@ -123,9 +125,7 @@ class TestBatchOperations:
 
         with patch.object(mgr, "check_for_update", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = None
-            await RemoteDataRegistry.check_all_updates(
-                manifest_components=manifest, force=True
-            )
+            await RemoteDataRegistry.check_all_updates(manifest_components=manifest, force=True)
             # Should pass manifest info to the manager
             mock_check.assert_called_once_with(
                 manifest_info={"version": "2.0.0", "checksum": "sha256:abc"},

@@ -5,7 +5,7 @@ These are shell/PowerShell scripts that users can download to install Docker
 on their systems.
 """
 
-DOCKER_INSTALL_LINUX = '''#!/bin/bash
+DOCKER_INSTALL_LINUX = """#!/bin/bash
 # Docker Installation Script for Linux
 # Supports: Ubuntu, Debian, CentOS, RHEL, Fedora, Arch
 
@@ -111,9 +111,9 @@ echo "Verify installation:"
 echo "  docker --version"
 echo "  docker compose version"
 echo ""
-'''
+"""
 
-DOCKER_INSTALL_WINDOWS = '''# Docker Desktop Installation Script for Windows
+DOCKER_INSTALL_WINDOWS = """# Docker Desktop Installation Script for Windows
 # Run in PowerShell as Administrator
 
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -186,4 +186,4 @@ Write-Host "  1. Launch Docker Desktop from the Start menu"
 Write-Host "  2. Complete the initial setup wizard"
 Write-Host "  3. Verify installation: docker --version"
 Write-Host ""
-'''
+"""

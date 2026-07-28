@@ -6,14 +6,15 @@ and RBACManager behaviour.
 """
 
 import pytest
+
 from ignition_toolkit.auth.rbac import (
-    Permission,
-    Role,
-    RBACManager,
     ADMIN_ROLE,
-    USER_ROLE,
-    READONLY_ROLE,
     EXECUTOR_ROLE,
+    READONLY_ROLE,
+    USER_ROLE,
+    Permission,
+    RBACManager,
+    Role,
     get_rbac_manager,
 )
 
@@ -135,9 +136,9 @@ class TestPredefinedRoles:
     def test_readonly_role_has_only_read_permissions(self):
         """READONLY_ROLE contains only read-type permissions."""
         for perm in READONLY_ROLE.permissions:
-            assert perm.value.endswith(":read"), (
-                f"READONLY_ROLE should not have non-read permission: {perm}"
-            )
+            assert perm.value.endswith(
+                ":read"
+            ), f"READONLY_ROLE should not have non-read permission: {perm}"
         assert READONLY_ROLE.is_system is True
 
     def test_executor_role_can_execute_but_not_write_playbooks(self):
@@ -187,17 +188,21 @@ class TestRBACManager:
     def test_check_permission_with_wildcard_scope(self):
         """check_permission() returns True when '*' is in the scopes list."""
         # Unknown role but wildcard scope grants all
-        assert self.rbac.check_permission(
-            "nonexistent_role", Permission.SYSTEM_ADMIN, scopes=["*"]
-        ) is True
+        assert (
+            self.rbac.check_permission("nonexistent_role", Permission.SYSTEM_ADMIN, scopes=["*"])
+            is True
+        )
 
     def test_check_permission_with_exact_scope(self):
         """check_permission() returns True when the exact permission value is in scopes."""
-        assert self.rbac.check_permission(
-            "nonexistent_role",
-            Permission.PLAYBOOK_EXECUTE,
-            scopes=["playbook:execute"],
-        ) is True
+        assert (
+            self.rbac.check_permission(
+                "nonexistent_role",
+                Permission.PLAYBOOK_EXECUTE,
+                scopes=["playbook:execute"],
+            )
+            is True
+        )
 
     def test_get_role_returns_correct_role(self):
         """get_role() returns the Role object for a known role name."""

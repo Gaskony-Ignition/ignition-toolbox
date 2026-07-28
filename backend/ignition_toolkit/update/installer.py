@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 async def download_update(
-    download_url: str,
-    progress_callback: Callable[[int, int], None] | None = None
+    download_url: str, progress_callback: Callable[[int, int], None] | None = None
 ) -> Path:
     """
     Download update archive to temporary directory
@@ -39,7 +38,7 @@ async def download_update(
 
     # Determine filename from URL
     filename = download_url.split("/")[-1]
-    if not filename.endswith(('.whl', '.tar.gz', '.zip')):
+    if not filename.endswith((".whl", ".tar.gz", ".zip")):
         filename = "update-package.tar.gz"
 
     archive_path = temp_dir / filename
@@ -94,13 +93,13 @@ async def install_update(archive_path: Path) -> bool:
                 "install",
                 "--upgrade",
                 "--force-reinstall",  # Force reinstall to ensure all files updated
-                str(archive_path)
+                str(archive_path),
             ],
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            errors='replace',
-            check=True
+            encoding="utf-8",
+            errors="replace",
+            check=True,
         )
 
         logger.info("Update installation successful")

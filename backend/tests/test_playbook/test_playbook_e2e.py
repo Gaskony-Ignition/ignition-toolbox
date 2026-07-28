@@ -22,7 +22,6 @@ from ignition_toolkit.playbook.loader import PlaybookLoader
 from ignition_toolkit.playbook.models import StepType
 from ignition_toolkit.playbook.step_type_registry import (
     get_step_definition,
-    get_all_definitions,
 )
 
 # Directories containing playbooks. The old ignition_toolkit/playbooks copy
@@ -63,8 +62,12 @@ HANDLER_PARAMS = {
     "gateway.wait_for_ready": {"timeout"},
     "designer.launch": {"launcher_file"},
     "designer.launch_shortcut": {
-        "designer_shortcut", "project_name", "gateway_credential",
-        "username", "password", "timeout",
+        "designer_shortcut",
+        "project_name",
+        "gateway_credential",
+        "username",
+        "password",
+        "timeout",
     },
     "designer.login": {"username", "password", "timeout"},
     "designer.open_project": {"project_name", "timeout"},
@@ -79,13 +82,20 @@ HANDLER_PARAMS = {
     "perspective.discover_page": {"selector", "types", "exclude_selectors"},
     "perspective.extract_component_metadata": {"components"},
     "perspective.execute_test_manifest": {
-        "manifest", "capture_screenshots", "on_failure",
-        "return_to_baseline", "baseline_url",
+        "manifest",
+        "capture_screenshots",
+        "on_failure",
+        "return_to_baseline",
+        "baseline_url",
     },
     "perspective.verify_navigation": {"expected_url_pattern", "expected_title_pattern", "timeout"},
     "perspective.verify_dock_opened": {"dock_selector", "timeout"},
     "perspective.verify_with_ai": {
-        "prompt", "ai_api_key", "selector", "confidence_threshold", "ai_model",
+        "prompt",
+        "ai_api_key",
+        "selector",
+        "confidence_threshold",
+        "ai_model",
     },
     "fat.generate_report": {"test_results", "title", "include_screenshots"},
     "fat.export_report": {"report", "output_path", "format"},
@@ -136,6 +146,7 @@ LIBRARY_PLAYBOOKS = collect_all_library_playbooks()
 # Test 1: Every playbook loads through the full PlaybookLoader pipeline
 # =============================================================================
 
+
 class TestPlaybookLoaderE2E:
     """Verify every YAML loads via PlaybookLoader without error."""
 
@@ -154,6 +165,7 @@ class TestPlaybookLoaderE2E:
 # =============================================================================
 # Test 2: Step parameters match what handlers actually read
 # =============================================================================
+
 
 class TestStepParameterContracts:
     """Verify every step passes parameters the handler actually reads."""
@@ -186,9 +198,8 @@ class TestStepParameterContracts:
                         f"'{correct_name}' — parameter is silently ignored"
                     )
 
-        assert not failures, (
-            f"{label}: {len(failures)} wrong parameter name(s):\n"
-            + "\n".join(failures)
+        assert not failures, f"{label}: {len(failures)} wrong parameter name(s):\n" + "\n".join(
+            failures
         )
 
     @pytest.mark.parametrize(
@@ -226,9 +237,8 @@ class TestStepParameterContracts:
                         f"(handler reads: {sorted(known_params)})"
                     )
 
-        assert not failures, (
-            f"{label}: {len(failures)} unknown parameter(s):\n"
-            + "\n".join(failures)
+        assert not failures, f"{label}: {len(failures)} unknown parameter(s):\n" + "\n".join(
+            failures
         )
 
     @pytest.mark.parametrize(
@@ -277,15 +287,15 @@ class TestStepParameterContracts:
                         f"'{step_type_str}' missing required param '{param_def.name}'"
                     )
 
-        assert not failures, (
-            f"{label}: {len(failures)} missing required parameter(s):\n"
-            + "\n".join(failures)
-        )
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} missing required parameter(s):\n" + "\n".join(failures)
 
 
 # =============================================================================
 # Test 3: Step-level properties are not confused with parameters
 # =============================================================================
+
 
 class TestStepStructure:
     """Verify step-level properties are at the right level."""
@@ -310,7 +320,6 @@ class TestStepStructure:
 
             # These should never be inside parameters (except for specific step types
             # that legitimately use "timeout" as a handler parameter)
-            step_type = step.get("type", "")
             for prop in ["retry_count", "retry_delay"]:
                 if prop in params:
                     failures.append(
@@ -318,10 +327,9 @@ class TestStepStructure:
                         f"'{prop}' is inside 'parameters' but should be at step level"
                     )
 
-        assert not failures, (
-            f"{label}: {len(failures)} misplaced step property(ies):\n"
-            + "\n".join(failures)
-        )
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} misplaced step property(ies):\n" + "\n".join(failures)
 
     @pytest.mark.parametrize(
         "yaml_path,label",
@@ -355,15 +363,15 @@ class TestStepStructure:
                     f"'on_failure' is inside 'parameters' but should be at step level"
                 )
 
-        assert not failures, (
-            f"{label}: {len(failures)} misplaced property(ies):\n"
-            + "\n".join(failures)
+        assert not failures, f"{label}: {len(failures)} misplaced property(ies):\n" + "\n".join(
+            failures
         )
 
 
 # =============================================================================
 # Test 4: Variable and parameter references
 # =============================================================================
+
 
 class TestReferenceIntegrity:
     """Verify that variable/parameter references can be resolved."""
@@ -373,9 +381,7 @@ class TestReferenceIntegrity:
         ALL_PLAYBOOKS,
         ids=[label for _, label in ALL_PLAYBOOKS],
     )
-    def test_parameter_references_point_to_declared_parameters(
-        self, yaml_path: Path, label: str
-    ):
+    def test_parameter_references_point_to_declared_parameters(self, yaml_path: Path, label: str):
         """{{ parameter.X }} references must match a declared parameter name."""
         import re
 
@@ -409,10 +415,9 @@ class TestReferenceIntegrity:
                             f"but no parameter '{ref_name}' is declared"
                         )
 
-        assert not failures, (
-            f"{label}: {len(failures)} unresolvable parameter reference(s):\n"
-            + "\n".join(failures)
-        )
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} unresolvable parameter reference(s):\n" + "\n".join(failures)
 
     @pytest.mark.parametrize(
         "yaml_path,label",
@@ -466,15 +471,17 @@ class TestReferenceIntegrity:
                     for match in set_var_pattern.finditer(script):
                         set_variables.add(match.group(1))
 
-        assert not failures, (
-            f"{label}: {len(failures)} variable reference(s) used before set:\n"
-            + "\n".join(failures)
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} variable reference(s) used before set:\n" + "\n".join(
+            failures
         )
 
 
 # =============================================================================
 # Test 5: Nested playbook references resolve to existing files
 # =============================================================================
+
 
 class TestNestedPlaybookPaths:
     """Verify playbook.run references point to real files."""
@@ -518,9 +525,8 @@ class TestNestedPlaybookPaths:
                     f"library/ or backend/playbooks/"
                 )
 
-        assert not failures, (
-            f"{label}: {len(failures)} missing nested playbook(s):\n"
-            + "\n".join(failures)
+        assert not failures, f"{label}: {len(failures)} missing nested playbook(s):\n" + "\n".join(
+            failures
         )
 
     @pytest.mark.parametrize(
@@ -528,9 +534,7 @@ class TestNestedPlaybookPaths:
         ALL_PLAYBOOKS,
         ids=[label for _, label in ALL_PLAYBOOKS],
     )
-    def test_nested_playbook_receives_required_parameters(
-        self, yaml_path: Path, label: str
-    ):
+    def test_nested_playbook_receives_required_parameters(self, yaml_path: Path, label: str):
         """playbook.run steps pass all required parameters to the nested playbook."""
         with open(yaml_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -577,15 +581,15 @@ class TestNestedPlaybookPaths:
                             f"parameter '{param_name}'"
                         )
 
-        assert not failures, (
-            f"{label}: {len(failures)} missing nested playbook parameter(s):\n"
-            + "\n".join(failures)
-        )
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} missing nested playbook parameter(s):\n" + "\n".join(failures)
 
 
 # =============================================================================
 # Test 6: Selector syntax validation
 # =============================================================================
+
 
 class TestSelectorSyntax:
     """Validate CSS selectors don't use known anti-patterns."""
@@ -627,15 +631,15 @@ class TestSelectorSyntax:
                         f"Selector: {selector!r}"
                     )
 
-        assert not failures, (
-            f"{label}: {len(failures)} invalid selector(s):\n"
-            + "\n".join(failures)
+        assert not failures, f"{label}: {len(failures)} invalid selector(s):\n" + "\n".join(
+            failures
         )
 
 
 # =============================================================================
 # Test 7: Unique step IDs within each playbook
 # =============================================================================
+
 
 class TestUniqueStepIds:
     """Verify step IDs are unique within each playbook."""
@@ -655,14 +659,13 @@ class TestUniqueStepIds:
                 step_ids.append(step.get("id", ""))
 
         duplicates = [sid for sid in step_ids if step_ids.count(sid) > 1]
-        assert not duplicates, (
-            f"{label}: duplicate step IDs: {sorted(set(duplicates))}"
-        )
+        assert not duplicates, f"{label}: duplicate step IDs: {sorted(set(duplicates))}"
 
 
 # =============================================================================
 # Test 8: Library and backend playbook copies are in sync
 # =============================================================================
+
 
 class TestLibraryBackendSync:
     """Verify library/ and backend/playbooks/ copies match."""
@@ -689,9 +692,10 @@ class TestLibraryBackendSync:
             if not backend_copy.exists():
                 missing.append(str(rel_path))
 
-        assert not missing, (
-            f"{len(missing)} library playbook(s) have no backend copy:\n"
-            + "\n".join(f"  {m}" for m in missing)
+        assert (
+            not missing
+        ), f"{len(missing)} library playbook(s) have no backend copy:\n" + "\n".join(
+            f"  {m}" for m in missing
         )
 
     def test_library_and_backend_versions_match(self):
@@ -714,18 +718,15 @@ class TestLibraryBackendSync:
             lib_version = str(lib_data.get("version", ""))
             backend_version = str(backend_data.get("version", ""))
             if lib_version != backend_version:
-                mismatches.append(
-                    f"  {rel_path}: library={lib_version}, backend={backend_version}"
-                )
+                mismatches.append(f"  {rel_path}: library={lib_version}, backend={backend_version}")
 
-        assert not mismatches, (
-            f"{len(mismatches)} version mismatch(es):\n" + "\n".join(mismatches)
-        )
+        assert not mismatches, f"{len(mismatches)} version mismatch(es):\n" + "\n".join(mismatches)
 
 
 # =============================================================================
 # Test 9: Step type correctness (verify vs verify_state)
 # =============================================================================
+
 
 class TestStepTypeCorrectness:
     """Verify steps use the right step type for their parameters."""
@@ -735,9 +736,7 @@ class TestStepTypeCorrectness:
         ALL_PLAYBOOKS,
         ids=[label for _, label in ALL_PLAYBOOKS],
     )
-    def test_verify_with_state_should_be_verify_state(
-        self, yaml_path: Path, label: str
-    ):
+    def test_verify_with_state_should_be_verify_state(self, yaml_path: Path, label: str):
         """browser.verify steps using 'state' param should be browser.verify_state."""
         with open(yaml_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -759,19 +758,14 @@ class TestStepTypeCorrectness:
                     f"(browser.verify only supports 'exists' boolean)"
                 )
 
-        assert not failures, (
-            f"{label}: {len(failures)} wrong step type(s):\n"
-            + "\n".join(failures)
-        )
+        assert not failures, f"{label}: {len(failures)} wrong step type(s):\n" + "\n".join(failures)
 
     @pytest.mark.parametrize(
         "yaml_path,label",
         ALL_PLAYBOOKS,
         ids=[label for _, label in ALL_PLAYBOOKS],
     )
-    def test_browser_wait_does_not_use_state_param(
-        self, yaml_path: Path, label: str
-    ):
+    def test_browser_wait_does_not_use_state_param(self, yaml_path: Path, label: str):
         """browser.wait only reads selector and timeout, not state."""
         with open(yaml_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -793,7 +787,6 @@ class TestStepTypeCorrectness:
                     f"browser.wait only reads 'selector' and 'timeout'"
                 )
 
-        assert not failures, (
-            f"{label}: {len(failures)} invalid browser.wait param(s):\n"
-            + "\n".join(failures)
-        )
+        assert (
+            not failures
+        ), f"{label}: {len(failures)} invalid browser.wait param(s):\n" + "\n".join(failures)

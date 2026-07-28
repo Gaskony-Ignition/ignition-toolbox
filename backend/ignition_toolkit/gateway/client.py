@@ -382,7 +382,9 @@ class GatewayClient:
 
     # System Operations
 
-    async def restart(self, wait_for_ready: bool = True, timeout: int = TimeoutDefaults.GATEWAY_RESTART) -> bool:
+    async def restart(
+        self, wait_for_ready: bool = True, timeout: int = TimeoutDefaults.GATEWAY_RESTART
+    ) -> bool:
         """
         Restart Gateway
 
@@ -412,7 +414,9 @@ class GatewayClient:
 
         return True
 
-    async def wait_for_ready(self, timeout: int = TimeoutDefaults.GATEWAY_RESTART, poll_interval: int = 5) -> bool:
+    async def wait_for_ready(
+        self, timeout: int = TimeoutDefaults.GATEWAY_RESTART, poll_interval: int = 5
+    ) -> bool:
         """
         Wait for Gateway to be ready (after restart or startup)
 

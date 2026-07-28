@@ -6,8 +6,7 @@ paths, features, server, and websocket_api_key fields.
 """
 
 import asyncio
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 class TestGetConfig:
@@ -110,8 +109,8 @@ class TestGetConfig:
 
     def test_version_comes_from_package_by_default(self):
         """When APP_VERSION env var is not set, version must come from ignition_toolkit.__version__."""
-        from ignition_toolkit.api.routers.config import get_config
         import ignition_toolkit
+        from ignition_toolkit.api.routers.config import get_config
 
         mock_settings = MagicMock()
         mock_settings.websocket_api_key = "key"
@@ -162,9 +161,7 @@ class TestGetConfig:
         mock_settings = MagicMock()
         mock_settings.websocket_api_key = "key"
 
-        env_without_port = {
-            k: v for k, v in __import__("os").environ.items() if k != "API_PORT"
-        }
+        env_without_port = {k: v for k, v in __import__("os").environ.items() if k != "API_PORT"}
         with patch("ignition_toolkit.api.routers.config.get_settings", return_value=mock_settings):
             with patch.dict("os.environ", env_without_port, clear=True):
                 result = asyncio.run(get_config())

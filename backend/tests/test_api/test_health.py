@@ -4,10 +4,7 @@ Tests for health check API endpoints
 Tests database, storage, and cleanup endpoints.
 """
 
-import pytest
-from pathlib import Path
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 class TestDatabaseHealth:
@@ -15,16 +12,22 @@ class TestDatabaseHealth:
 
     def test_database_health_returns_stats(self):
         """Test that database health returns statistics"""
-        from ignition_toolkit.api.routers.health import database_health
-        from contextlib import contextmanager
         import asyncio
+        from contextlib import contextmanager
+
+        from ignition_toolkit.api.routers.health import database_health
 
         # Mock the database
         mock_db = MagicMock()
         mock_session = MagicMock()
 
         # Setup mock query results for func.count and func.min/max
-        mock_session.query.return_value.scalar.side_effect = [10, 50, None, None]  # exec count, step count, oldest, newest
+        mock_session.query.return_value.scalar.side_effect = [
+            10,
+            50,
+            None,
+            None,
+        ]  # exec count, step count, oldest, newest
         mock_session.query.return_value.group_by.return_value.all.return_value = [
             ("completed", 8),
             ("failed", 2),
@@ -38,8 +41,8 @@ class TestDatabaseHealth:
         mock_db.session_scope = mock_session_scope
         mock_db.db_path = "/tmp/test.db"
 
-        with patch('ignition_toolkit.api.routers.health.get_database', return_value=mock_db):
-            with patch('pathlib.Path.exists', return_value=False):
+        with patch("ignition_toolkit.api.routers.health.get_database", return_value=mock_db):
+            with patch("pathlib.Path.exists", return_value=False):
                 result = asyncio.run(database_health())
 
         assert result["status"] == "healthy"
@@ -47,13 +50,14 @@ class TestDatabaseHealth:
 
     def test_database_health_handles_errors(self):
         """Test that database health handles errors gracefully"""
-        from ignition_toolkit.api.routers.health import database_health
         import asyncio
+
+        from ignition_toolkit.api.routers.health import database_health
 
         mock_db = MagicMock()
         mock_db.session_scope.side_effect = Exception("Database error")
 
-        with patch('ignition_toolkit.api.routers.health.get_database', return_value=mock_db):
+        with patch("ignition_toolkit.api.routers.health.get_database", return_value=mock_db):
             result = asyncio.run(database_health())
 
         assert result["status"] == "error"
@@ -65,8 +69,9 @@ class TestStorageHealth:
 
     def test_storage_health_returns_stats(self, tmp_path):
         """Test that storage health returns file statistics"""
-        from ignition_toolkit.api.routers.health import storage_health
         import asyncio
+
+        from ignition_toolkit.api.routers.health import storage_health
 
         # Create test screenshot files
         screenshots_dir = tmp_path / "screenshots"
@@ -75,7 +80,7 @@ class TestStorageHealth:
         (screenshots_dir / "test1.png").write_bytes(b"x" * 1000)
         (screenshots_dir / "test2.png").write_bytes(b"x" * 2000)
 
-        with patch('ignition_toolkit.core.paths.get_screenshots_dir', return_value=screenshots_dir):
+        with patch("ignition_toolkit.core.paths.get_screenshots_dir", return_value=screenshots_dir):
             result = asyncio.run(storage_health())
 
         assert result["status"] == "healthy"
@@ -84,13 +89,14 @@ class TestStorageHealth:
 
     def test_storage_health_empty_directory(self, tmp_path):
         """Test storage health with empty directory"""
-        from ignition_toolkit.api.routers.health import storage_health
         import asyncio
+
+        from ignition_toolkit.api.routers.health import storage_health
 
         screenshots_dir = tmp_path / "screenshots"
         screenshots_dir.mkdir()
 
-        with patch('ignition_toolkit.core.paths.get_screenshots_dir', return_value=screenshots_dir):
+        with patch("ignition_toolkit.core.paths.get_screenshots_dir", return_value=screenshots_dir):
             result = asyncio.run(storage_health())
 
         assert result["status"] == "healthy"
@@ -99,12 +105,13 @@ class TestStorageHealth:
 
     def test_storage_health_nonexistent_directory(self, tmp_path):
         """Test storage health when directory doesn't exist"""
-        from ignition_toolkit.api.routers.health import storage_health
         import asyncio
+
+        from ignition_toolkit.api.routers.health import storage_health
 
         screenshots_dir = tmp_path / "nonexistent"
 
-        with patch('ignition_toolkit.core.paths.get_screenshots_dir', return_value=screenshots_dir):
+        with patch("ignition_toolkit.core.paths.get_screenshots_dir", return_value=screenshots_dir):
             result = asyncio.run(storage_health())
 
         assert result["status"] == "healthy"
@@ -117,8 +124,9 @@ class TestCleanupEndpoint:
 
     def test_cleanup_dry_run(self):
         """Test cleanup in dry run mode"""
-        from ignition_toolkit.api.routers.health import cleanup_old_data, CleanupRequest
         import asyncio
+
+        from ignition_toolkit.api.routers.health import CleanupRequest, cleanup_old_data
 
         mock_db = MagicMock()
         mock_session = MagicMock()
@@ -131,7 +139,7 @@ class TestCleanupEndpoint:
 
         request = CleanupRequest(older_than_days=30, dry_run=True)
 
-        with patch('ignition_toolkit.api.routers.health.get_database', return_value=mock_db):
+        with patch("ignition_toolkit.api.routers.health.get_database", return_value=mock_db):
             result = asyncio.run(cleanup_old_data(request))
 
         assert result["dry_run"] is True
@@ -158,17 +166,19 @@ class TestHealthEndpoints:
 
     def test_liveness_probe(self):
         """Test liveness probe always returns alive"""
-        from ignition_toolkit.api.routers.health import liveness_probe
         import asyncio
+
+        from ignition_toolkit.api.routers.health import liveness_probe
 
         result = asyncio.run(liveness_probe())
         assert result["status"] == "alive"
 
     def test_readiness_probe_healthy(self):
         """Test readiness probe when healthy"""
+        import asyncio
+
         from ignition_toolkit.api.routers.health import readiness_probe
         from ignition_toolkit.startup.health import HealthStatus
-        import asyncio
 
         mock_health = MagicMock()
         mock_health.ready = True
@@ -176,7 +186,9 @@ class TestHealthEndpoints:
 
         mock_response = MagicMock()
 
-        with patch('ignition_toolkit.api.routers.health.get_health_state', return_value=mock_health):
+        with patch(
+            "ignition_toolkit.api.routers.health.get_health_state", return_value=mock_health
+        ):
             result = asyncio.run(readiness_probe(mock_response))
 
         assert result["ready"] is True
@@ -184,9 +196,10 @@ class TestHealthEndpoints:
 
     def test_readiness_probe_not_ready(self):
         """Test readiness probe when not ready"""
+        import asyncio
+
         from ignition_toolkit.api.routers.health import readiness_probe
         from ignition_toolkit.startup.health import HealthStatus
-        import asyncio
 
         mock_health = MagicMock()
         mock_health.ready = False
@@ -194,7 +207,9 @@ class TestHealthEndpoints:
 
         mock_response = MagicMock()
 
-        with patch('ignition_toolkit.api.routers.health.get_health_state', return_value=mock_health):
+        with patch(
+            "ignition_toolkit.api.routers.health.get_health_state", return_value=mock_health
+        ):
             result = asyncio.run(readiness_probe(mock_response))
 
         assert result["ready"] is False

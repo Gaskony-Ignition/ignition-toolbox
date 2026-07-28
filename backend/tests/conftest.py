@@ -10,26 +10,35 @@ Stack Builder fixtures:
   - catalog_path, integrations_path, sample_*_instance, basic/full_stack_instances
 """
 
-import pytest
-from contextlib import contextmanager
-from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock
-
 # Add the backend directory to the path
 import sys
+from contextlib import contextmanager
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 @pytest.fixture
 def catalog_path():
     """Return the path to the catalog.json file."""
-    return Path(__file__).parent.parent / "ignition_toolkit" / "stackbuilder" / "data" / "catalog.json"
+    return (
+        Path(__file__).parent.parent / "ignition_toolkit" / "stackbuilder" / "data" / "catalog.json"
+    )
 
 
 @pytest.fixture
 def integrations_path():
     """Return the path to the integrations.json file."""
-    return Path(__file__).parent.parent / "ignition_toolkit" / "stackbuilder" / "data" / "integrations.json"
+    return (
+        Path(__file__).parent.parent
+        / "ignition_toolkit"
+        / "stackbuilder"
+        / "data"
+        / "integrations.json"
+    )
 
 
 @pytest.fixture
@@ -45,7 +54,7 @@ def sample_ignition_instance():
             "admin_username": "admin",
             "admin_password": "password",
             "edition": "standard",
-        }
+        },
     }
 
 
@@ -61,7 +70,7 @@ def sample_postgres_instance():
             "database": "ignition_db",
             "username": "postgres",
             "password": "postgres123",
-        }
+        },
     }
 
 
@@ -76,7 +85,7 @@ def sample_traefik_instance():
             "http_port": 80,
             "https_port": 443,
             "dashboard_port": 8080,
-        }
+        },
     }
 
 
@@ -91,7 +100,7 @@ def sample_keycloak_instance():
             "port": 8180,
             "admin_username": "admin",
             "admin_password": "admin123",
-        }
+        },
     }
 
 
@@ -105,7 +114,7 @@ def sample_mosquitto_instance():
             "version": "latest",
             "mqtt_port": 1883,
             "websocket_port": 9001,
-        }
+        },
     }
 
 
@@ -120,7 +129,7 @@ def sample_grafana_instance():
             "port": 3000,
             "admin_username": "admin",
             "admin_password": "grafana123",
-        }
+        },
     }
 
 
@@ -134,7 +143,7 @@ def sample_mailhog_instance():
             "version": "latest",
             "smtp_port": 1025,
             "http_port": 8025,
-        }
+        },
     }
 
 

@@ -412,7 +412,9 @@ class BrowserManager:
         logger.info(f"Waiting for selector: {selector}")
         await page.wait_for_selector(selector, timeout=timeout)
 
-    async def screenshot(self, name: str, full_page: bool = False, format: str | None = None) -> Path:
+    async def screenshot(
+        self, name: str, full_page: bool = False, format: str | None = None
+    ) -> Path:
         """
         Take screenshot
 
@@ -436,8 +438,10 @@ class BrowserManager:
             # Actually, let's use JPEG with good quality, then convert to WebP for best compression
             # Simpler approach: Take PNG first, then convert to WebP using Pillow
             import io
+
             try:
                 from PIL import Image
+
                 screenshot_bytes = await page.screenshot(full_page=full_page, type="png")
                 img = Image.open(io.BytesIO(screenshot_bytes))
                 img.save(str(screenshot_path), "WEBP", quality=SCREENSHOT_WEBP_QUALITY)
@@ -620,9 +624,7 @@ class BrowserManager:
                     # page). Stop the loop rather than spinning every frame on a
                     # dead connection — continuing only floods logs and adds CDP
                     # contention that can aggravate the disconnect.
-                    logger.warning(
-                        f"Screenshot streaming stopping — browser connection lost: {e}"
-                    )
+                    logger.warning(f"Screenshot streaming stopping — browser connection lost: {e}")
                     self._streaming_active = False
                     break
                 # Transient error (e.g. a single dropped frame): back off a few
@@ -655,12 +657,13 @@ class BrowserManager:
 
         try:
             await asyncio.wait_for(
-                asyncio.gather(*self._active_downloads, return_exceptions=True),
-                timeout=timeout
+                asyncio.gather(*self._active_downloads, return_exceptions=True), timeout=timeout
             )
             logger.info("All downloads completed")
         except asyncio.TimeoutError:
-            logger.warning(f"Download timeout after {timeout}s - some downloads may not have completed")
+            logger.warning(
+                f"Download timeout after {timeout}s - some downloads may not have completed"
+            )
         finally:
             # Clear completed tasks
             self._active_downloads.clear()

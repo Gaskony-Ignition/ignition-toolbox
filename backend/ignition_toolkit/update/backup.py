@@ -61,7 +61,9 @@ def backup_user_data() -> Path:
                 # Built-in playbooks are in gateway/, perspective/, designer/, examples/
                 # Normalize to forward slashes for cross-platform compatibility
                 relative_path_str = str(playbook.relative_to(playbooks_dir)).replace("\\", "/")
-                if not relative_path_str.startswith(("gateway/", "perspective/", "designer/", "examples/")):
+                if not relative_path_str.startswith(
+                    ("gateway/", "perspective/", "designer/", "examples/")
+                ):
                     custom_playbooks.append(playbook)
 
             if custom_playbooks:
@@ -75,7 +77,7 @@ def backup_user_data() -> Path:
 
         # Create backup manifest
         manifest_path = backup_dir / "MANIFEST.txt"
-        with open(manifest_path, "w", encoding='utf-8') as f:
+        with open(manifest_path, "w", encoding="utf-8") as f:
             f.write(f"Backup created: {datetime.now().isoformat()}\n")
             f.write("Files backed up:\n")
             for file in backup_dir.glob("*"):

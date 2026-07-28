@@ -4,8 +4,6 @@ Tests for ignition_toolkit/core/timeouts.py
 Covers: TimeoutDefaults values, TimeoutKeys string values, and their completeness.
 """
 
-import pytest
-
 
 class TestTimeoutDefaults:
     """Tests for the TimeoutDefaults class."""
@@ -43,7 +41,13 @@ class TestTimeoutDefaults:
     def test_all_values_are_numeric(self):
         from ignition_toolkit.core.timeouts import TimeoutDefaults
 
-        for attr in ("GATEWAY_RESTART", "MODULE_INSTALL", "BROWSER_ACTION", "BROWSER_VERIFY", "DESIGNER_LAUNCH"):
+        for attr in (
+            "GATEWAY_RESTART",
+            "MODULE_INSTALL",
+            "BROWSER_ACTION",
+            "BROWSER_VERIFY",
+            "DESIGNER_LAUNCH",
+        ):
             value = getattr(TimeoutDefaults, attr)
             assert isinstance(value, (int, float)), f"{attr} must be numeric, got {type(value)}"
 

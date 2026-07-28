@@ -57,9 +57,7 @@ class TokenBucket:
         # Refill tokens based on time passed
         now = time.monotonic()
         time_passed = now - self.last_refill
-        self.tokens = min(
-            self.capacity, self.tokens + time_passed * self.refill_rate
-        )
+        self.tokens = min(self.capacity, self.tokens + time_passed * self.refill_rate)
         self.last_refill = now
 
         # Try to consume
@@ -182,9 +180,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Default
         return "normal"
 
-    def get_or_create_bucket(
-        self, client_id: str, endpoint_category: str
-    ) -> TokenBucket:
+    def get_or_create_bucket(self, client_id: str, endpoint_category: str) -> TokenBucket:
         """
         Get or create token bucket for client and endpoint
 
@@ -197,9 +193,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """
         if endpoint_category not in self.buckets[client_id]:
             capacity, refill_rate = self.rate_limits[endpoint_category]
-            self.buckets[client_id][endpoint_category] = TokenBucket(
-                capacity, refill_rate
-            )
+            self.buckets[client_id][endpoint_category] = TokenBucket(capacity, refill_rate)
 
         return self.buckets[client_id][endpoint_category]
 
@@ -214,8 +208,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         for client_id, client_buckets in self.buckets.items():
             # Check if all buckets are full (no recent activity)
             all_full = all(
-                bucket.tokens >= bucket.capacity * 0.99
-                for bucket in client_buckets.values()
+                bucket.tokens >= bucket.capacity * 0.99 for bucket in client_buckets.values()
             )
             if all_full:
                 stale_clients.append(client_id)
@@ -240,9 +233,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             Response (or 429 if rate limited)
         """
         # Skip rate limiting for static files and frontend routes
-        if not request.url.path.startswith("/api") and not request.url.path.startswith(
-            "/ws"
-        ):
+        if not request.url.path.startswith("/api") and not request.url.path.startswith("/ws"):
             return await call_next(request)
 
         # Cleanup periodically

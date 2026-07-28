@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 def _is_frozen() -> bool:
     """Check if running as a frozen PyInstaller executable."""
-    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
 def setup_environment():
@@ -215,7 +215,12 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 5000
     api_workers: int = 1
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5000", "app://.", "file://"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "app://.",
+        "file://",
+    ]
     websocket_api_key: str = ""  # Will be auto-generated if not set
 
     def __init__(self, **kwargs):

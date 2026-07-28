@@ -29,16 +29,21 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Request/Response Models
 
+
 class CreateAPIKeyRequest(BaseModel):
     """Request to create an API key"""
+
     name: str = Field(..., min_length=1, max_length=100, description="Key name")
     role: str = Field(default="user", description="Role: admin, user, readonly, executor")
     scopes: list[str] | None = Field(default=None, description="Specific permission scopes")
-    expires_in_days: int | None = Field(default=None, ge=1, le=365, description="Days until expiration")
+    expires_in_days: int | None = Field(
+        default=None, ge=1, le=365, description="Days until expiration"
+    )
 
 
 class UpdateAPIKeyRequest(BaseModel):
     """Request to update an API key"""
+
     name: str | None = Field(default=None, min_length=1, max_length=100)
     role: str | None = Field(default=None)
     scopes: list[str] | None = Field(default=None)
@@ -47,12 +52,14 @@ class UpdateAPIKeyRequest(BaseModel):
 
 class CreateRoleRequest(BaseModel):
     """Request to create a custom role"""
+
     name: str = Field(..., min_length=1, max_length=50, description="Role name")
     description: str = Field(..., description="Role description")
     permissions: list[str] = Field(default_factory=list, description="Permission names")
 
 
 # API Key Endpoints
+
 
 @router.post("/keys")
 async def create_api_key(
@@ -207,6 +214,7 @@ async def delete_api_key(
 
 # Role Endpoints
 
+
 @router.get("/roles")
 async def list_roles(
     user: CurrentUser = Depends(require_auth),
@@ -250,10 +258,7 @@ async def create_role(
             perm = Permission(perm_str)
             permissions.append(perm)
         except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid permission: {perm_str}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid permission: {perm_str}")
 
     try:
         role = rbac.create_role(
@@ -290,6 +295,7 @@ async def delete_role(
 
 # Audit Log Endpoints
 
+
 @router.get("/audit")
 async def get_audit_logs(
     limit: int = 100,
@@ -312,10 +318,7 @@ async def get_audit_logs(
         try:
             event_type_enum = AuditEventType(event_type)
         except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid event type: {event_type}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid event type: {event_type}")
 
     events = audit.get_events(
         limit=limit,
@@ -342,6 +345,7 @@ async def get_audit_stats(
 
 # Current User Endpoint
 
+
 @router.get("/me")
 async def get_current_user_info(
     user: CurrentUser = Depends(require_auth),
@@ -364,9 +368,4 @@ async def list_permissions(
     user: CurrentUser = Depends(require_auth),
 ):
     """List all available permissions"""
-    return {
-        "permissions": [
-            {"name": p.name, "value": p.value}
-            for p in Permission
-        ]
-    }
+    return {"permissions": [{"name": p.name, "value": p.value} for p in Permission]}

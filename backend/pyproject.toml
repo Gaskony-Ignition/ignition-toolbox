@@ -83,10 +83,15 @@ packages = ["ignition_toolkit"]
 [tool.black]
 line-length = 100
 target-version = ['py310', 'py311', 'py312', 'py313']
+# Golden snapshots are expected generator OUTPUT, compared byte-for-byte.
+# Formatting them rewrites the expected value and breaks the tests.
+extend-exclude = 'tests/test_stackbuilder/goldens/'
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# See the black note above — these are fixtures, not source.
+extend-exclude = ["tests/test_stackbuilder/goldens"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
@@ -94,6 +99,11 @@ ignore = [
     "E501",  # line too long — handled by formatter if needed
     "E402",  # module-level import not at top — intentional in several files
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately bind PascalCase mock classes and UPPER_CASE fixture
+# constants inside test functions.
+"tests/**" = ["N806"]
 
 [tool.mypy]
 python_version = "3.10"

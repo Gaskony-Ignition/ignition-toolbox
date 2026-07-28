@@ -13,22 +13,15 @@ Tests all endpoints in the stackbuilder.py router:
 - CRUD operations for saved stacks
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from ignition_toolkit.api.routers.stackbuilder import (
     router,
-    StackConfig,
-    InstanceConfig,
-    GlobalSettingsRequest,
-    IntegrationSettingsRequest,
-    SavedStackCreate,
-    VALID_NAME_PATTERN,
-    RESERVED_NAMES,
 )
-
 
 # Create a test app
 app = FastAPI()
@@ -84,7 +77,9 @@ class TestCatalogEndpoints:
 
     def test_get_ignition_versions(self):
         """Test GET /api/stackbuilder/versions/ignition returns version list."""
-        with patch('ignition_toolkit.api.routers.stackbuilder.main._get_ignition_versions') as mock_versions:
+        with patch(
+            "ignition_toolkit.api.routers.stackbuilder.main._get_ignition_versions"
+        ) as mock_versions:
             mock_versions.return_value = ["latest", "8.3.2", "8.3.1", "8.1.45"]
             response = client.get("/api/stackbuilder/versions/ignition")
             assert response.status_code == 200
@@ -94,7 +89,9 @@ class TestCatalogEndpoints:
 
     def test_get_postgres_versions(self):
         """Test GET /api/stackbuilder/versions/postgres returns version list."""
-        with patch('ignition_toolkit.api.routers.stackbuilder.main._get_postgres_versions') as mock_versions:
+        with patch(
+            "ignition_toolkit.api.routers.stackbuilder.main._get_postgres_versions"
+        ) as mock_versions:
             mock_versions.return_value = ["latest", "16-alpine", "15-alpine"]
             response = client.get("/api/stackbuilder/versions/postgres")
             assert response.status_code == 200
@@ -254,9 +251,7 @@ class TestStackGeneration:
         assert response.status_code == 422
         assert "conflict" in response.json()["detail"].lower()
 
-    def test_generate_stack_with_traefik(
-        self, sample_ignition_instance, sample_traefik_instance
-    ):
+    def test_generate_stack_with_traefik(self, sample_ignition_instance, sample_traefik_instance):
         """Test stack generation with Traefik reverse proxy."""
         stack_config = {
             "instances": [sample_ignition_instance, sample_traefik_instance],
@@ -320,7 +315,7 @@ class TestSavedStacksCRUD:
     @pytest.fixture(autouse=True)
     def mock_database_operations(self):
         """Mock database operations for saved stack tests."""
-        with patch('ignition_toolkit.api.routers.stackbuilder.main.get_database') as mock_get_db:
+        with patch("ignition_toolkit.api.routers.stackbuilder.main.get_database") as mock_get_db:
             mock_session = MagicMock()
             mock_db = MagicMock()
             mock_db.session_scope.return_value.__enter__ = MagicMock(return_value=mock_session)
@@ -364,7 +359,7 @@ class TestSavedStacksCRUD:
         }
 
         # Mock SavedStackModel constructor
-        with patch('ignition_toolkit.api.routers.stackbuilder.main.SavedStackModel') as MockModel:
+        with patch("ignition_toolkit.api.routers.stackbuilder.main.SavedStackModel") as MockModel:
             MockModel.return_value = mock_stack
 
             stack_data = {

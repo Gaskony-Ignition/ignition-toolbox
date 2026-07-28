@@ -89,17 +89,41 @@ class ReportExporter:
             writer.writerow(["Metric", "Value"])
             writer.writerow(["Report Title", report.title])
             writer.writerow(["Generated At", report.generated_at.isoformat()])
-            writer.writerow(["Period Start", report.period_start.isoformat() if report.period_start else "N/A"])
-            writer.writerow(["Period End", report.period_end.isoformat() if report.period_end else "N/A"])
+            writer.writerow(
+                ["Period Start", report.period_start.isoformat() if report.period_start else "N/A"]
+            )
+            writer.writerow(
+                ["Period End", report.period_end.isoformat() if report.period_end else "N/A"]
+            )
             writer.writerow(["Total Executions", report.overall_stats.total_executions])
             writer.writerow(["Passed", report.overall_stats.passed])
             writer.writerow(["Failed", report.overall_stats.failed])
             writer.writerow(["Running", report.overall_stats.running])
             writer.writerow(["Cancelled", report.overall_stats.cancelled])
             writer.writerow(["Pass Rate", f"{report.overall_stats.pass_rate:.2%}"])
-            writer.writerow(["Avg Duration (s)", f"{report.overall_stats.avg_duration_seconds:.2f}"])
-            writer.writerow(["Min Duration (s)", f"{report.overall_stats.min_duration_seconds:.2f}" if report.overall_stats.min_duration_seconds else "N/A"])
-            writer.writerow(["Max Duration (s)", f"{report.overall_stats.max_duration_seconds:.2f}" if report.overall_stats.max_duration_seconds else "N/A"])
+            writer.writerow(
+                ["Avg Duration (s)", f"{report.overall_stats.avg_duration_seconds:.2f}"]
+            )
+            writer.writerow(
+                [
+                    "Min Duration (s)",
+                    (
+                        f"{report.overall_stats.min_duration_seconds:.2f}"
+                        if report.overall_stats.min_duration_seconds
+                        else "N/A"
+                    ),
+                ]
+            )
+            writer.writerow(
+                [
+                    "Max Duration (s)",
+                    (
+                        f"{report.overall_stats.max_duration_seconds:.2f}"
+                        if report.overall_stats.max_duration_seconds
+                        else "N/A"
+                    ),
+                ]
+            )
             writer.writerow(["Total Steps", report.overall_stats.total_steps])
             writer.writerow(["Steps Passed", report.overall_stats.steps_passed])
             writer.writerow(["Steps Failed", report.overall_stats.steps_failed])
@@ -109,62 +133,70 @@ class ReportExporter:
         if include_executions and report.executions:
             output.write("# Execution Details\n")
             writer = csv.writer(output)
-            writer.writerow([
-                "ID",
-                "Playbook",
-                "Status",
-                "Started At",
-                "Completed At",
-                "Duration (s)",
-                "Total Steps",
-                "Passed Steps",
-                "Failed Steps",
-                "Error Message",
-            ])
+            writer.writerow(
+                [
+                    "ID",
+                    "Playbook",
+                    "Status",
+                    "Started At",
+                    "Completed At",
+                    "Duration (s)",
+                    "Total Steps",
+                    "Passed Steps",
+                    "Failed Steps",
+                    "Error Message",
+                ]
+            )
 
             for exec in report.executions:
-                writer.writerow([
-                    exec.id,
-                    exec.playbook_name,
-                    exec.status,
-                    exec.started_at.isoformat() if exec.started_at else "",
-                    exec.completed_at.isoformat() if exec.completed_at else "",
-                    f"{exec.duration_seconds:.2f}" if exec.duration_seconds else "",
-                    exec.total_steps,
-                    exec.passed_steps,
-                    exec.failed_steps,
-                    exec.error_message or "",
-                ])
+                writer.writerow(
+                    [
+                        exec.id,
+                        exec.playbook_name,
+                        exec.status,
+                        exec.started_at.isoformat() if exec.started_at else "",
+                        exec.completed_at.isoformat() if exec.completed_at else "",
+                        f"{exec.duration_seconds:.2f}" if exec.duration_seconds else "",
+                        exec.total_steps,
+                        exec.passed_steps,
+                        exec.failed_steps,
+                        exec.error_message or "",
+                    ]
+                )
             output.write("\n")
 
         # Playbook stats section
         if include_playbook_stats and report.playbook_stats:
             output.write("# Playbook Statistics\n")
             writer = csv.writer(output)
-            writer.writerow([
-                "Playbook",
-                "Path",
-                "Total Executions",
-                "Passed",
-                "Failed",
-                "Pass Rate",
-                "Avg Duration (s)",
-                "Last Execution",
-                "Last Status",
-            ])
+            writer.writerow(
+                [
+                    "Playbook",
+                    "Path",
+                    "Total Executions",
+                    "Passed",
+                    "Failed",
+                    "Pass Rate",
+                    "Avg Duration (s)",
+                    "Last Execution",
+                    "Last Status",
+                ]
+            )
 
             for stats in report.playbook_stats:
-                writer.writerow([
-                    stats.playbook_name,
-                    stats.playbook_path,
-                    stats.total_executions,
-                    stats.passed,
-                    stats.failed,
-                    f"{stats.pass_rate:.2%}",
-                    f"{stats.avg_duration_seconds:.2f}",
-                    stats.last_execution.isoformat() if stats.last_execution else "",
-                    stats.last_status or "",
-                ])
+                writer.writerow(
+                    [
+                        stats.playbook_name,
+                        stats.playbook_path,
+                        stats.total_executions,
+                        stats.passed,
+                        stats.failed,
+                        f"{stats.pass_rate:.2%}",
+                        f"{stats.avg_duration_seconds:.2f}",
+                        stats.last_execution.isoformat() if stats.last_execution else "",
+                        stats.last_status or "",
+                    ]
+                )
             output.write("\n")
 
         # Trends section
@@ -174,13 +206,15 @@ class ReportExporter:
             writer.writerow(["Date", "Total", "Passed", "Failed", "Pass Rate"])
 
             for trend in report.trends:
-                writer.writerow([
-                    trend.date,
-                    trend.total,
-                    trend.passed,
-                    trend.failed,
-                    f"{trend.pass_rate:.2%}",
-                ])
+                writer.writerow(
+                    [
+                        trend.date,
+                        trend.total,
+                        trend.passed,
+                        trend.failed,
+                        f"{trend.pass_rate:.2%}",
+                    ]
+                )
             output.write("\n")
 
         return output.getvalue()
@@ -198,34 +232,38 @@ class ReportExporter:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "ID",
-            "Playbook Path",
-            "Playbook Name",
-            "Status",
-            "Started At",
-            "Completed At",
-            "Duration (seconds)",
-            "Total Steps",
-            "Passed Steps",
-            "Failed Steps",
-            "Error Message",
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "Playbook Path",
+                "Playbook Name",
+                "Status",
+                "Started At",
+                "Completed At",
+                "Duration (seconds)",
+                "Total Steps",
+                "Passed Steps",
+                "Failed Steps",
+                "Error Message",
+            ]
+        )
 
         for exec in report.executions:
-            writer.writerow([
-                exec.id,
-                exec.playbook_path,
-                exec.playbook_name,
-                exec.status,
-                exec.started_at.isoformat() if exec.started_at else "",
-                exec.completed_at.isoformat() if exec.completed_at else "",
-                exec.duration_seconds if exec.duration_seconds else "",
-                exec.total_steps,
-                exec.passed_steps,
-                exec.failed_steps,
-                exec.error_message or "",
-            ])
+            writer.writerow(
+                [
+                    exec.id,
+                    exec.playbook_path,
+                    exec.playbook_name,
+                    exec.status,
+                    exec.started_at.isoformat() if exec.started_at else "",
+                    exec.completed_at.isoformat() if exec.completed_at else "",
+                    exec.duration_seconds if exec.duration_seconds else "",
+                    exec.total_steps,
+                    exec.passed_steps,
+                    exec.failed_steps,
+                    exec.error_message or "",
+                ]
+            )
 
         return output.getvalue()
 

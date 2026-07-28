@@ -137,7 +137,8 @@ def api_exception_handler(operation: str):
                     ErrorCode.INTERNAL_ERROR,
                     f"{operation} failed: {str(e)}",
                     500,
-                    recovery_hint=recovery_hint or "Check the application logs for more details. If the problem persists, restart the application.",
+                    recovery_hint=recovery_hint
+                    or "Check the application logs for more details. If the problem persists, restart the application.",
                 )
 
         return wrapper

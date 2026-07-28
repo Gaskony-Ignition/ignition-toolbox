@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 try:
     from Xlib import X, display, error  # noqa: F401
     from Xlib.protocol import event
+
     XLIB_AVAILABLE = True
 except ImportError:
     XLIB_AVAILABLE = False
@@ -22,6 +23,7 @@ except ImportError:
 # Try to import AT-SPI (Assistive Technology Service Provider Interface)
 try:
     import pyatspi
+
     PYATSPI_AVAILABLE = True
 except ImportError:
     PYATSPI_AVAILABLE = False
@@ -79,8 +81,7 @@ class LinuxDesignerAutomation:
 
                         # Check if this is Designer
                         if window_name and any(
-                            keyword in window_name.lower()
-                            for keyword in ["ignition", "designer"]
+                            keyword in window_name.lower() for keyword in ["ignition", "designer"]
                         ):
                             logger.info(f"Found Designer window: {window_name}")
                             self.designer_window = window
@@ -322,7 +323,7 @@ class LinuxDesignerAutomation:
                 ev = event.ClientMessage(
                     window=self.designer_window,
                     client_type=wm_protocols,
-                    data=(32, [wm_delete, X.CurrentTime, 0, 0, 0])
+                    data=(32, [wm_delete, X.CurrentTime, 0, 0, 0]),
                 )
 
                 self.designer_window.send_event(ev)
@@ -356,9 +357,7 @@ class LinuxDesignerAutomation:
 
             # Use import command (ImageMagick)
             subprocess.run(
-                ["import", "-window", str(self.window_id), output_path],
-                check=True,
-                timeout=5
+                ["import", "-window", str(self.window_id), output_path], check=True, timeout=5
             )
 
             logger.info("Screenshot captured")

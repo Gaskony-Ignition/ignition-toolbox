@@ -36,7 +36,9 @@ class TestWslPathTranslation:
 
     def test_url_unchanged(self, monkeypatch):
         monkeypatch.setenv("WSL_DISTRO_NAME", "Ubuntu")
-        assert mcp_server._to_windows_path_if_wsl("http://localhost:8088") == "http://localhost:8088"
+        assert (
+            mcp_server._to_windows_path_if_wsl("http://localhost:8088") == "http://localhost:8088"
+        )
 
     def test_only_path_keys_translated(self, monkeypatch):
         monkeypatch.setenv("WSL_DISTRO_NAME", "Ubuntu")

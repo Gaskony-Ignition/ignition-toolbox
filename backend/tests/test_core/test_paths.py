@@ -5,11 +5,8 @@ Covers: is_frozen, get_package_root, get_data_dir, get_user_playbooks_dir,
         get_screenshots_dir, get_all_playbook_dirs, env-var overrides.
 """
 
-import os
 import sys
 from pathlib import Path
-
-import pytest
 
 
 class TestIsFrozen:
@@ -133,7 +130,7 @@ class TestGetUserPlaybooksDir:
 
     def test_is_under_user_data_dir(self):
         """User playbooks must be inside the user data dir."""
-        from ignition_toolkit.core.paths import get_user_playbooks_dir, get_user_data_dir
+        from ignition_toolkit.core.paths import get_user_data_dir, get_user_playbooks_dir
 
         user_data = get_user_data_dir()
         user_pb = get_user_playbooks_dir()
@@ -157,7 +154,7 @@ class TestGetScreenshotsDir:
         assert isinstance(result, Path)
 
     def test_is_under_data_dir(self):
-        from ignition_toolkit.core.paths import get_screenshots_dir, get_data_dir
+        from ignition_toolkit.core.paths import get_data_dir, get_screenshots_dir
 
         data = get_data_dir()
         screenshots = get_screenshots_dir()

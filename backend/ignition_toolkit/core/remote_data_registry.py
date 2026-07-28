@@ -77,10 +77,7 @@ class RemoteDataRegistry:
     @classmethod
     def get_all_status(cls) -> dict[str, dict[str, Any]]:
         """Get status/metadata for all registered components."""
-        return {
-            name: manager.get_metadata()
-            for name, manager in cls._managers.items()
-        }
+        return {name: manager.get_metadata() for name, manager in cls._managers.items()}
 
     @classmethod
     def reset(cls) -> None:

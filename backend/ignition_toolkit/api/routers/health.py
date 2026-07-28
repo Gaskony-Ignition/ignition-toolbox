@@ -140,7 +140,7 @@ async def database_health() -> dict[str, Any]:
 
     try:
         # Get database file size
-        if db and hasattr(db, 'db_path'):
+        if db and hasattr(db, "db_path"):
             db_path = Path(db.db_path)
             if db_path.exists():
                 size_bytes = db_path.stat().st_size
@@ -249,9 +249,11 @@ async def storage_health() -> dict[str, Any]:
 
             if oldest_time:
                 from datetime import datetime
+
                 stats["oldest_screenshot"] = datetime.fromtimestamp(oldest_time).isoformat()
             if newest_time:
                 from datetime import datetime
+
                 stats["newest_screenshot"] = datetime.fromtimestamp(newest_time).isoformat()
         else:
             stats["file_count"] = 0
@@ -269,6 +271,7 @@ async def storage_health() -> dict[str, Any]:
 
 class CleanupRequest(BaseModel):
     """Request for cleanup operation"""
+
     older_than_days: int = 30
     dry_run: bool = True
 
@@ -315,9 +318,7 @@ async def cleanup_old_data(request: CleanupRequest) -> dict[str, Any]:
 
             # Find old executions
             old_executions = (
-                session.query(ExecutionModel)
-                .filter(ExecutionModel.started_at < cutoff_date)
-                .all()
+                session.query(ExecutionModel).filter(ExecutionModel.started_at < cutoff_date).all()
             )
 
             result["executions_found"] = len(old_executions)

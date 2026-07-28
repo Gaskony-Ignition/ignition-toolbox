@@ -9,7 +9,7 @@ Loads every YAML file under backend/playbooks/ and validates:
 """
 
 from pathlib import Path
-import pytest
+
 import yaml
 
 PLAYBOOKS_DIR = Path(__file__).parent.parent.parent / "playbooks"
@@ -49,9 +49,10 @@ class TestYamlSchema:
             if missing:
                 failures.append(f"{yaml_file.name}: missing fields {sorted(missing)}")
 
-        assert not failures, (
-            f"{len(failures)} playbook(s) with missing required fields:\n"
-            + "\n".join(f"  {f}" for f in failures)
+        assert (
+            not failures
+        ), f"{len(failures)} playbook(s) with missing required fields:\n" + "\n".join(
+            f"  {f}" for f in failures
         )
 
     def test_all_playbooks_have_valid_domain(self):
@@ -67,9 +68,8 @@ class TestYamlSchema:
                     f"(must be one of {sorted(VALID_DOMAINS)})"
                 )
 
-        assert not failures, (
-            f"{len(failures)} playbook(s) with invalid domain:\n"
-            + "\n".join(f"  {f}" for f in failures)
+        assert not failures, f"{len(failures)} playbook(s) with invalid domain:\n" + "\n".join(
+            f"  {f}" for f in failures
         )
 
     def test_all_playbooks_have_valid_step_types(self):
@@ -90,9 +90,8 @@ class TestYamlSchema:
                         f"unknown type '{step_type}'"
                     )
 
-        assert not failures, (
-            f"{len(failures)} step(s) with unknown type:\n"
-            + "\n".join(f"  {f}" for f in failures)
+        assert not failures, f"{len(failures)} step(s) with unknown type:\n" + "\n".join(
+            f"  {f}" for f in failures
         )
 
     def test_all_steps_have_id_and_type(self):
@@ -111,7 +110,6 @@ class TestYamlSchema:
                 if "type" not in step:
                     failures.append(f"{yaml_file.name}: steps[{i}] missing 'type'")
 
-        assert not failures, (
-            f"{len(failures)} step(s) missing required fields:\n"
-            + "\n".join(f"  {f}" for f in failures)
+        assert not failures, f"{len(failures)} step(s) missing required fields:\n" + "\n".join(
+            f"  {f}" for f in failures
         )

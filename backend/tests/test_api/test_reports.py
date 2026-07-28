@@ -7,15 +7,15 @@ Uses direct function calls with mocking (same pattern as test_health.py).
 """
 
 import asyncio
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_stats_mock(
     total: int = 0,
@@ -68,14 +68,20 @@ def _make_report_mock(report_dict: dict | None = None) -> MagicMock:
 # get_overall_stats
 # ---------------------------------------------------------------------------
 
+
 class TestGetOverallStats:
     def test_get_overall_stats_returns_expected_keys(self):
         """GET /reports/stats returns period_days, playbook_filter, and stats dict."""
         from ignition_toolkit.api.routers.reports import get_overall_stats
 
-        mock_analytics = _make_analytics_mock(stats=_make_stats_mock(total=5, passed=4, failed=1, pass_rate=0.8))
+        mock_analytics = _make_analytics_mock(
+            stats=_make_stats_mock(total=5, passed=4, failed=1, pass_rate=0.8)
+        )
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_overall_stats(days=30, playbook_path=None))
 
         assert "period_days" in result
@@ -90,15 +96,26 @@ class TestGetOverallStats:
         mock_stats = _make_stats_mock(total=10, passed=8, failed=2, pass_rate=0.8)
         mock_analytics = _make_analytics_mock(stats=mock_stats)
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_overall_stats(days=7))
 
         stats = result["stats"]
         expected_keys = [
-            "total_executions", "passed", "failed", "running",
-            "cancelled", "pass_rate", "avg_duration_seconds",
-            "min_duration_seconds", "max_duration_seconds",
-            "total_steps", "steps_passed", "steps_failed",
+            "total_executions",
+            "passed",
+            "failed",
+            "running",
+            "cancelled",
+            "pass_rate",
+            "avg_duration_seconds",
+            "min_duration_seconds",
+            "max_duration_seconds",
+            "total_steps",
+            "steps_passed",
+            "steps_failed",
         ]
         for key in expected_keys:
             assert key in stats, f"Missing key: {key}"
@@ -109,7 +126,10 @@ class TestGetOverallStats:
 
         mock_analytics = _make_analytics_mock(stats=_make_stats_mock())
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_overall_stats(days=30))
 
         assert result["stats"]["total_executions"] == 0
@@ -121,7 +141,10 @@ class TestGetOverallStats:
 
         mock_analytics = _make_analytics_mock()
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_overall_stats(days=30, playbook_path="playbooks/test.yaml"))
 
         assert result["playbook_filter"] == "playbooks/test.yaml"
@@ -132,6 +155,7 @@ class TestGetOverallStats:
 # ---------------------------------------------------------------------------
 # get_trends
 # ---------------------------------------------------------------------------
+
 
 class TestGetTrends:
     def test_get_trends_returns_expected_structure(self):
@@ -147,7 +171,10 @@ class TestGetTrends:
 
         mock_analytics = _make_analytics_mock(trends=[mock_trend])
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_trends(days=7, granularity="day"))
 
         assert "period_days" in result
@@ -165,7 +192,10 @@ class TestGetTrends:
 
         mock_analytics = _make_analytics_mock(trends=[])
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_trends(days=30, granularity="week"))
 
         assert result["trends"] == []
@@ -176,7 +206,10 @@ class TestGetTrends:
 
         mock_analytics = _make_analytics_mock()
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(get_trends(days=30, granularity="yearly"))
 
@@ -188,7 +221,10 @@ class TestGetTrends:
 
         mock_analytics = _make_analytics_mock()
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             for granularity in ("day", "week", "month"):
                 result = asyncio.run(get_trends(days=30, granularity=granularity))
                 assert result["granularity"] == granularity
@@ -197,6 +233,7 @@ class TestGetTrends:
 # ---------------------------------------------------------------------------
 # get_playbook_stats
 # ---------------------------------------------------------------------------
+
 
 class TestGetPlaybookStats:
     def test_get_playbook_stats_returns_expected_structure(self):
@@ -216,7 +253,10 @@ class TestGetPlaybookStats:
 
         mock_analytics = _make_analytics_mock(playbook_stats=[mock_pb_stat])
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_playbook_stats(days=30, limit=50))
 
         assert "period_days" in result
@@ -233,7 +273,10 @@ class TestGetPlaybookStats:
 
         mock_analytics = _make_analytics_mock(playbook_stats=[])
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_playbook_stats(days=30, limit=50))
 
         assert result["count"] == 0
@@ -243,6 +286,7 @@ class TestGetPlaybookStats:
 # ---------------------------------------------------------------------------
 # get_failure_analysis
 # ---------------------------------------------------------------------------
+
 
 class TestGetFailureAnalysis:
     def test_get_failure_analysis_returns_failures_list(self):
@@ -254,7 +298,10 @@ class TestGetFailureAnalysis:
         ]
         mock_analytics = _make_analytics_mock(failures=failure_data)
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_failure_analysis(days=30, limit=20))
 
         assert "period_days" in result
@@ -269,7 +316,10 @@ class TestGetFailureAnalysis:
 
         mock_analytics = _make_analytics_mock(failures=[])
 
-        with patch("ignition_toolkit.api.routers.reports.get_execution_analytics", return_value=mock_analytics):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_execution_analytics",
+            return_value=mock_analytics,
+        ):
             result = asyncio.run(get_failure_analysis(days=30, limit=20))
 
         assert result["count"] == 0
@@ -280,10 +330,11 @@ class TestGetFailureAnalysis:
 # generate_report
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateReport:
     def test_generate_summary_report(self):
         """POST /reports/generate with report_type=summary calls generate_summary_report."""
-        from ignition_toolkit.api.routers.reports import generate_report, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, generate_report
 
         mock_report = _make_report_mock({"report_type": "summary", "stats": {}})
         mock_generator = MagicMock()
@@ -291,7 +342,9 @@ class TestGenerateReport:
 
         request = GenerateReportRequest(report_type="summary", days=30)
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             result = asyncio.run(generate_report(request))
 
         assert result["report_type"] == "summary"
@@ -299,7 +352,7 @@ class TestGenerateReport:
 
     def test_generate_detailed_report(self):
         """POST /reports/generate with report_type=detailed calls generate_detailed_report."""
-        from ignition_toolkit.api.routers.reports import generate_report, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, generate_report
 
         mock_report = _make_report_mock({"report_type": "detailed", "executions": []})
         mock_generator = MagicMock()
@@ -307,7 +360,9 @@ class TestGenerateReport:
 
         request = GenerateReportRequest(report_type="detailed", days=7)
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             result = asyncio.run(generate_report(request))
 
         assert result["report_type"] == "detailed"
@@ -321,21 +376,26 @@ class TestGenerateReport:
         therefore checks that *some* HTTPException is raised and that the detail
         message mentions the missing path, without asserting on the specific code.
         """
-        from ignition_toolkit.api.routers.reports import generate_report, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, generate_report
 
         mock_generator = MagicMock()
         request = GenerateReportRequest(report_type="playbook", playbook_path=None)
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(generate_report(request))
 
         assert exc_info.value.status_code in (400, 500)
-        assert "playbook_path" in exc_info.value.detail.lower() or "playbook" in exc_info.value.detail.lower()
+        assert (
+            "playbook_path" in exc_info.value.detail.lower()
+            or "playbook" in exc_info.value.detail.lower()
+        )
 
     def test_generate_playbook_report_with_path(self):
         """POST /reports/generate with report_type=playbook and a path calls generate_playbook_report."""
-        from ignition_toolkit.api.routers.reports import generate_report, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, generate_report
 
         mock_report = _make_report_mock({"report_type": "playbook"})
         mock_generator = MagicMock()
@@ -343,7 +403,9 @@ class TestGenerateReport:
 
         request = GenerateReportRequest(report_type="playbook", playbook_path="playbooks/test.yaml")
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             result = asyncio.run(generate_report(request))
 
         assert result["report_type"] == "playbook"
@@ -356,22 +418,28 @@ class TestGenerateReport:
         re-raises as 500, so the effective status code is 500 with a detail
         message that identifies the invalid type.
         """
-        from ignition_toolkit.api.routers.reports import generate_report, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, generate_report
 
         mock_generator = MagicMock()
         request = GenerateReportRequest(report_type="unknown_type")
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(generate_report(request))
 
         assert exc_info.value.status_code in (400, 500)
-        assert "unknown_type" in exc_info.value.detail or "Invalid report_type" in exc_info.value.detail
+        assert (
+            "unknown_type" in exc_info.value.detail
+            or "Invalid report_type" in exc_info.value.detail
+        )
 
 
 # ---------------------------------------------------------------------------
 # get_summary_report (convenience endpoint)
 # ---------------------------------------------------------------------------
+
 
 class TestGetSummaryReport:
     def test_get_summary_report_returns_report_dict(self):
@@ -382,7 +450,9 @@ class TestGetSummaryReport:
         mock_generator = MagicMock()
         mock_generator.generate_summary_report.return_value = mock_report
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator):
+        with patch(
+            "ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator
+        ):
             result = asyncio.run(get_summary_report(days=30, trend_granularity="day"))
 
         assert result["report_type"] == "summary"
@@ -395,11 +465,13 @@ class TestGetSummaryReport:
 # export_report_json
 # ---------------------------------------------------------------------------
 
+
 class TestExportReportJson:
     def test_export_json_returns_response_with_json_content_type(self):
         """POST /reports/export/json returns a Response with application/json media type."""
-        from ignition_toolkit.api.routers.reports import export_report_json, GenerateReportRequest
         from fastapi.responses import Response
+
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, export_report_json
 
         mock_report = _make_report_mock()
         mock_generator = MagicMock()
@@ -410,8 +482,16 @@ class TestExportReportJson:
 
         request = GenerateReportRequest(report_type="summary")
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             result = asyncio.run(export_report_json(request))
 
         assert isinstance(result, Response)
@@ -425,31 +505,43 @@ class TestExportReportJson:
         re-wrapped as a 500; we check that an HTTPException is raised with a
         detail message identifying the missing path.
         """
-        from ignition_toolkit.api.routers.reports import export_report_json, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, export_report_json
 
         mock_generator = MagicMock()
         mock_exporter = MagicMock()
 
         request = GenerateReportRequest(report_type="playbook", playbook_path=None)
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(export_report_json(request))
 
         assert exc_info.value.status_code in (400, 500)
-        assert "playbook_path" in exc_info.value.detail or "playbook" in exc_info.value.detail.lower()
+        assert (
+            "playbook_path" in exc_info.value.detail or "playbook" in exc_info.value.detail.lower()
+        )
 
 
 # ---------------------------------------------------------------------------
 # export_report_csv
 # ---------------------------------------------------------------------------
 
+
 class TestExportReportCsv:
     def test_export_csv_returns_response_with_csv_content_type(self):
         """POST /reports/export/csv returns a Response with text/csv media type."""
-        from ignition_toolkit.api.routers.reports import export_report_csv, GenerateReportRequest
         from fastapi.responses import Response
+
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, export_report_csv
 
         mock_report = _make_report_mock()
         mock_generator = MagicMock()
@@ -460,8 +552,16 @@ class TestExportReportCsv:
 
         request = GenerateReportRequest(report_type="summary")
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             result = asyncio.run(export_report_csv(request))
 
         assert isinstance(result, Response)
@@ -475,31 +575,43 @@ class TestExportReportCsv:
         re-wrapped as a 500; we check that an HTTPException is raised with a
         detail message identifying the missing path.
         """
-        from ignition_toolkit.api.routers.reports import export_report_csv, GenerateReportRequest
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest, export_report_csv
 
         mock_generator = MagicMock()
         mock_exporter = MagicMock()
 
         request = GenerateReportRequest(report_type="playbook", playbook_path=None)
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             with pytest.raises(HTTPException) as exc_info:
                 asyncio.run(export_report_csv(request))
 
         assert exc_info.value.status_code in (400, 500)
-        assert "playbook_path" in exc_info.value.detail or "playbook" in exc_info.value.detail.lower()
+        assert (
+            "playbook_path" in exc_info.value.detail or "playbook" in exc_info.value.detail.lower()
+        )
 
 
 # ---------------------------------------------------------------------------
 # export_executions_csv
 # ---------------------------------------------------------------------------
 
+
 class TestExportExecutionsCsv:
     def test_export_executions_csv_returns_csv_response(self):
         """GET /reports/export/executions/csv returns CSV Response."""
-        from ignition_toolkit.api.routers.reports import export_executions_csv
         from fastapi.responses import Response
+
+        from ignition_toolkit.api.routers.reports import export_executions_csv
 
         mock_report = _make_report_mock()
         mock_generator = MagicMock()
@@ -508,8 +620,16 @@ class TestExportExecutionsCsv:
         mock_exporter = MagicMock()
         mock_exporter.to_executions_csv.return_value = "execution_id,status\n123,passed\n"
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             result = asyncio.run(export_executions_csv(days=7, limit=500, status=None))
 
         assert isinstance(result, Response)
@@ -518,8 +638,8 @@ class TestExportExecutionsCsv:
 
     def test_export_executions_csv_with_status_filter(self):
         """GET /reports/export/executions/csv passes status filter to generator."""
+
         from ignition_toolkit.api.routers.reports import export_executions_csv
-        from fastapi.responses import Response
 
         mock_report = _make_report_mock()
         mock_generator = MagicMock()
@@ -528,8 +648,16 @@ class TestExportExecutionsCsv:
         mock_exporter = MagicMock()
         mock_exporter.to_executions_csv.return_value = "execution_id,status\n"
 
-        with patch("ignition_toolkit.api.routers.reports.get_report_generator", return_value=mock_generator), \
-             patch("ignition_toolkit.api.routers.reports.get_report_exporter", return_value=mock_exporter):
+        with (
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_generator",
+                return_value=mock_generator,
+            ),
+            patch(
+                "ignition_toolkit.api.routers.reports.get_report_exporter",
+                return_value=mock_exporter,
+            ),
+        ):
             asyncio.run(export_executions_csv(days=7, limit=100, status="failed"))
 
         call_kwargs = mock_generator.generate_detailed_report.call_args.kwargs
@@ -539,6 +667,7 @@ class TestExportExecutionsCsv:
 # ---------------------------------------------------------------------------
 # GenerateReportRequest model validation
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateReportRequestModel:
     def test_default_values(self):
@@ -554,8 +683,9 @@ class TestGenerateReportRequestModel:
 
     def test_days_range_validation(self):
         """days must be 1-365; values outside raise ValidationError."""
-        from ignition_toolkit.api.routers.reports import GenerateReportRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest
 
         with pytest.raises(ValidationError):
             GenerateReportRequest(days=0)
@@ -571,8 +701,9 @@ class TestGenerateReportRequestModel:
 
     def test_execution_limit_range_validation(self):
         """execution_limit must be 1-1000; values outside raise ValidationError."""
-        from ignition_toolkit.api.routers.reports import GenerateReportRequest
         from pydantic import ValidationError
+
+        from ignition_toolkit.api.routers.reports import GenerateReportRequest
 
         with pytest.raises(ValidationError):
             GenerateReportRequest(execution_limit=0)

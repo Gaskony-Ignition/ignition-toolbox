@@ -6,6 +6,7 @@ with Python commands that work on Windows, Linux, and macOS.
 
 v4.1.0: Enhanced with pre-flight checks to prevent restart/refresh issues.
 """
+
 import subprocess
 import sys
 import time
@@ -21,10 +22,14 @@ console = Console()
 def find_server_processes():
     """Find all uvicorn processes for ignition_toolkit"""
     processes = []
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            cmdline = proc.info['cmdline']
-            if cmdline and 'uvicorn' in ' '.join(cmdline) and 'ignition_toolkit' in ' '.join(cmdline):
+            cmdline = proc.info["cmdline"]
+            if (
+                cmdline
+                and "uvicorn" in " ".join(cmdline)
+                and "ignition_toolkit" in " ".join(cmdline)
+            ):
                 processes.append(proc)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
@@ -42,6 +47,7 @@ def is_port_in_use(port=5000):
 # ==============================================================================
 # Pre-flight Check Functions (v4.1.0)
 # ==============================================================================
+
 
 def get_package_root() -> Path:
     """Get the package root directory"""
@@ -70,8 +76,12 @@ def check_frontend_staleness() -> tuple[str, str | None]:
         return ("fresh", None)  # No source to check against
 
     # Find all TypeScript/JavaScript source files
-    src_files = list(src_dir.rglob("*.tsx")) + list(src_dir.rglob("*.ts")) + \
-                list(src_dir.rglob("*.jsx")) + list(src_dir.rglob("*.js"))
+    src_files = (
+        list(src_dir.rglob("*.tsx"))
+        + list(src_dir.rglob("*.ts"))
+        + list(src_dir.rglob("*.jsx"))
+        + list(src_dir.rglob("*.js"))
+    )
 
     if not src_files:
         return ("fresh", None)
@@ -116,7 +126,7 @@ def rebuild_frontend(quiet: bool = False) -> bool:
                 cwd=frontend_dir,
                 capture_output=quiet,
                 text=True,
-                check=True
+                check=True,
             )
 
             if not quiet:
@@ -137,12 +147,7 @@ def rebuild_frontend(quiet: bool = False) -> bool:
         if not quiet:
             console.print("[cyan]Running frontend rebuild...[/cyan]")
 
-        subprocess.run(
-            ["bash", str(rebuild_script)],
-            capture_output=quiet,
-            text=True,
-            check=True
-        )
+        subprocess.run(["bash", str(rebuild_script)], capture_output=quiet, text=True, check=True)
 
         if not quiet:
             console.print("[green]✓ Frontend rebuilt successfully[/green]")
@@ -171,6 +176,7 @@ def clear_bytecode_cache() -> int:
     for pycache_dir in ignition_toolkit_dir.rglob("__pycache__"):
         try:
             import shutil
+
             shutil.rmtree(pycache_dir)
             count += 1
         except OSError:
@@ -198,6 +204,7 @@ def check_database_locks() -> bool:
     # Only problematic if we can't open the database
     try:
         import sqlite3
+
         conn = sqlite3.connect(str(db_file), timeout=1.0)
         conn.execute("SELECT 1")
         conn.close()
@@ -249,7 +256,9 @@ def run_preflight_checks(skip_checks: bool = False, auto_rebuild: bool = True) -
                 if rebuild_frontend():
                     console.print("[green]✓ Frontend rebuilt[/green]")
                 else:
-                    console.print("[yellow]⚠ Frontend rebuild failed, continuing with stale build[/yellow]")
+                    console.print(
+                        "[yellow]⚠ Frontend rebuild failed, continuing with stale build[/yellow]"
+                    )
         else:
             console.print("[dim]  (Auto-rebuild disabled)[/dim]")
     else:
@@ -258,7 +267,9 @@ def run_preflight_checks(skip_checks: bool = False, auto_rebuild: bool = True) -
     # Check 2: Clear bytecode cache
     cache_count = clear_bytecode_cache()
     if cache_count > 0:
-        console.print(f"[green]✓ Cleared {cache_count} bytecode cache director{'y' if cache_count == 1 else 'ies'}[/green]")
+        console.print(
+            f"[green]✓ Cleared {cache_count} bytecode cache director{'y' if cache_count == 1 else 'ies'}[/green]"
+        )
     else:
         console.print("[green]✓ No bytecode cache to clear[/green]")
 
@@ -281,11 +292,11 @@ def run_preflight_checks(skip_checks: bool = False, auto_rebuild: bool = True) -
 
 
 @click.command()
-@click.option('--port', default=5000, help='Port to run server on')
-@click.option('--host', default='0.0.0.0', help='Host to bind to')
-@click.option('--dev', is_flag=True, help='Development mode with auto-reload')
-@click.option('--skip-checks', is_flag=True, help='Skip pre-flight checks (faster startup)')
-@click.option('--no-rebuild', is_flag=True, help='Do not rebuild frontend even if stale')
+@click.option("--port", default=5000, help="Port to run server on")
+@click.option("--host", default="0.0.0.0", help="Host to bind to")
+@click.option("--dev", is_flag=True, help="Development mode with auto-reload")
+@click.option("--skip-checks", is_flag=True, help="Skip pre-flight checks (faster startup)")
+@click.option("--no-rebuild", is_flag=True, help="Do not rebuild frontend even if stale")
 def start(port, host, dev, skip_checks, no_rebuild):
     """
     Start the Ignition Toolkit server
@@ -316,6 +327,7 @@ def start(port, host, dev, skip_checks, no_rebuild):
 
     # Set environment variables for consistent paths
     from ignition_toolkit.config import setup_environment
+
     setup_environment()
 
     # Run pre-flight checks (v4.1.0)
@@ -338,14 +350,18 @@ def start(port, host, dev, skip_checks, no_rebuild):
 
     # Build uvicorn command
     uvicorn_cmd = [
-        sys.executable, '-m', 'uvicorn',
-        'ignition_toolkit.api.app:app',
-        '--host', host,
-        '--port', str(port)
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "ignition_toolkit.api.app:app",
+        "--host",
+        host,
+        "--port",
+        str(port),
     ]
 
     if dev:
-        uvicorn_cmd.append('--reload')
+        uvicorn_cmd.append("--reload")
 
     # Start server
     try:
@@ -358,7 +374,7 @@ def start(port, host, dev, skip_checks, no_rebuild):
 
 
 @click.command()
-@click.option('--force', is_flag=True, help='Force kill processes if normal termination fails')
+@click.option("--force", is_flag=True, help="Force kill processes if normal termination fails")
 def stop(force):
     """Stop the Ignition Toolkit server"""
     console.print("[bold cyan]Stopping Ignition Automation Toolkit Server[/bold cyan]")
@@ -401,13 +417,17 @@ def stop(force):
             time.sleep(1)
             final_check = find_server_processes()
             if final_check:
-                console.print(f"[red]Warning: {len(final_check)} process(es) could not be stopped[/red]")
+                console.print(
+                    f"[red]Warning: {len(final_check)} process(es) could not be stopped[/red]"
+                )
                 for proc in final_check:
                     console.print(f"  PID: {proc.pid}")
             else:
                 console.print("[green]✓ All processes stopped[/green]")
         else:
-            console.print(f"[yellow]Warning: {len(remaining)} process(es) didn't stop gracefully[/yellow]")
+            console.print(
+                f"[yellow]Warning: {len(remaining)} process(es) didn't stop gracefully[/yellow]"
+            )
             for proc in remaining:
                 console.print(f"  PID: {proc.pid}")
             console.print("\n[cyan]Try running with --force to kill remaining processes[/cyan]")
@@ -416,7 +436,7 @@ def stop(force):
 
 
 @click.command()
-@click.option('--port', default=5000, help='Port to check')
+@click.option("--port", default=5000, help="Port to check")
 def status(port):
     """Check server status and health"""
     console.print("[bold cyan]Ignition Toolkit Server Health Check[/bold cyan]\n")
@@ -444,7 +464,7 @@ def status(port):
         import httpx
 
         console.print(f"\nChecking HTTP endpoint at http://localhost:{port}/...")
-        response = httpx.get(f'http://localhost:{port}/', timeout=5)
+        response = httpx.get(f"http://localhost:{port}/", timeout=5)
 
         if response.status_code == 200:
             console.print(f"[green]✓ Server is responding (HTTP {response.status_code})[/green]")
@@ -453,7 +473,7 @@ def status(port):
 
         # Try health endpoint
         try:
-            health_response = httpx.get(f'http://localhost:{port}/api/health', timeout=5)
+            health_response = httpx.get(f"http://localhost:{port}/api/health", timeout=5)
             if health_response.status_code == 200:
                 health_data = health_response.json()
                 console.print("[green]✓ Health check passed[/green]")

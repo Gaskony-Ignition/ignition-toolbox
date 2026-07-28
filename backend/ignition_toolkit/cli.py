@@ -31,8 +31,7 @@ def serve(host: str | None, port: int | None, reload: bool) -> None:
 
     # Configure logging FIRST - set to DEBUG to see all logs including perspective handler logs
     logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     # Import settings to get defaults from .env or Settings
@@ -80,6 +79,7 @@ def init() -> None:
 
     # Create data directory
     from ignition_toolkit.core.paths import get_data_dir, get_playbooks_dir
+
     data_dir = get_data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
     console.print(f"✅ Data directory created: [green]{data_dir}[/green]")
@@ -202,7 +202,9 @@ def verify(verbose: bool) -> None:
 
     # 8. Playwright browsers check
     try:
-        playwright_path = os.getenv("PLAYWRIGHT_BROWSERS_PATH", str(package_root / "data" / ".playwright-browsers"))
+        playwright_path = os.getenv(
+            "PLAYWRIGHT_BROWSERS_PATH", str(package_root / "data" / ".playwright-browsers")
+        )
         playwright_ok = Path(playwright_path).exists()
         checks.append(("Playwright Browsers", playwright_path, "✅" if playwright_ok else "⚠️"))
         if not playwright_ok:
@@ -287,7 +289,9 @@ def credential() -> None:
 @click.option("--password", prompt=True, hide_input=True, help="Password")
 @click.option("--gateway-url", default=None, help="Gateway URL (e.g., http://localhost:9088)")
 @click.option("--description", default="", help="Credential description")
-def credential_add(name: str, username: str, password: str, gateway_url: str | None, description: str) -> None:
+def credential_add(
+    name: str, username: str, password: str, gateway_url: str | None, description: str
+) -> None:
     """Add a new credential"""
     from ignition_toolkit.credentials.models import Credential
     from ignition_toolkit.credentials.vault import CredentialVault

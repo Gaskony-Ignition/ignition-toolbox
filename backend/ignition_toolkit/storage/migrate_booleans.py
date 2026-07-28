@@ -52,9 +52,7 @@ def migrate_boolean_columns():
 
         # Check scheduled_playbooks table
         if "scheduled_playbooks" in inspector.get_table_names():
-            sched_columns = [
-                col["name"] for col in inspector.get_columns("scheduled_playbooks")
-            ]
+            sched_columns = [col["name"] for col in inspector.get_columns("scheduled_playbooks")]
 
             if "enabled" in sched_columns:
                 # Check column type
@@ -76,30 +74,22 @@ def _migrate_ai_settings_enabled(session):
     """Migrate ai_settings.enabled from String to Boolean"""
 
     # Step 1: Add temporary boolean column
-    session.execute(
-        text("ALTER TABLE ai_settings ADD COLUMN enabled_bool INTEGER DEFAULT 0")
-    )
+    session.execute(text("ALTER TABLE ai_settings ADD COLUMN enabled_bool INTEGER DEFAULT 0"))
 
     # Step 2: Copy data with conversion (SQLite stores Boolean as INTEGER: 0 or 1)
-    session.execute(
-        text(
-            """
+    session.execute(text("""
         UPDATE ai_settings
         SET enabled_bool = CASE
             WHEN enabled = 'true' THEN 1
             ELSE 0
         END
-    """
-        )
-    )
+    """))
 
     # Step 3: Drop old column (SQLite requires table recreation for column drops)
     # We'll use a simpler approach: rename columns directly
 
     # Create new table with correct schema
-    session.execute(
-        text(
-            """
+    session.execute(text("""
         CREATE TABLE ai_settings_new (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
@@ -111,20 +101,14 @@ def _migrate_ai_settings_enabled(session):
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-    """
-        )
-    )
+    """))
 
     # Copy data
-    session.execute(
-        text(
-            """
+    session.execute(text("""
         INSERT INTO ai_settings_new (id, name, provider, api_key, api_base_url, model_name, enabled, created_at, updated_at)
         SELECT id, name, provider, api_key, api_base_url, model_name, enabled_bool, created_at, updated_at
         FROM ai_settings
-    """
-        )
-    )
+    """))
 
     # Drop old table and rename new one
     session.execute(text("DROP TABLE ai_settings"))
@@ -137,9 +121,7 @@ def _migrate_scheduled_playbooks_enabled(session):
     """Migrate scheduled_playbooks.enabled from String to Boolean"""
 
     # Create new table with correct schema
-    session.execute(
-        text(
-            """
+    session.execute(text("""
         CREATE TABLE scheduled_playbooks_new (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -155,14 +137,10 @@ def _migrate_scheduled_playbooks_enabled(session):
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-    """
-        )
-    )
+    """))
 
     # Copy data with conversion
-    session.execute(
-        text(
-            """
+    session.execute(text("""
         INSERT INTO scheduled_playbooks_new (id, name, playbook_path, schedule_type, schedule_config,
                                               parameters, gateway_url, credential_name, enabled,
                                               last_run_at, next_run_at, created_at, updated_at)
@@ -171,24 +149,18 @@ def _migrate_scheduled_playbooks_enabled(session):
                CASE WHEN enabled = 'true' THEN 1 ELSE 0 END,
                last_run_at, next_run_at, created_at, updated_at
         FROM scheduled_playbooks
-    """
-        )
-    )
+    """))
 
     # Drop old table and rename new one
     session.execute(text("DROP TABLE scheduled_playbooks"))
-    session.execute(
-        text("ALTER TABLE scheduled_playbooks_new RENAME TO scheduled_playbooks")
-    )
+    session.execute(text("ALTER TABLE scheduled_playbooks_new RENAME TO scheduled_playbooks"))
 
     # Recreate indexes
     session.execute(
         text("CREATE INDEX idx_scheduled_playbooks_enabled ON scheduled_playbooks(enabled)")
     )
     session.execute(
-        text(
-            "CREATE INDEX idx_scheduled_playbooks_next_run ON scheduled_playbooks(next_run_at)"
-        )
+        text("CREATE INDEX idx_scheduled_playbooks_next_run ON scheduled_playbooks(next_run_at)")
     )
 
     logger.info("✅ Migrated scheduled_playbooks.enabled to Boolean")

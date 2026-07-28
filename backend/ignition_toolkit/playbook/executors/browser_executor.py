@@ -34,7 +34,9 @@ class BrowserNavigateHandler(StepHandler):
 class BrowserClickHandler(StepHandler):
     """Handle browser.click step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -49,7 +51,9 @@ class BrowserClickHandler(StepHandler):
 class BrowserFillHandler(StepHandler):
     """Handle browser.fill step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -77,7 +81,9 @@ class BrowserScreenshotHandler(StepHandler):
 class BrowserWaitHandler(StepHandler):
     """Handle browser.wait step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -91,7 +97,9 @@ class BrowserWaitHandler(StepHandler):
 class BrowserVerifyHandler(StepHandler):
     """Handle browser.verify step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -136,7 +144,9 @@ class BrowserVerifyHandler(StepHandler):
 class BrowserFileUploadHandler(StepHandler):
     """Handle browser.file_upload step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -151,7 +161,9 @@ class BrowserFileUploadHandler(StepHandler):
 class BrowserVerifyTextHandler(StepHandler):
     """Handle browser.verify_text step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -216,7 +228,9 @@ class BrowserVerifyTextHandler(StepHandler):
 class BrowserVerifyAttributeHandler(StepHandler):
     """Handle browser.verify_attribute step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -264,7 +278,9 @@ class BrowserVerifyAttributeHandler(StepHandler):
 class BrowserVerifyStateHandler(StepHandler):
     """Handle browser.verify_state step"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_VERIFY
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 
@@ -364,7 +380,9 @@ class BrowserKeyboardHandler(StepHandler):
 class BrowserGetTextHandler(StepHandler):
     """Handle browser.get_text step - extract text content from an element"""
 
-    def __init__(self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION):
+    def __init__(
+        self, manager: BrowserManager, default_timeout: int = TimeoutDefaults.BROWSER_ACTION
+    ):
         self.manager = manager
         self.default_timeout = default_timeout
 

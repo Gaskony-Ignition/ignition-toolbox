@@ -103,7 +103,9 @@ async def submit_playbook(
     """
     token = get_github_token()
     if not token:
-        raise ValueError("GitHub token not configured. Please set your GitHub PAT in Settings > Integrations.")
+        raise ValueError(
+            "GitHub token not configured. Please set your GitHub PAT in Settings > Integrations."
+        )
 
     domain = metadata.get("domain", "gateway")
     filename = playbook_path.split("/")[-1]
@@ -124,7 +126,9 @@ async def submit_playbook(
             headers=headers,
         )
         if ref_resp.status_code == 404:
-            raise ValueError(f"Repository {DEFAULT_REPO} not found or no access. Check your token permissions.")
+            raise ValueError(
+                f"Repository {DEFAULT_REPO} not found or no access. Check your token permissions."
+            )
         ref_resp.raise_for_status()
         base_sha = ref_resp.json()["object"]["sha"]
 
@@ -144,6 +148,7 @@ async def submit_playbook(
         )
         if index_resp.status_code == 200:
             import base64
+
             content_b64 = index_resp.json()["content"]
             index_content = json.loads(base64.b64decode(content_b64))
 
@@ -167,7 +172,8 @@ async def submit_playbook(
 
         # Remove existing entry for same path if it exists
         existing_playbooks = [
-            p for p in index_content.get("playbooks", [])
+            p
+            for p in index_content.get("playbooks", [])
             if p.get("playbook_path") != new_entry["playbook_path"]
         ]
         existing_playbooks.append(new_entry)
