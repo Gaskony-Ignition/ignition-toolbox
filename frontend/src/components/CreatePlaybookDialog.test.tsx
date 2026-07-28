@@ -39,7 +39,7 @@ vi.mock('../api/client', () => ({
 function renderDialog(props: {
   open?: boolean;
   onClose?: () => void;
-  defaultDomain?: 'gateway' | 'perspective' | 'designer';
+  defaultDomain?: 'gateway' | 'perspective';
   showNotification?: (msg: string, severity: string) => void;
 }) {
   const queryClient = new QueryClient({
@@ -100,7 +100,7 @@ describe('CreatePlaybookDialog', () => {
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
-  it('shows all three domain options (Gateway, Perspective, Designer)', () => {
+  it('shows both domain options (Gateway, Perspective)', () => {
     renderDialog({ open: true });
 
     // Open the select dropdown
@@ -109,7 +109,6 @@ describe('CreatePlaybookDialog', () => {
 
     expect(screen.getByRole('option', { name: 'Gateway' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Perspective' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Designer' })).toBeInTheDocument();
   });
 
   it('defaults to the defaultDomain prop', () => {
@@ -239,20 +238,20 @@ describe('CreatePlaybookDialog', () => {
     mockCreate.mockResolvedValue({ path: '/path.yaml', playbook: {} });
     renderDialog({ open: true, defaultDomain: 'gateway' });
 
-    // Change domain to designer
+    // Change domain to perspective
     const select = screen.getByRole('combobox');
     fireEvent.mouseDown(select);
-    const designerOption = screen.getByRole('option', { name: 'Designer' });
-    fireEvent.click(designerOption);
+    const perspectiveOption = screen.getByRole('option', { name: 'Perspective' });
+    fireEvent.click(perspectiveOption);
 
     const nameInput = screen.getByLabelText(/playbook name/i);
-    fireEvent.change(nameInput, { target: { value: 'Designer Playbook' } });
+    fireEvent.change(nameInput, { target: { value: 'Perspective Playbook' } });
     fireEvent.click(screen.getByRole('button', { name: /create playbook/i }));
 
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledWith(
-        'Designer Playbook',
-        'designer',
+        'Perspective Playbook',
+        'perspective',
         expect.any(String)
       );
     });

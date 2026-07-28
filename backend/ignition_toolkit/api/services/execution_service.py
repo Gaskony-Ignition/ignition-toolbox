@@ -470,7 +470,7 @@ class ExecutionService:
         """
         Ensure Playwright browser is installed before running browser-based playbooks.
 
-        This is called on-demand when executing Perspective or Designer playbooks,
+        This is called on-demand when executing Perspective playbooks,
         rather than blocking app startup with a large download.
 
         Raises:

@@ -150,8 +150,6 @@ function AppContent() {
         switch (playbookSubTab) {
           case 'gateway':
             return <Playbooks domainFilter="gateway" />;
-          case 'designer':
-            return <Playbooks domainFilter="designer" />;
           case 'perspective':
             return (
               <>

@@ -148,7 +148,7 @@ def _translate_path_parameters(parameters: dict[str, Any]) -> dict[str, Any]:
     """Rewrite WSL path values for parameters that look like filesystem paths.
 
     Targets keys containing folder/path/dir/file (e.g. module_folder,
-    download_path, designer_install_path) so a caller in WSL can pass a native
+    download_path) so a caller in WSL can pass a native
     /linux/path and have it reach the Windows backend transparently — matching
     what upgrade_module already does for module_folder.
     """
@@ -195,7 +195,7 @@ TOOLS: list[Tool] = [
                 "name": {"type": "string", "description": "Playbook name (used as filename)"},
                 "domain": {
                     "type": "string",
-                    "description": "Domain: gateway, perspective, or designer",
+                    "description": "Domain: gateway or perspective",
                 },
                 "yaml_content": {
                     "type": "string",

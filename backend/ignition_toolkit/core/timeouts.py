@@ -9,7 +9,6 @@ Units:
     - MODULE_INSTALL: seconds
     - BROWSER_ACTION: milliseconds (Playwright API uses ms)
     - BROWSER_VERIFY: milliseconds
-    - DESIGNER_LAUNCH: seconds
 """
 
 
@@ -20,7 +19,6 @@ class TimeoutDefaults:
     MODULE_INSTALL: int = 300  # seconds
     BROWSER_ACTION: int = 30000  # milliseconds
     BROWSER_VERIFY: int = 5000  # milliseconds
-    DESIGNER_LAUNCH: int = 60  # seconds
 
 
 class TimeoutKeys:
@@ -29,4 +27,3 @@ class TimeoutKeys:
     GATEWAY_RESTART = "gateway_restart"
     MODULE_INSTALL = "module_install"
     BROWSER_OPERATION = "browser_operation"
-    DESIGNER_LAUNCH = "designer_launch"

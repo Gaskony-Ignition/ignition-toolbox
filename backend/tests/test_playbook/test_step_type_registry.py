@@ -5,8 +5,8 @@ Ensures the STEP_REGISTRY in step_type_registry.py stays in sync with
 the StepType enum in models.py.
 """
 
-KNOWN_DOMAINS = {"browser", "gateway", "designer", "perspective", "utility", "playbook", "fat"}
-EXPECTED_COUNT = 44
+KNOWN_DOMAINS = {"browser", "gateway", "perspective", "utility", "playbook", "fat"}
+EXPECTED_COUNT = 37
 
 
 class TestRegistryCompleteness:
@@ -18,7 +18,7 @@ class TestRegistryCompleteness:
         assert missing == [], f"Step types missing from registry: {missing}"
 
     def test_registry_has_expected_count(self):
-        """Registry has exactly 44 step type definitions."""
+        """Registry has exactly 37 step type definitions."""
         from ignition_toolkit.playbook.step_type_registry import get_all_definitions
 
         definitions = get_all_definitions()

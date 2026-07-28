@@ -92,7 +92,7 @@ def get_builtin_playbooks_dir() -> Path:
     Get the built-in playbooks directory.
 
     These are the playbooks bundled with the toolkit installation (read-only).
-    Contains all built-in playbooks (Gateway, Perspective, Designer).
+    Contains all built-in playbooks (Gateway, Perspective).
 
     Returns:
         Path: Absolute path to playbooks/ directory at project root

@@ -2,7 +2,7 @@
  * PlaybookCategorySection - Categorization/grouping logic for playbooks
  *
  * Provides functions and components for organizing playbooks by domain
- * (gateway, designer, perspective) and by group.
+ * (gateway, perspective) and by group.
  *
  * Extracted from Playbooks.tsx to reduce file size and improve maintainability.
  */
@@ -15,7 +15,6 @@ import { applyOrder } from './PlaybookDragHandlers';
  */
 export function categorizePlaybooks(playbooks: PlaybookInfo[]) {
   const gateway: PlaybookInfo[] = [];
-  const designer: PlaybookInfo[] = [];
   const perspective: PlaybookInfo[] = [];
 
   playbooks.forEach((playbook) => {
@@ -23,8 +22,6 @@ export function categorizePlaybooks(playbooks: PlaybookInfo[]) {
     if (playbook.domain) {
       if (playbook.domain === 'gateway') {
         gateway.push(playbook);
-      } else if (playbook.domain === 'designer') {
-        designer.push(playbook);
       } else if (playbook.domain === 'perspective') {
         perspective.push(playbook);
       } else {
@@ -39,8 +36,6 @@ export function categorizePlaybooks(playbooks: PlaybookInfo[]) {
     function categorizeByPath(pb: PlaybookInfo) {
       if (pb.path.includes('gateway/')) {
         gateway.push(pb);
-      } else if (pb.path.includes('designer/')) {
-        designer.push(pb);
       } else if (pb.path.includes('perspective/') || pb.path.includes('browser/')) {
         perspective.push(pb);
       } else {
@@ -53,7 +48,6 @@ export function categorizePlaybooks(playbooks: PlaybookInfo[]) {
   // Apply saved order to each category
   return {
     gateway: applyOrder(gateway, 'gateway'),
-    designer: applyOrder(designer, 'designer'),
     perspective: applyOrder(perspective, 'perspective'),
   };
 }
@@ -79,6 +73,5 @@ export function splitByVerification(playbooks: PlaybookInfo[]) {
 /** Domain display names */
 export const domainNames: Record<string, string> = {
   gateway: 'Gateway',
-  designer: 'Designer',
   perspective: 'Perspective',
 };

@@ -27,7 +27,7 @@ interface PlaybookSectionsState {
 /**
  * Hook for managing user-created sections for playbook organization
  *
- * @param domain - Domain name (gateway, designer, perspective)
+ * @param domain - Domain name (gateway, perspective)
  * @returns Object with sections state and management functions
  */
 export function usePlaybookSections(domain: string): PlaybookSectionsState {

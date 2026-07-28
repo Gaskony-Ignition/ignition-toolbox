@@ -199,7 +199,6 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
   // Group playbooks by domain
   const gatewayPlaybooks = filteredPlaybooks.filter((pb) => pb.domain === 'gateway');
   const perspectivePlaybooks = filteredPlaybooks.filter((pb) => pb.domain === 'perspective');
-  const designerPlaybooks = filteredPlaybooks.filter((pb) => pb.domain === 'designer');
 
 
   return (
@@ -246,7 +245,6 @@ export function PlaybookLibraryDialog({ open, onClose }: PlaybookLibraryDialogPr
             <Tab label={`All (${filteredPlaybooks.length})`} value="all" />
             <Tab label={`Gateway (${gatewayPlaybooks.length})`} value="gateway" />
             <Tab label={`Perspective (${perspectivePlaybooks.length})`} value="perspective" />
-            <Tab label={`Designer (${designerPlaybooks.length})`} value="designer" />
           </Tabs>
         </Box>
 

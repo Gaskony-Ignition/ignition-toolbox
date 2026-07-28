@@ -577,7 +577,7 @@ export function Settings() {
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto', mt: 2 }}>
             Visual acceptance testing platform for Ignition SCADA systems.
-            Automate Gateway, Designer, and Perspective operations with playbook-driven workflows.
+            Automate Gateway and Perspective operations with playbook-driven workflows.
           </Typography>
         </Paper>
 

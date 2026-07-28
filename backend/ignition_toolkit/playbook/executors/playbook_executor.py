@@ -147,7 +147,6 @@ class PlaybookRunHandler(StepHandler):
             child_executor = StepExecutor(
                 gateway_client=self.parent_executor.gateway_client,  # Share parent's gateway client
                 browser_manager=self.parent_executor.browser_manager,  # Share parent's browser manager
-                designer_manager=self.parent_executor.designer_manager,  # Share parent's designer manager
                 parameter_resolver=child_resolver,
                 base_path=self.parent_executor.base_path,
                 state_manager=self.parent_executor.state_manager,

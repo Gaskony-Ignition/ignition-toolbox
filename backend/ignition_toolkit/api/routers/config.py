@@ -53,7 +53,6 @@ async def get_config():
         "features": {
             "ai_enabled": ai_enabled,
             "browser_automation": True,
-            "designer_automation": False,  # Future feature
         },
         "server": {
             "port": int(os.getenv("API_PORT", "5000")),

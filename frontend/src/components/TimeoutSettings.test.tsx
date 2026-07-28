@@ -55,7 +55,7 @@ describe('TimeoutSettings', () => {
 
   // ----- Renders all fields when no relevantTimeouts filter -----
 
-  it('shows all 4 timeout fields when accordion is expanded and no relevantTimeouts filter', () => {
+  it('shows all 3 timeout fields when accordion is expanded and no relevantTimeouts filter', () => {
     render(
       <TimeoutSettings
         timeoutOverrides={emptyOverrides}
@@ -68,11 +68,10 @@ describe('TimeoutSettings', () => {
 
     expect(screen.getByLabelText(/Gateway Restart/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Module Installation/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Designer Launch/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Browser Operations/)).toBeInTheDocument();
   });
 
-  it('shows all 4 timeout fields when relevantTimeouts is null/undefined', () => {
+  it('shows all 3 timeout fields when relevantTimeouts is null/undefined', () => {
     render(
       <TimeoutSettings
         timeoutOverrides={emptyOverrides}
@@ -85,7 +84,6 @@ describe('TimeoutSettings', () => {
 
     expect(screen.getByLabelText(/Gateway Restart/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Module Installation/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Designer Launch/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Browser Operations/)).toBeInTheDocument();
   });
 
@@ -104,7 +102,6 @@ describe('TimeoutSettings', () => {
 
     expect(screen.getByLabelText(/Gateway Restart/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Module Installation/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Designer Launch/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Browser Operations/)).not.toBeInTheDocument();
   });
 
@@ -121,7 +118,6 @@ describe('TimeoutSettings', () => {
 
     expect(screen.queryByLabelText(/Gateway Restart/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Module Installation/)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/Designer Launch/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Browser Operations/)).not.toBeInTheDocument();
   });
 
@@ -138,7 +134,6 @@ describe('TimeoutSettings', () => {
 
     expect(screen.getByLabelText(/Gateway Restart/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Module Installation/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Designer Launch/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Browser Operations/)).toBeInTheDocument();
   });
 
@@ -168,19 +163,6 @@ describe('TimeoutSettings', () => {
     fireEvent.click(screen.getByText('Timeout Settings'));
 
     expect(screen.getByLabelText(/Module Installation \(default: 300s\)/)).toBeInTheDocument();
-  });
-
-  it('shows default value 60s in Designer Launch label', () => {
-    render(
-      <TimeoutSettings
-        timeoutOverrides={emptyOverrides}
-        onChange={mockOnChange}
-      />
-    );
-
-    fireEvent.click(screen.getByText('Timeout Settings'));
-
-    expect(screen.getByLabelText(/Designer Launch \(default: 60s\)/)).toBeInTheDocument();
   });
 
   it('shows default value 30000ms in Browser Operations label', () => {

@@ -100,8 +100,6 @@ datas = [
     (str(backend_dir / 'ignition_toolkit' / 'api' / 'data'), 'api/data'),
     # Include Perspective component discovery script
     (str(backend_dir / 'ignition_toolkit' / 'browser' / 'component_discovery.js'), 'browser'),
-    # Include Designer PowerShell helper scripts
-    (str(backend_dir / 'ignition_toolkit' / 'designer' / 'scripts'), 'designer/scripts'),
 ]
 
 # Add Playwright driver (required for browser installation command)

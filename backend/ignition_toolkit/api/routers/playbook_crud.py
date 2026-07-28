@@ -24,7 +24,6 @@ from ignition_toolkit.core.paths import (
     get_user_playbooks_dir,
     is_frozen,
 )
-from ignition_toolkit.core.timeouts import TimeoutKeys
 from ignition_toolkit.core.validation_limits import ValidationLimits
 from ignition_toolkit.playbook.loader import PlaybookLoader
 from ignition_toolkit.playbook.step_type_registry import get_step_definition_by_value
@@ -227,7 +226,7 @@ def _compute_relevant_timeouts(steps, playbook_dirs, domain=None) -> list[str]:
     its timeout categories too.
 
     Returns a sorted list of applicable timeout category strings:
-        "browser_operation", "designer_launch", "gateway_restart", "module_install"
+        "browser_operation", "gateway_restart", "module_install"
     """
     result = set()
 
@@ -258,10 +257,6 @@ def _compute_relevant_timeouts(steps, playbook_dirs, domain=None) -> list[str]:
             defn = get_step_definition_by_value(step_type_value)
             if defn and defn.timeout_category:
                 result.add(defn.timeout_category)
-
-    # Designer domain playbooks use designer_launch timeout
-    if domain == "designer":
-        result.add(TimeoutKeys.DESIGNER_LAUNCH)
 
     return sorted(result)
 

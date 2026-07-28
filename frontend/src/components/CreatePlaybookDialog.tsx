@@ -22,7 +22,7 @@ import {
 import type { QueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 
-export type PlaybookDomain = 'gateway' | 'perspective' | 'designer';
+export type PlaybookDomain = 'gateway' | 'perspective';
 
 interface CreatePlaybookDialogProps {
   open: boolean;
@@ -147,7 +147,6 @@ metadata:
             >
               <MenuItem value="gateway">Gateway</MenuItem>
               <MenuItem value="perspective">Perspective</MenuItem>
-              <MenuItem value="designer">Designer</MenuItem>
             </Select>
           </FormControl>
           <Alert severity="info">

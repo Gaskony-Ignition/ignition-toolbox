@@ -3,7 +3,7 @@ Step type metadata API endpoint
 
 Returns metadata for all available step types including:
 - Type name (e.g., 'gateway.login')
-- Domain (gateway, browser, designer, perspective, utility, playbook, fat)
+- Domain (gateway, browser, perspective, utility, playbook, fat)
 - Description of what the step does
 - Parameter definitions with type, required, default, and description
 """
@@ -60,7 +60,7 @@ async def get_step_types():
 
     Returns step type definitions including:
     - Type identifier (e.g., 'gateway.login')
-    - Domain classification (gateway, browser, designer, etc.)
+    - Domain classification (gateway, browser, etc.)
     - Human-readable description
     - Parameter definitions with types, defaults, and descriptions
     """

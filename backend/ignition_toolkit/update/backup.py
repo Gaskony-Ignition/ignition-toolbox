@@ -58,7 +58,8 @@ def backup_user_data() -> Path:
             custom_playbooks = []
             for playbook in playbooks_dir.rglob("*.yaml"):
                 # Check if it's a custom playbook (not built-in)
-                # Built-in playbooks are in gateway/, perspective/, designer/, examples/
+                # Built-in playbooks are in gateway/, perspective/, designer/ (legacy,
+                # removed domain — old installs may still have the folder), examples/
                 # Normalize to forward slashes for cross-platform compatibility
                 relative_path_str = str(playbook.relative_to(playbooks_dir)).replace("\\", "/")
                 if not relative_path_str.startswith(

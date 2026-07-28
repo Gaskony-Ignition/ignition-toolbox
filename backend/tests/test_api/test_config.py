@@ -59,12 +59,12 @@ class TestGetConfig:
             assert value, f"paths[{key!r}] must not be empty"
 
     def test_features_contains_required_keys(self):
-        """The 'features' dict must include ai_enabled, browser_automation, designer_automation."""
+        """The 'features' dict must include ai_enabled and browser_automation."""
         result = self._run_get_config()
 
         features = result["features"]
         assert isinstance(features, dict)
-        expected = {"ai_enabled", "browser_automation", "designer_automation"}
+        expected = {"ai_enabled", "browser_automation"}
         missing = expected - set(features.keys())
         assert not missing, f"Missing features keys: {missing}"
 

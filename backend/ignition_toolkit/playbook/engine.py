@@ -15,7 +15,6 @@ from typing import Any
 from ignition_toolkit.browser import BrowserManager
 from ignition_toolkit.core.timeouts import TimeoutDefaults, TimeoutKeys
 from ignition_toolkit.credentials import CredentialVault
-from ignition_toolkit.designer import DesignerManager
 from ignition_toolkit.gateway import GatewayClient
 from ignition_toolkit.playbook.exceptions import PlaybookExecutionError
 from ignition_toolkit.playbook.models import (
@@ -80,7 +79,6 @@ class PlaybookEngine:
                 - gateway_restart: Gateway restart timeout in seconds (default: 120)
                 - module_install: Module installation timeout in seconds (default: 300)
                 - browser_operation: Browser operation timeout in milliseconds (default: 30000)
-                - designer_launch: Designer window detection timeout in seconds (default: 60)
         """
         self.gateway_client = gateway_client
         self.credential_vault = credential_vault
@@ -110,12 +108,6 @@ class PlaybookEngine:
         """Get browser operation timeout in milliseconds (default: 30000)"""
         return self.timeout_overrides.get(
             TimeoutKeys.BROWSER_OPERATION, TimeoutDefaults.BROWSER_ACTION
-        )
-
-    def get_designer_launch_timeout(self) -> int:
-        """Get designer launch timeout in seconds (default: 60)"""
-        return self.timeout_overrides.get(
-            TimeoutKeys.DESIGNER_LAUNCH, TimeoutDefaults.DESIGNER_LAUNCH
         )
 
     def set_update_callback(self, callback: Callable[[ExecutionState], None]) -> None:
@@ -201,75 +193,6 @@ class PlaybookEngine:
 
         return resolver, step_results_dict
 
-    async def _setup_resource_managers(
-        self, playbook: Playbook, parameters: dict[str, Any], execution_id: str
-    ) -> tuple[BrowserManager | None, "DesignerManager | None"]:
-        """
-        Set up browser and designer managers if needed
-
-        Args:
-            playbook: Playbook being executed
-            parameters: Execution parameters
-            execution_id: Execution ID for logging
-
-        Returns:
-            Tuple of (browser_manager, designer_manager)
-        """
-        browser_manager = None
-        designer_manager = None
-
-        # Extract download_path parameter if present
-        download_path = parameters.get("download_path")
-        downloads_dir = Path(download_path) if download_path else None
-
-        # Set up browser manager if needed
-        has_browser_steps = any(
-            step.type.domain in ("browser", "perspective") for step in playbook.steps
-        )
-        playbook_domain = playbook.metadata.get("domain")
-        needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
-
-        if needs_browser:
-            screenshot_frame_callback = None
-            if self.screenshot_callback:
-
-                async def screenshot_frame_callback(screenshot_b64: str):
-                    await self.screenshot_callback(execution_id, screenshot_b64)
-
-            browser_manager = BrowserManager(
-                headless=True,
-                screenshot_callback=screenshot_frame_callback,
-                downloads_dir=downloads_dir,
-            )
-            await browser_manager.start()
-
-            if screenshot_frame_callback:
-                await browser_manager.start_screenshot_streaming()
-                logger.info(f"Browser screenshot streaming started for execution {execution_id}")
-            else:
-                logger.info(f"Browser started without streaming for execution {execution_id}")
-
-            self._browser_manager = browser_manager
-        else:
-            logger.debug(
-                f"Skipping browser initialization (not needed for domain={playbook_domain})"
-            )
-
-        # Set up designer manager if needed
-        has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
-        if has_designer_steps:
-            designer_install_path = parameters.get("designer_install_path")
-            install_path = Path(designer_install_path) if designer_install_path else None
-
-            designer_manager = DesignerManager(
-                install_path=install_path,
-                downloads_dir=downloads_dir,
-            )
-            await designer_manager.start()
-            logger.info(f"Designer manager started for execution {execution_id}")
-
-        return browser_manager, designer_manager
-
     def enable_debug(self, execution_id: str) -> None:
         """
         Enable debug mode for an execution (auto-pause after each step)
@@ -344,9 +267,8 @@ class PlaybookEngine:
         else:
             logger.warning("No database configured - execution will not be saved")
 
-        # Initialize browser_manager and designer_manager to None BEFORE try block (scope issue)
+        # Initialize browser_manager to None BEFORE try block (scope issue)
         browser_manager = None
-        designer_manager = None
 
         try:
             # Validate parameters (can fail, but state already saved)
@@ -377,7 +299,7 @@ class PlaybookEngine:
             download_path = parameters.get("download_path")
             downloads_dir = Path(download_path) if download_path else None
 
-            # Create browser manager for Perspective/browser playbooks (NOT for Designer)
+            # Create browser manager for Perspective/browser playbooks
             has_browser_steps = any(
                 step.type.domain in ("browser", "perspective") for step in playbook.steps
             )
@@ -423,25 +345,10 @@ class PlaybookEngine:
                     f"Skipping browser initialization (not needed for domain={playbook_domain})"
                 )
 
-            # Create designer manager if playbook has designer steps
-            has_designer_steps = any(step.type.domain == "designer" for step in playbook.steps)
-            if has_designer_steps:
-                # Extract designer_install_path parameter if present
-                designer_install_path = parameters.get("designer_install_path")
-                install_path = Path(designer_install_path) if designer_install_path else None
-
-                designer_manager = DesignerManager(
-                    install_path=install_path,
-                    downloads_dir=downloads_dir,
-                )
-                await designer_manager.start()
-                logger.info(f"Designer manager started for execution {execution_id}")
-
             # Create step executor
             executor = StepExecutor(
                 gateway_client=self.gateway_client,
                 browser_manager=browser_manager,
-                designer_manager=designer_manager,
                 parameter_resolver=resolver,
                 base_path=base_path,
                 state_manager=self.state_manager,
@@ -675,14 +582,6 @@ class PlaybookEngine:
                     logger.warning(f"Error stopping browser manager: {e}")
                 finally:
                     self._browser_manager = None  # Clear reference
-
-            # Stop designer manager if created
-            if designer_manager:
-                try:
-                    await designer_manager.stop()
-                    logger.info("Designer manager stopped")
-                except Exception as e:
-                    logger.warning(f"Error stopping designer manager: {e}")
 
             # Notify final update
             await self._notify_update(execution_state)

@@ -26,7 +26,6 @@ interface TimeoutSettingsProps {
 const DEFAULTS = {
   gateway_restart: 120,    // seconds
   module_install: 300,     // seconds
-  designer_launch: 60,     // seconds
   browser_operation: 30000 // milliseconds
 };
 
@@ -131,24 +130,6 @@ export function TimeoutSettings({ timeoutOverrides, onChange, relevantTimeouts }
                 }}
               />
               <HelpTooltip content="Maximum time allowed for module upload and installation. Large modules or slow systems may need more time. The default 5 minutes is usually sufficient." />
-            </Box>
-          )}
-          {(relevantTimeouts == null || relevantTimeouts.includes('designer_launch')) && (
-            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-              <TextField
-                label={`Designer Launch (default: ${DEFAULTS.designer_launch}s)`}
-                type="number"
-                size="small"
-                fullWidth
-                value={getValue('designer_launch')}
-                onChange={(e) => handleChange('designer_launch', e.target.value)}
-                helperText="Time to wait for Designer windows to appear"
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">seconds</InputAdornment>,
-                  inputProps: { min: 1 },
-                }}
-              />
-              <HelpTooltip content="How long to wait for the Designer login window and project selection screens to appear. Increase this if the Designer takes longer to start up on your system (e.g., slow hardware or large gateway)." />
             </Box>
           )}
           {(relevantTimeouts == null || relevantTimeouts.includes('browser_operation')) && (

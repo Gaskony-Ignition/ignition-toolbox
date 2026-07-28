@@ -50,7 +50,7 @@ class PlaybookImportRequest(BaseModel):
     """Request to import a playbook from JSON"""
 
     name: str
-    domain: str  # gateway, perspective, or designer
+    domain: str  # gateway or perspective
     yaml_content: str
     overwrite: bool = False
     metadata: dict[str, Any] | None = None  # Optional metadata from export
@@ -323,7 +323,7 @@ async def import_playbook(request: PlaybookImportRequest):
     """
     metadata_store = get_metadata_store()
     try:
-        if request.domain not in ["gateway", "perspective", "designer"]:
+        if request.domain not in ["gateway", "perspective"]:
             raise HTTPException(status_code=400, detail=f"Invalid domain: {request.domain}")
 
         try:

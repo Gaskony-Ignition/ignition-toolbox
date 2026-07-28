@@ -65,7 +65,7 @@ export function WelcomeDialog() {
       <DialogContent>
         <Typography variant="body1" color="text.secondary" paragraph>
           Visual acceptance testing for Ignition SCADA systems. Run automated
-          playbooks to test Gateway operations, Designer features, and
+          playbooks to test Gateway operations and
           Perspective views.
         </Typography>
 

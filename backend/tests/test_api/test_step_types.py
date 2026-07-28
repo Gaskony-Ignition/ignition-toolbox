@@ -27,14 +27,14 @@ class TestGetStepTypes:
 
         assert len(result.step_types) > 0
 
-    def test_step_types_contains_44_entries(self):
-        """The registry must expose exactly 44 step type definitions."""
+    def test_step_types_contains_37_entries(self):
+        """The registry must expose exactly 37 step type definitions."""
         from ignition_toolkit.api.routers.step_types import get_step_types
 
         result = asyncio.run(get_step_types())
 
-        assert len(result.step_types) == 44, (
-            f"Expected 44 step types, got {len(result.step_types)}. "
+        assert len(result.step_types) == 37, (
+            f"Expected 37 step types, got {len(result.step_types)}. "
             f"Types: {[s.type for s in result.step_types]}"
         )
 
@@ -76,7 +76,6 @@ class TestGetStepTypes:
 
         expected_domains = {
             "browser",
-            "designer",
             "fat",
             "gateway",
             "perspective",

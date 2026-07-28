@@ -223,7 +223,7 @@ class PlaybookUpdateChecker:
         Get updates filtered by domain
 
         Args:
-            domain: Domain to filter by ("gateway", "perspective", "designer")
+            domain: Domain to filter by ("gateway", "perspective")
 
         Returns:
             List of updates for specified domain

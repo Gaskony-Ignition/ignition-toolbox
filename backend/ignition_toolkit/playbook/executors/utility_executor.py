@@ -76,7 +76,6 @@ class UtilityPythonHandler(StepHandler):
     This handler provides full Python access for playbook scripts including:
     - Standard library imports (zipfile, pathlib, subprocess, os, etc.)
     - File system access for module installation/upgrade workflows
-    - Process execution for Designer automation
     - XML/JSON parsing for module metadata extraction
     - HTTP requests for gateway polling
 

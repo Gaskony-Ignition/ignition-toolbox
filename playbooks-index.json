@@ -247,43 +247,6 @@
       ],
       "group": "Perspective (Audit)",
       "release_notes": "Initial library publication"
-    },
-    "designer/launch_designer_linux": {
-      "version": "1.0",
-      "domain": "designer",
-      "verified": true,
-      "verified_by": "Nigel G",
-      "description": "Launch Ignition Designer application on Linux using xdotool and X11 automation",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/designer/launch_designer_linux.yaml",
-      "checksum": "sha256:8151558a5efa39541eeede4dcfab126207038830d9b048ab0bfd8aed5ae35d30",
-      "size_bytes": 6606,
-      "dependencies": [],
-      "author": "Nigel G",
-      "tags": [
-        "designer",
-        "launch",
-        "linux"
-      ],
-      "group": "Designer (Base Playbooks)",
-      "release_notes": "Initial library publication"
-    },
-    "designer/launch_designer_shortcut": {
-      "version": "1.0",
-      "domain": "designer",
-      "verified": true,
-      "verified_by": "Nigel G",
-      "description": "Launch Ignition Designer application",
-      "download_url": "https://raw.githubusercontent.com/Gaskony-Ignition/ignition-toolbox/main/library/designer/launch_designer_shortcut.yaml",
-      "checksum": "sha256:cf4f762f2473e015fed0dfd1ac22df4c7cbd776c03e610b6b09b30a5011dbf45",
-      "size_bytes": 14022,
-      "dependencies": [],
-      "author": "Nigel G",
-      "tags": [
-        "designer",
-        "launch"
-      ],
-      "group": "Designer (Base Playbooks)",
-      "release_notes": "Initial library publication"
     }
   }
 }

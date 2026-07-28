@@ -48,7 +48,7 @@ class PlaybookInfo(BaseModel):
     parameters: list[ParameterInfo] = []
     steps: list[StepInfo] = []
     # Metadata fields
-    domain: str | None = None  # Playbook domain (gateway, designer, perspective)
+    domain: str | None = None  # Playbook domain (gateway, perspective)
     group: str | None = (
         None  # Playbook group for UI organization (e.g., "Gateway (Base Playbooks)")
     )
@@ -162,4 +162,4 @@ class ExecutionStatusResponse(BaseModel):
     error: str | None
     debug_mode: bool = False
     step_results: list[StepResultResponse] | None = None
-    domain: str | None = None  # Playbook domain (gateway, designer, perspective)
+    domain: str | None = None  # Playbook domain (gateway, perspective)

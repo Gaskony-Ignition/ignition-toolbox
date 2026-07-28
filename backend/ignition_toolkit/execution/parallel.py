@@ -163,10 +163,7 @@ class ParallelExecutionManager:
                 playbook_path = config.get("playbook_path", "")
 
                 # Browser-based playbooks need browser resource
-                if any(
-                    domain in playbook_path.lower()
-                    for domain in ["perspective", "browser", "designer"]
-                ):
+                if any(domain in playbook_path.lower() for domain in ["perspective", "browser"]):
                     await self.resource_limiter.acquire(ResourceType.BROWSER)
                     resources_acquired.append(ResourceType.BROWSER)
 

@@ -470,23 +470,3 @@ class TestDomainDetection:
         needs_browser = playbook_domain in ("perspective", "gateway") or has_browser_steps
 
         assert needs_browser is False
-
-    def test_designer_steps_detected(self):
-        """Test designer steps are detected for resource setup"""
-        playbook = Playbook(
-            name="Test Playbook",
-            version="1.0",
-            description="Test",
-            parameters=[],
-            steps=[
-                PlaybookStep(
-                    id="step1",
-                    name="Step 1",
-                    type=StepType.DESIGNER_LAUNCH,
-                    parameters={},
-                ),
-            ],
-        )
-
-        has_designer_steps = any(step.type.value.startswith("designer.") for step in playbook.steps)
-        assert has_designer_steps is True

@@ -66,7 +66,6 @@ interface DraggableStepListProps {
 const DOMAIN_COLORS: Record<string, string> = {
   gateway: '#4caf50',
   browser: '#2196f3',
-  designer: '#9c27b0',
   perspective: '#ff9800',
   utility: '#607d8b',
   playbook: '#795548',

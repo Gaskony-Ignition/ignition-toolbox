@@ -13,7 +13,6 @@ from typing import Any
 
 from ignition_toolkit.browser import BrowserManager
 from ignition_toolkit.core.timeouts import TimeoutDefaults, TimeoutKeys
-from ignition_toolkit.designer import DesignerManager
 from ignition_toolkit.gateway import GatewayClient
 from ignition_toolkit.playbook.exceptions import StepExecutionError
 
@@ -31,13 +30,6 @@ from ignition_toolkit.playbook.executors import (
     BrowserVerifyStateHandler,
     BrowserVerifyTextHandler,
     BrowserWaitHandler,
-    DesignerCloseHandler,
-    DesignerLaunchHandler,
-    DesignerLaunchShortcutHandler,
-    DesignerLoginHandler,
-    DesignerOpenProjectHandler,
-    DesignerScreenshotHandler,
-    DesignerWaitHandler,
     FATExportReportHandler,
     # FAT reporting handlers
     FATGenerateReportHandler,
@@ -89,7 +81,6 @@ class StepExecutor:
         self,
         gateway_client: GatewayClient | None = None,
         browser_manager: BrowserManager | None = None,
-        designer_manager: DesignerManager | None = None,
         parameter_resolver: ParameterResolver | None = None,
         base_path: Path | None = None,
         state_manager: Any | None = None,  # StateManager type hint causes circular import
@@ -102,7 +93,6 @@ class StepExecutor:
         Args:
             gateway_client: Gateway client for gateway operations
             browser_manager: Browser manager for browser operations
-            designer_manager: Designer manager for designer operations
             parameter_resolver: Parameter resolver for resolving references
             base_path: Base path for resolving relative file paths
             state_manager: State manager for pause/resume and debug mode
@@ -111,7 +101,6 @@ class StepExecutor:
         """
         self.gateway_client = gateway_client
         self.browser_manager = browser_manager
-        self.designer_manager = designer_manager
         self.parameter_resolver = parameter_resolver
         self.base_path = base_path or Path.cwd()
         self.state_manager = state_manager
@@ -202,22 +191,6 @@ class StepExecutor:
             handlers[StepType.BROWSER_GET_TEXT] = BrowserGetTextHandler(
                 self.browser_manager, default_timeout=browser_timeout
             )
-
-        # Designer handlers
-        if self.designer_manager:
-            handlers[StepType.DESIGNER_LAUNCH] = DesignerLaunchHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_LAUNCH_SHORTCUT] = DesignerLaunchShortcutHandler(
-                self.designer_manager
-            )
-            handlers[StepType.DESIGNER_LOGIN] = DesignerLoginHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_OPEN_PROJECT] = DesignerOpenProjectHandler(
-                self.designer_manager
-            )
-            handlers[StepType.DESIGNER_CLOSE] = DesignerCloseHandler(self.designer_manager)
-            handlers[StepType.DESIGNER_SCREENSHOT] = DesignerScreenshotHandler(
-                self.designer_manager
-            )
-            handlers[StepType.DESIGNER_WAIT] = DesignerWaitHandler(self.designer_manager)
 
         # Playbook handler (nested playbooks)
         handlers[StepType.PLAYBOOK_RUN] = PlaybookRunHandler(parent_executor=self)

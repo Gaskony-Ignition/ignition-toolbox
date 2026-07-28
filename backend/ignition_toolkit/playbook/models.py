@@ -54,15 +54,6 @@ class StepType(str, Enum):
     BROWSER_VERIFY_STATE = "browser.verify_state"
     BROWSER_GET_TEXT = "browser.get_text"
 
-    # Designer operations (desktop application automation)
-    DESIGNER_LAUNCH = "designer.launch"
-    DESIGNER_LAUNCH_SHORTCUT = "designer.launch_shortcut"
-    DESIGNER_LOGIN = "designer.login"
-    DESIGNER_OPEN_PROJECT = "designer.open_project"
-    DESIGNER_CLOSE = "designer.close"
-    DESIGNER_SCREENSHOT = "designer.screenshot"
-    DESIGNER_WAIT = "designer.wait"
-
     # Playbook operations (composable playbooks)
     PLAYBOOK_RUN = "playbook.run"
 
@@ -306,7 +297,7 @@ class ExecutionState:
         step_results: Results of completed steps
         variables: Runtime variables
         error: Error message if failed
-        domain: Playbook domain (gateway, designer, perspective)
+        domain: Playbook domain (gateway, perspective)
     """
 
     execution_id: str
@@ -320,7 +311,7 @@ class ExecutionState:
     step_results: list[StepResult] = field(default_factory=list)
     variables: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
-    domain: str | None = None  # Playbook domain (gateway, designer, perspective)
+    domain: str | None = None  # Playbook domain (gateway, perspective)
 
     def get_step_result(self, step_id: str) -> StepResult | None:
         """

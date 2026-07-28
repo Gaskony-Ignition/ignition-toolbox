@@ -7,7 +7,7 @@ existed in the source tree but was never added to ``backend.spec``, so the
 PyInstaller-frozen build silently shipped without it (blank UDT Builder page
 in v3.3.0, ``GET /api/udt/templates`` returning ``[]``). The same class of bug
 was found in four more places (api/data, exchange/selectors.json,
-browser/component_discovery.js, designer/scripts) — all fixed alongside this
+browser/component_discovery.js) — all fixed alongside this
 test.
 """
 

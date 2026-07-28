@@ -33,11 +33,6 @@ class TestTimeoutDefaults:
 
         assert TimeoutDefaults.BROWSER_VERIFY > 0
 
-    def test_designer_launch_is_positive(self):
-        from ignition_toolkit.core.timeouts import TimeoutDefaults
-
-        assert TimeoutDefaults.DESIGNER_LAUNCH > 0
-
     def test_all_values_are_numeric(self):
         from ignition_toolkit.core.timeouts import TimeoutDefaults
 
@@ -46,7 +41,6 @@ class TestTimeoutDefaults:
             "MODULE_INSTALL",
             "BROWSER_ACTION",
             "BROWSER_VERIFY",
-            "DESIGNER_LAUNCH",
         ):
             value = getattr(TimeoutDefaults, attr)
             assert isinstance(value, (int, float)), f"{attr} must be numeric, got {type(value)}"
@@ -75,12 +69,6 @@ class TestTimeoutDefaults:
 
         assert TimeoutDefaults.BROWSER_VERIFY == 5000
 
-    def test_designer_launch_default_value(self):
-        """Designer launch should default to 60 seconds."""
-        from ignition_toolkit.core.timeouts import TimeoutDefaults
-
-        assert TimeoutDefaults.DESIGNER_LAUNCH == 60
-
 
 class TestTimeoutKeys:
     """Tests for the TimeoutKeys class."""
@@ -105,16 +93,11 @@ class TestTimeoutKeys:
 
         assert isinstance(TimeoutKeys.BROWSER_OPERATION, str)
 
-    def test_designer_launch_is_string(self):
-        from ignition_toolkit.core.timeouts import TimeoutKeys
-
-        assert isinstance(TimeoutKeys.DESIGNER_LAUNCH, str)
-
     def test_key_values_are_lowercase(self):
         """Key strings should be snake_case (lowercase) for consistent dict usage."""
         from ignition_toolkit.core.timeouts import TimeoutKeys
 
-        for attr in ("GATEWAY_RESTART", "MODULE_INSTALL", "BROWSER_OPERATION", "DESIGNER_LAUNCH"):
+        for attr in ("GATEWAY_RESTART", "MODULE_INSTALL", "BROWSER_OPERATION"):
             value = getattr(TimeoutKeys, attr)
             assert value == value.lower(), f"{attr} key '{value}' should be lowercase"
 
@@ -133,11 +116,6 @@ class TestTimeoutKeys:
 
         assert TimeoutKeys.BROWSER_OPERATION == "browser_operation"
 
-    def test_designer_launch_key_value(self):
-        from ignition_toolkit.core.timeouts import TimeoutKeys
-
-        assert TimeoutKeys.DESIGNER_LAUNCH == "designer_launch"
-
     def test_all_keys_are_unique(self):
         """No two keys should share the same string value."""
         from ignition_toolkit.core.timeouts import TimeoutKeys
@@ -146,6 +124,5 @@ class TestTimeoutKeys:
             TimeoutKeys.GATEWAY_RESTART,
             TimeoutKeys.MODULE_INSTALL,
             TimeoutKeys.BROWSER_OPERATION,
-            TimeoutKeys.DESIGNER_LAUNCH,
         ]
         assert len(values) == len(set(values)), "Duplicate key values found in TimeoutKeys"

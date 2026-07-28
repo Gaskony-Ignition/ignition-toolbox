@@ -63,11 +63,6 @@ dev = [
 ai = [
     "anthropic>=0.42.0",
 ]
-designer = [
-    "pywinauto>=0.6.8; sys_platform == 'win32'",
-    "python-xlib>=0.33; sys_platform == 'linux'",
-    "pyatspi>=2.38.2; sys_platform == 'linux'",
-]
 
 [project.scripts]
 ignition-toolkit = "ignition_toolkit.cli:main"

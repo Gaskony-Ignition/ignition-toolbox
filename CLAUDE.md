@@ -33,7 +33,7 @@ is NOT", and the decision framework. Goals drive every feature decision.
 │  └── App settings (electron-store)                      │
 ├─────────────────────────────────────────────────────────┤
 │  Python Subprocess (FastAPI)                            │
-│  ├── Playbook engine (~69 step types)                   │
+│  ├── Playbook engine (37 step types)                   │
 │  ├── Playwright browser automation                      │
 │  ├── Gateway REST client                                │
 │  ├── Credential vault (Fernet encryption)               │
@@ -165,7 +165,7 @@ The Python backend is the full Ignition Automation Toolkit:
 | Module | Purpose |
 | -------- | --------- |
 | `ignition_toolkit/api/` | FastAPI REST API and WebSocket |
-| `ignition_toolkit/playbook/` | Playbook engine (~69 step types — source of truth: `StepType` enum in `playbook/models.py`) |
+| `ignition_toolkit/playbook/` | Playbook engine (37 step types — source of truth: `StepType` enum in `playbook/models.py`) |
 | `ignition_toolkit/browser/` | Playwright browser automation |
 | `ignition_toolkit/gateway/` | Ignition Gateway REST client |
 | `ignition_toolkit/credentials/` | Fernet-encrypted credential vault |
@@ -178,7 +178,6 @@ The Python backend is the full Ignition Automation Toolkit:
 | `ignition_toolkit/startup/` | Startup validation and Playwright installer |
 | `ignition_toolkit/scheduler/` | Playbook scheduling |
 | `ignition_toolkit/update/` | Version update checking |
-| `ignition_toolkit/designer/` | Designer integration |
 | `ignition_toolkit/modules/` | Ignition module management |
 
 ### Frontend (`frontend/`)
@@ -199,7 +198,7 @@ React 19 + TypeScript + Material-UI v7 frontend:
 
 ## Core Principles
 
-1. **Domain Separation** - Playbooks are Gateway-only OR Perspective-only OR Designer-only
+1. **Domain Separation** - Playbooks are Gateway-only OR Perspective-only
 2. **Visual Feedback** - Users see what's happening via live browser streaming
 3. **Playbook Library** - Users duplicate and modify existing playbooks
 4. **Secure by Default** - Credentials encrypted, never in playbooks

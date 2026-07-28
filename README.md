@@ -7,8 +7,8 @@ aren't repeatable, visual UI problems slip past blind scripts, the same login
 and navigation flows get rewritten for every job, and the knowledge walks out
 the door with whoever wrote them. **The Toolbox makes gateway and Perspective
 acceptance testing repeatable and visible**: a library of reusable,
-domain-separated playbooks runs against Gateways, Perspective sessions, and
-Designers with real-time browser streaming — the tester *sees* what happened —
+domain-separated playbooks runs against Gateways and Perspective sessions
+with real-time browser streaming — the tester *sees* what happened —
 plus encrypted credentials and full execution history.
 
 The full problem statement, target users, and decision framework live in
@@ -25,7 +25,7 @@ graph TB
 
     subgraph Backend["Python Backend (FastAPI :5000)"]
         API["REST API +<br/>WebSocket"]
-        Engine["Playbook Engine<br/>(44 step types)"]
+        Engine["Playbook Engine<br/>(37 step types)"]
         PW["Playwright<br/>Browser Automation"]
         GW["Gateway Client"]
         Vault["Credential Vault<br/>(Fernet)"]
@@ -63,7 +63,7 @@ graph TB
          ▼                              ▼
 ┌──────────────── Python Backend (FastAPI :5000) ────────┐
 │  REST API + WebSocket                                  │
-│  ├── Playbook Engine (44 step types)                   │
+│  ├── Playbook Engine (37 step types)                   │
 │  ├── Playwright Browser Automation                     │
 │  ├── Gateway REST Client                               │
 │  ├── Credential Vault (Fernet)                         │
@@ -189,7 +189,7 @@ ignition-toolbox/
 ├── backend/                       # Python backend
 │   ├── ignition_toolkit/          # Main package
 │   │   ├── api/                   # FastAPI REST API + WebSocket
-│   │   ├── playbook/              # Playbook engine (44 step types)
+│   │   ├── playbook/              # Playbook engine (37 step types)
 │   │   ├── browser/               # Playwright browser automation
 │   │   ├── gateway/               # Ignition Gateway REST client
 │   │   ├── credentials/           # Fernet-encrypted credential vault

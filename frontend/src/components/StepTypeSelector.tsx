@@ -1,7 +1,7 @@
 /**
  * StepTypeSelector - Grouped dropdown for selecting step types
  *
- * Organizes step types by domain (gateway, browser, designer, etc.)
+ * Organizes step types by domain (gateway, browser, etc.)
  * with descriptions for each step type.
  */
 
@@ -28,7 +28,6 @@ interface StepTypeSelectorProps {
 const DOMAIN_CONFIG: Record<string, { label: string; icon: string }> = {
   gateway: { label: 'Gateway', icon: '🔧' },
   browser: { label: 'Browser', icon: '🌐' },
-  designer: { label: 'Designer', icon: '🎨' },
   perspective: { label: 'Perspective', icon: '📱' },
   utility: { label: 'Utility', icon: '⚙️' },
   playbook: { label: 'Playbook', icon: '📋' },
@@ -53,7 +52,7 @@ export function StepTypeSelector({
     });
 
     // Sort groups by domain order
-    const domainOrder = ['gateway', 'browser', 'designer', 'perspective', 'utility', 'playbook', 'fat'];
+    const domainOrder = ['gateway', 'browser', 'perspective', 'utility', 'playbook', 'fat'];
     const sortedGroups: [string, StepTypeInfo[]][] = [];
 
     domainOrder.forEach((domain) => {

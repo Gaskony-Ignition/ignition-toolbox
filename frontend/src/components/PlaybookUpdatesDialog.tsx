@@ -147,7 +147,6 @@ export function PlaybookUpdatesDialog({ open, onClose }: PlaybookUpdatesDialogPr
   // Group by domain
   const gatewayUpdates = filteredUpdates.filter((u) => u.domain === 'gateway');
   const perspectiveUpdates = filteredUpdates.filter((u) => u.domain === 'perspective');
-  const designerUpdates = filteredUpdates.filter((u) => u.domain === 'designer');
 
 
   return (
@@ -189,7 +188,6 @@ export function PlaybookUpdatesDialog({ open, onClose }: PlaybookUpdatesDialogPr
             <Tab label={`All (${filteredUpdates.length})`} value="all" />
             <Tab label={`Gateway (${gatewayUpdates.length})`} value="gateway" />
             <Tab label={`Perspective (${perspectiveUpdates.length})`} value="perspective" />
-            <Tab label={`Designer (${designerUpdates.length})`} value="designer" />
           </Tabs>
         </Box>
 

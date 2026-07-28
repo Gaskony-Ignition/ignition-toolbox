@@ -250,7 +250,7 @@ function DroppableZone({ id, children }: { id: string; children: React.ReactNode
 // - PlaybookCategorySection.tsx
 
 interface PlaybooksProps {
-  domainFilter?: 'gateway' | 'designer' | 'perspective';
+  domainFilter?: 'gateway' | 'perspective';
 }
 
 export function Playbooks({ domainFilter }: PlaybooksProps) {
@@ -312,7 +312,7 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
 
   // Category order and expanded state (managed by hooks with localStorage persistence)
   const { order: rawCategoryOrder, updateOrder: updateCategoryOrder } = useCategoryOrder();
-  const categoryOrder = rawCategoryOrder.length > 0 ? rawCategoryOrder : ['gateway', 'designer', 'perspective'];
+  const categoryOrder = rawCategoryOrder.length > 0 ? rawCategoryOrder : ['gateway', 'perspective'];
   const { expanded: categoryExpanded, setExpanded: setCategoryExpanded } = useCategoryExpanded();
 
   // Fetch playbooks
@@ -352,13 +352,11 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
 
   // State for each category to enable re-rendering on drag
   const [gatewayPlaybooks, setGatewayPlaybooks] = useState(categories.gateway);
-  const [designerPlaybooks, setDesignerPlaybooks] = useState(categories.designer);
   const [perspectivePlaybooks, setPerspectivePlaybooks] = useState(categories.perspective);
 
   // Update state when playbooks change
   useEffect(() => {
     setGatewayPlaybooks(categories.gateway);
-    setDesignerPlaybooks(categories.designer);
     setPerspectivePlaybooks(categories.perspective);
 
     // Clean up saved configurations for deleted playbooks
@@ -506,7 +504,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
 
   // Unified drag end handlers using parameterized factory (replaces 3 identical handlers)
   const handleGatewayDragEnd = createCategoryDragEndHandler(gatewayPlaybooks, setGatewayPlaybooks, 'gateway');
-  const handleDesignerDragEnd = createCategoryDragEndHandler(designerPlaybooks, setDesignerPlaybooks, 'designer');
   const handlePerspectiveDragEnd = createCategoryDragEndHandler(perspectivePlaybooks, setPerspectivePlaybooks, 'perspective');
 
   // Handle category reordering
@@ -572,7 +569,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
     if (!domainFilter) return null;
     switch (domainFilter) {
       case 'gateway': return gatewayPlaybooks;
-      case 'designer': return designerPlaybooks;
       case 'perspective': return perspectivePlaybooks;
       default: return null;
     }
@@ -885,12 +881,6 @@ export function Playbooks({ domainFilter }: PlaybooksProps) {
                     playbooks: gatewayPlaybooks,
                     dragHandler: handleGatewayDragEnd,
                     emptyMessage: 'No Gateway playbooks found. Add YAML playbooks to ./playbooks/gateway/',
-                  },
-                  designer: {
-                    title: `🎨 Designer (${designerPlaybooks.length})`,
-                    playbooks: designerPlaybooks,
-                    dragHandler: handleDesignerDragEnd,
-                    emptyMessage: 'No Designer playbooks found. Add YAML playbooks to ./playbooks/designer/',
                   },
                   perspective: {
                     title: `📱 Perspective (${perspectivePlaybooks.length})`,

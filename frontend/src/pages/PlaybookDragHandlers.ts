@@ -48,12 +48,12 @@ export function applyOrder(playbooks: PlaybookInfo[], category: string): Playboo
 /**
  * Creates a unified drag-end handler for any playbook category.
  *
- * Replaces the 3 identical handleGatewayDragEnd / handleDesignerDragEnd /
+ * Replaces the identical handleGatewayDragEnd /
  * handlePerspectiveDragEnd with a single parameterized factory.
  *
  * @param categoryPlaybooks - The current ordered list for this category
  * @param setPlaybooks - State setter for this category's playbook list
- * @param categoryKey - The localStorage key for this category ('gateway' | 'designer' | 'perspective')
+ * @param categoryKey - The localStorage key for this category ('gateway' | 'perspective')
  */
 export function createCategoryDragEndHandler(
   categoryPlaybooks: PlaybookInfo[],

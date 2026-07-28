@@ -332,7 +332,6 @@ class PlaybookMetadataStore:
         Built-in playbooks are those in:
         - playbooks/gateway/
         - playbooks/perspective/
-        - playbooks/designer/
         - playbooks/examples/
 
         But NOT in user-created directories
@@ -340,6 +339,8 @@ class PlaybookMetadataStore:
         Args:
             playbooks_dir: Path to playbooks directory
         """
+        # "designer" is legacy: the domain was removed, but existing installs may
+        # still have a designer/ folder that must keep counting as built-in.
         built_in_dirs = ["gateway", "perspective", "designer", "examples"]
 
         for dir_name in built_in_dirs:

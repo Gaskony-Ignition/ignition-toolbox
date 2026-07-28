@@ -155,7 +155,7 @@ function makeQueryClient() {
 
 // Use dynamic import to avoid module-initialization deadlock from static import
 // combined with vi.mock hoisting in the JSDOM environment.
-async function renderPlaybooks(props: { domainFilter?: 'gateway' | 'designer' | 'perspective' } = {}) {
+async function renderPlaybooks(props: { domainFilter?: 'gateway' | 'perspective' } = {}) {
   const { Playbooks } = await import('./Playbooks');
   return render(
     React.createElement(
@@ -305,8 +305,8 @@ describe('Playbooks page', () => {
   });
 
   it('shows domain-specific heading when domainFilter is set', { timeout: 20000 }, async () => {
-    await renderPlaybooks({ domainFilter: 'designer' });
-    expect(screen.getByText(/designer playbooks/i)).toBeInTheDocument();
+    await renderPlaybooks({ domainFilter: 'perspective' });
+    expect(screen.getByText(/perspective playbooks/i)).toBeInTheDocument();
   });
 
   it('shows empty state when filtered domain has no playbooks', { timeout: 20000 }, async () => {
@@ -314,9 +314,9 @@ describe('Playbooks page', () => {
     vi.mocked(api.playbooks.list).mockResolvedValue([
       makePlaybook({ name: 'GW Playbook', path: 'gateway/gw.yaml', domain: 'gateway' }),
     ]);
-    await renderPlaybooks({ domainFilter: 'designer' });
+    await renderPlaybooks({ domainFilter: 'perspective' });
     await waitFor(() => {
-      expect(screen.getByText(/no designer playbooks found/i)).toBeInTheDocument();
+      expect(screen.getByText(/no perspective playbooks found/i)).toBeInTheDocument();
     }, { timeout: 12000 });
   });
 });

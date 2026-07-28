@@ -3,7 +3,7 @@ Tests for YAML playbook schema validation.
 
 Loads every YAML file under backend/playbooks/ and validates:
 - Required top-level fields: name, version, description, domain, steps
-- domain is one of: gateway, designer, perspective
+- domain is one of: gateway, perspective
 - Every step type is a known step type from the registry
 - Reports ALL failures, not just the first one
 """
@@ -14,7 +14,7 @@ import yaml
 
 PLAYBOOKS_DIR = Path(__file__).parent.parent.parent / "playbooks"
 REQUIRED_FIELDS = {"name", "version", "description", "domain", "steps"}
-VALID_DOMAINS = {"gateway", "designer", "perspective"}
+VALID_DOMAINS = {"gateway", "perspective"}
 
 
 def get_known_step_types() -> set[str]:
@@ -56,7 +56,7 @@ class TestYamlSchema:
         )
 
     def test_all_playbooks_have_valid_domain(self):
-        """Every playbook YAML has a domain value in {gateway, designer, perspective}."""
+        """Every playbook YAML has a domain value in {gateway, perspective}."""
         failures = []
         for yaml_file, data in load_all_playbooks():
             if not isinstance(data, dict):

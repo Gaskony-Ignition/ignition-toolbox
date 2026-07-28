@@ -21,7 +21,6 @@ import {
 } from '@mui/material';
 import {
   Storage as GatewayIcon,
-  DesignServices as DesignerIcon,
   Visibility as PerspectiveIcon,
   Settings as SettingsIcon,
   KeyboardArrowDown as ArrowDownIcon,
@@ -84,7 +83,6 @@ const stackSubTabs: { id: StackSubTab; label: string; icon: React.ReactNode }[] 
 
 const playbookSubTabs: { id: PlaybookSubTab; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'gateway', label: 'Gateway', icon: <GatewayIcon sx={{ fontSize: '1rem' }} /> },
-  { id: 'designer', label: 'Designer', icon: <DesignerIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'perspective', label: 'Perspective', icon: <PerspectiveIcon sx={{ fontSize: '1rem' }} />, badge: 'Beta' },
   { id: 'active-execution', label: 'Active Execution', icon: <ActiveExecutionIcon sx={{ fontSize: '1rem' }} /> },
   { id: 'past-executions', label: 'Past Executions', icon: <PastExecutionsIcon sx={{ fontSize: '1rem' }} /> },

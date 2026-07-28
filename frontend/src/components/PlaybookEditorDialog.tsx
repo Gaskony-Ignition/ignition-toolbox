@@ -446,7 +446,6 @@ export function PlaybookEditorDialog({
                     >
                       <MenuItem value="gateway">Gateway</MenuItem>
                       <MenuItem value="browser">Browser</MenuItem>
-                      <MenuItem value="designer">Designer</MenuItem>
                       <MenuItem value="perspective">Perspective</MenuItem>
                     </Select>
                   </FormControl>

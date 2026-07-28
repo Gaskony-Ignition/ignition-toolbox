@@ -18,12 +18,6 @@ export const TIMING = {
     PLAYBOOKS: 30000,
     /** Playbooks page - check for library updates */
     PLAYBOOK_UPDATES: 300000,
-    /** Designer page - status check when running */
-    DESIGNER_FAST: 5000,
-    /** Designer page - status check when idle */
-    DESIGNER_SLOW: 30000,
-    /** Designer page - log polling while a mutation is pending */
-    DESIGNER_LOGS_PENDING: 1500,
     /** StackBuilder page - status check during deployment */
     STACKBUILDER_FAST: 5000,
     /** StackBuilder page - status check when idle */

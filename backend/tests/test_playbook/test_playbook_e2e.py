@@ -60,20 +60,6 @@ HANDLER_PARAMS = {
     "gateway.get_project": {"project_name"},
     "gateway.restart": {"wait_for_ready", "timeout"},
     "gateway.wait_for_ready": {"timeout"},
-    "designer.launch": {"launcher_file"},
-    "designer.launch_shortcut": {
-        "designer_shortcut",
-        "project_name",
-        "gateway_credential",
-        "username",
-        "password",
-        "timeout",
-    },
-    "designer.login": {"username", "password", "timeout"},
-    "designer.open_project": {"project_name", "timeout"},
-    "designer.close": set(),
-    "designer.screenshot": {"name"},
-    "designer.wait": {"timeout"},
     "playbook.run": {"playbook"},  # handler reads "playbook", NOT "playbook_path"
     "utility.sleep": {"seconds"},
     "utility.log": {"message", "level"},
@@ -674,13 +660,13 @@ class TestLibraryBackendSync:
         """Every gateway library playbook should have a matching backend copy.
 
         Perspective playbooks are library-only (distributed via online library),
-        so only gateway/ and designer/ playbooks need backend copies.
+        so only gateway/ playbooks need backend copies.
         """
         if not LIBRARY_DIR.is_dir() or not BACKEND_PLAYBOOKS_DIR.is_dir():
             pytest.skip("library/ or backend/playbooks/ not found")
 
-        # Only gateway/ and designer/ playbooks must be bundled
-        BUNDLED_DOMAINS = {"gateway", "designer"}
+        # Only gateway/ playbooks must be bundled
+        BUNDLED_DOMAINS = {"gateway"}
 
         missing = []
         for yaml_file in sorted(LIBRARY_DIR.rglob("*.yaml")):

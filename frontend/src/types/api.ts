@@ -30,7 +30,7 @@ export interface PlaybookInfo {
   parameters: ParameterInfo[];
   steps: StepInfo[];
   // Metadata fields
-  domain: string | null;  // Playbook domain (gateway, designer, perspective)
+  domain: string | null;  // Playbook domain (gateway, perspective)
   group: string | null;  // Playbook group for UI organization (e.g., "Gateway (Base Playbooks)")
   revision: number;
   verified: boolean;
@@ -48,7 +48,6 @@ export interface TimeoutOverrides {
   gateway_restart?: number;   // seconds (default: 120)
   module_install?: number;    // seconds (default: 300)
   browser_operation?: number; // milliseconds (default: 30000)
-  designer_launch?: number;   // seconds (default: 60)
 }
 
 export interface ExecutionRequest {
@@ -77,7 +76,7 @@ export interface ExecutionStatusResponse {
   error: string | null;
   debug_mode?: boolean;
   step_results?: StepResult[] | null;
-  domain?: string | null;  // Playbook domain (gateway, designer, perspective)
+  domain?: string | null;  // Playbook domain (gateway, perspective)
 }
 
 export interface CredentialInfo {
@@ -126,7 +125,7 @@ export interface ExecutionUpdate {
   started_at: string | null;
   completed_at: string | null;
   step_results: StepResult[];
-  domain?: string | null;  // Playbook domain (gateway, designer, perspective)
+  domain?: string | null;  // Playbook domain (gateway, perspective)
 }
 
 export interface ScreenshotFrame {

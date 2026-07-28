@@ -36,7 +36,7 @@ export const helpContent = {
     parameters:
       'Some playbooks accept parameters that customize their behavior. Parameters can be set before execution.',
     domains:
-      'Playbooks are organized by domain: Gateway (config/backup), Designer (project work), Perspective (UI testing), and API (REST calls).',
+      'Playbooks are organized by domain: Gateway (config/backup), Perspective (UI testing), and API (REST calls).',
   },
 
   // Settings section

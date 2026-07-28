@@ -17,7 +17,6 @@ export type MainTab = (typeof MAIN_TABS)[number];
 
 export const PLAYBOOK_SUB_TABS = [
   'gateway',
-  'designer',
   'perspective',
   'active-execution',
   'past-executions',

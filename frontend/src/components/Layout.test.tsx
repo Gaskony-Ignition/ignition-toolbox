@@ -89,9 +89,8 @@ describe('Layout', () => {
   it('renders playbook sub-tabs when Playbooks tab is active (default)', () => {
     renderLayout();
     // Playbooks is the default tab — sub-tabs should be visible.
-    // Sub-tabs: Gateway, Designer, Perspective, Active Execution
+    // Sub-tabs: Gateway, Perspective, Active Execution
     expect(screen.getByRole('button', { name: /gateway/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /designer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /active execution/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /perspective/i })).toBeInTheDocument();
   });

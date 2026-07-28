@@ -283,7 +283,7 @@ export function EmbeddedShellTerminal({
                   <li>Type <code>claude-code</code> (or <code>claude-work</code>) to start Claude Code</li>
                   <li>Read <code>CLAUDE_CODE_INSTRUCTIONS.md</code> for playbook syntax and patterns</li>
                   <li>Claude Code can read, edit, and create playbook YAML files</li>
-                  <li>Use <code>ls</code> to see available playbooks in gateway/, perspective/, designer/</li>
+                  <li>Use <code>ls</code> to see available playbooks in gateway/, perspective/</li>
                 </ol>
               </Box>
             </Alert>

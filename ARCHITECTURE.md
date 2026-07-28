@@ -30,7 +30,7 @@ graph TB
 
     subgraph Backend["Python Backend (FastAPI :5000)"]
         API["REST API +<br/>WebSocket"]
-        Engine["Playbook Engine<br/>(44 step types)"]
+        Engine["Playbook Engine<br/>(37 step types)"]
         PW["Playwright<br/>Browser Automation"]
         GW["Gateway Client"]
         Vault["Credential Vault<br/>(Fernet)"]
@@ -126,7 +126,7 @@ The main process spawns the Python backend as a child process and communicates w
 
 ### Key Architectural Characteristics
 
-1. **Domain Separation** - Gateway, Perspective, and Designer playbooks are kept separate
+1. **Domain Separation** - Gateway and Perspective playbooks are kept separate
 2. **Visual Feedback** - Real-time browser streaming (2 FPS) during Perspective tests
 3. **Async-First** - Python asyncio throughout for I/O operations
 4. **Type-Safe** - TypeScript frontend, Python type hints backend
@@ -280,11 +280,8 @@ ignition_toolkit/
 ├── execution/                # Execution queue
 │   └── queue.py              # Parallel execution with resource limiting
 │
-├── reporting/                # Reports + analytics
-│   └── generator.py          # Trend reports, CSV/PDF exports
-│
-└── designer/                 # Designer automation
-    └── manager.py            # Designer step handlers
+└── reporting/                # Reports + analytics
+    └── generator.py          # Trend reports, CSV/PDF exports
 ```
 
 **Key Backend Patterns:**
