@@ -3,6 +3,9 @@
 **Status:** PLANNED (written 2026-07-06). The perspective playbook library is
 currently **empty** (its README advertises 7 playbooks that don't exist —
 fixed to say "planned" as part of this work).
+**Migration note (31/07/2026):** predates the strangler migration decision
+(`../../../toolbox-projects/MIGRATION.md`, D11) — the Electron app is being
+replaced by native Ignition projects; re-scope before executing.
 **Goal:** Run against a customer's Perspective project and produce a
 professional report of recommendations — consistency, layout, quality, best
 practice. This is the flagship deliverable for Nigel's consulting work with

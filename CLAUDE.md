@@ -287,7 +287,11 @@ Skills live in `.claude/skills/`. Load them — don't work from memory.
 
 **Work queue:** `docs/OPEN_WORK.md` is the live list of unfinished work;
 major planned features have agent-executable plans in `docs/plans/`
-(StackBuilder test strategy, UDT Builder, Perspective project audit).
+(StackBuilder test strategy, UDT Builder, Perspective project audit). Those
+plans predate the strangler migration decision
+(`../toolbox-projects/MIGRATION.md`, D11): the Electron app is being
+progressively replaced by native Ignition projects, so scope any new
+Electron-side feature work with eventual porting/retirement in mind.
 
 **Stale-doc warning:** `docs/IMPROVEMENT_PLAN.md` and
 `docs/architectural-debt-audit.md` are dated point-in-time reviews (Feb 2026,

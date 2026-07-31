@@ -1,5 +1,12 @@
 # Ignition Toolbox - Development Phases
 
+> ⚠️ **Historical snapshot — do not act on this without verifying.** Written
+> February 2026. Several features it records as shipped were later **removed
+> entirely** in the v3.5.0–v3.7.0 strangler wave (CloudDesigner, the Exchange
+> scraper, desktop Designer automation) as the toolbox migrates into native
+> Ignition projects — see `../toolbox-projects/MIGRATION.md` (D11). Kept as a
+> record of the development arc only.
+>
 > Generated: February 2026
 > Total Estimated Effort: ~470 hours
 

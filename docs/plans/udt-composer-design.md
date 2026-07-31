@@ -4,6 +4,9 @@ Status: **in progress** (started 06/07/2026). Supersedes the questionnaire
 flow in [udt-builder-design.md](udt-builder-design.md) as the primary UX;
 that doc's models/conventions/template phases (1–3, shipped v3.3.x) are the
 foundation and stay.
+**Migration note (31/07/2026):** predates the strangler migration decision
+(`../../../toolbox-projects/MIGRATION.md`, D11) — the Electron app is being
+replaced by native Ignition projects; re-scope before executing.
 
 ## Why (Nigel, 06/07/2026)
 

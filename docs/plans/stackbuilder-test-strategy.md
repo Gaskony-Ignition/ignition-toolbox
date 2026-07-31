@@ -1,6 +1,9 @@
 # StackBuilder Test Strategy — Plan for a Future Agent Session
 
-**Status:** PLANNED (written 2026-07-06, verified against v3.2.5 code)
+**Status:** PLANNED (written 2026-07-06, verified against v3.2.5 code).
+**Migration note (31/07/2026):** predates the strangler migration decision
+(`../../../toolbox-projects/MIGRATION.md`, D11) — the Electron app is being
+replaced by native Ignition projects; re-scope before executing.
 **Goal:** Make the beta StackBuilder trustworthy without manually testing every
 service combination. An agent session (Sonnet-class) should be able to execute
 this plan phase by phase. Load skills `testing-and-verification` and
